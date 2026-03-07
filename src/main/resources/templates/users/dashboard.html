@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Dashboard</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        h1, h3 { margin-bottom: 10px; }
+        ul { list-style: none; padding-left: 0; }
+        li { padding: 5px 0; }
+        .section { margin-bottom: 30px; }
+        .community-link, .friend-name { margin-right: 10px; }
+        button { margin-left: 5px; }
+        form { display: inline; }
+    </style>
+</head>
+<body>
+
+<h1>Welcome to MediaOdyssey</h1>
+<p>You are logged in.</p>
+
+<hr>
+
+<div class="section">
+    <h3>Community Actions</h3>
+    <a th:href="@{/communities/create}"><button>Create Community</button></a>
+    <a th:href="@{/communities}"><button>Join Community</button></a>
+</div>
+
+<div class="section">
+    <h3>Your Communities</h3>
+    <ul>
+        <li th:each="community : ${myCommunities}">
+            <a th:href="@{/communities/{id}(id=${community.id})}"
+               th:text="${community.name}"
+               class="community-link">Community Name</a>
+        </li>
+        <li th:if="${#lists.isEmpty(myCommunities)}">You have not joined any communities yet.</li>
+    </ul>
+</div>
+
+<div class="section">
+    <h3>Friends</h3>
+    <ul>
+        <li th:each="f : ${friends}" th:text="${f.username}" class="friend-name"></li>
+        <li th:if="${#lists.isEmpty(friends)}">You have no friends yet.</li>
+    </ul>
+</div>
+
+<div class="section">
+    <h3>Incoming Friend Requests</h3>
+    <ul>
+        <li th:each="r : ${requests}">
+            <span th:text="${r.username}"></span>
+            <form th:action="@{/users/friends/accept}" method="post">
+                <input type="hidden" th:name="requestId" th:value="${r.id}" />
+                <button type="submit">Accept</button>
+            </form>
+        </li>
+        <li th:if="${#lists.isEmpty(requests)}">No incoming friend requests.</li>
+    </ul>
+</div>
+
+<div class="section">
+    <h3>Suggested Friends</h3>
+    <ul>
+        <li th:each="s : ${suggested}">
+            <span th:text="${s.username}"></span>
+            <form th:action="@{/users/friends/request}" method="post">
+                <input type="hidden" th:name="friendId" th:value="${s.id}" />
+                <button type="submit">Add Friend</button>
+            </form>
+        </li>
+        <li th:if="${#lists.isEmpty(suggested)}">No suggested friends at the moment.</li>
+    </ul>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Community</title>
+</head>
+<body>
+
+<h1 th:text="${community.name}">Community Name</h1>
+<p th:text="${community.description}">Community Description</p>
+
+<hr>
+
+<form th:action="@{/communities/{id}/join(id=${community.id})}" method="post">
+    <button type="submit">Join Community</button>
+</form>
+
+<br>
+
+<a th:href="@{/posts/create/{id}(id=${community.id})}">
+    <button>Create Post</button>
+</a>
+
+<hr>
+
+<h2>Posts</h2>
+<div th:if="${#lists.isEmpty(posts)}">
+    <p>No posts yet.</p>
+</div>
+
+<div th:each="post : ${posts}" style="border:1px solid #ccc; padding:10px; margin-bottom:10px;">
+    <h3>
+        <a th:href="@{/posts/{id}(id=${post.id})}" th:text="${post.title}">Post Title</a>
+    </h3>
+    <p th:text="${#strings.abbreviate(post.content,150)}">Post preview...</p>
+</div>
+
+<hr>
+
+    <p>Members: <span th:text="${memberCount}">0</span></p>
+
+
+</body>
+</html>

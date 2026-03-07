@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Create Post</title>
+    <style>
+        body { font-family: Arial, sans-serif; }
+        form { display: flex; flex-direction: column; gap: 10px; width: 50%; }
+        input, textarea { padding: 8px; font-size: 14px; width: 100%; }
+        button { padding: 10px; font-size: 16px; cursor: pointer; }
+    </style>
+</head>
+<body>
+
+<h1>Create a New Post</h1>
+
+<form th:action="@{/posts/create/{communityId}(communityId=${communityId})}" method="post">
+    <input type="text" name="title" placeholder="Post title" required>
+    <textarea name="content" placeholder="Post content" required></textarea>
+    <button type="submit">Create Post</button>
+</form>
+
+<br>
+
+<a th:href="@{/communities/{id}(id=${communityId})}">
+    <button>Back to Community</button>
+</a>
+</body>
+</html>

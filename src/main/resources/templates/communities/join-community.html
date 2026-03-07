@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Join Community</title>
+
+    <style>
+        table {
+            border-collapse: collapse;
+            width: 60%;
+        }
+
+        th, td {
+            border: 1px solid #ccc;
+            padding: 10px;
+            text-align: left;
+        }
+
+        tr.clickable-row:hover {
+            background-color: #f2f2f2;
+            cursor: pointer;
+        }
+    </style>
+
+</head>
+<body>
+
+<h2>Join Community</h2>
+
+<table>
+    <thead>
+    <tr>
+        <th>Community Name</th>
+        <th>Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+
+    <!--/*@thymesVar id="community" type="com.mo.mediaodyssey.models.Community"*/-->
+
+    <tr th:each="community : ${communities}"
+        class="clickable-row"
+        th:onclick="|window.location='/communities/' + ${community.id}|">
+
+        <td th:text="${community.name}">Community Name</td>
+        <td th:text="${community.description}">Description</td>
+
+    </tr>
+
+    </tbody>
+</table>
+
+</body>
+</html>

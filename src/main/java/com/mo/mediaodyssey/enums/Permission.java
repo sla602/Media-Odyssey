@@ -1,0 +1,20 @@
+package com.mo.mediaodyssey.enums;
+
+public enum Permission {
+    //CONTENT
+    CREATE_POST,
+    CREATE_COMMENT,
+
+    //MODERATION
+    DELETE_POST,
+    KICK_MEMBER,
+
+    //ROLE MANAGEMENT
+    PROMOTE_MEMBER,
+    DEMOTE_MODERATOR,
+    TRANSFER_OWNERSHIP,
+
+    //COMMUNITY MANAGEMENT
+    EDIT_COMMUNITY,
+    DELETE_COMMUNITY
+}

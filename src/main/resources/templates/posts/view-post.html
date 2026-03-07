@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title th:text="${post.title}">Post Title</title>
+    <style>
+        .comment {
+            border: 1px solid #ccc;
+            padding: 10px;
+            margin-top: 10px;
+            border-radius: 5px;
+        }
+        textarea { width: 100%; height: 60px; margin-top:5px; margin-bottom:5px;}
+        button { margin-top:5px;}
+    </style>
+</head>
+<body>
+
+<div>
+    <h1 th:text="${post.title}">Post Title</h1>
+    <p><b>Author ID:</b> <span th:text="${post.authorId}">Author</span></p>
+    <p th:text="${post.content}">Full post content</p>
+</div>
+
+<hr>
+<h2>Comments</h2>
+
+<div th:each="cwd : ${comments}"
+     th:style="'margin-left:' + ${cwd.depth * 30} + 'px;'"
+     class="comment">
+
+    <p><b th:text="${cwd.comment.authorId}">Author</b></p>
+    <p th:text="${cwd.comment.content}">Comment text</p>
+
+    <!-- Reply form -->
+    <form th:action="@{/comments/reply/{id}(id=${cwd.comment.id})}" method="post">
+        <input type="text" name="content" placeholder="Reply..." required>
+        <button type="submit">Reply</button>
+    </form>
+
+</div>
+
+<hr>
+<h3>Add a Comment</h3>
+<form th:action="@{/comments/post/{postId}(postId=${post.id})}" method="post">
+    <textarea name="content" placeholder="Write your comment..." required></textarea>
+    <br>
+    <button type="submit">Comment</button>
+</form>
+</body>
+</html>

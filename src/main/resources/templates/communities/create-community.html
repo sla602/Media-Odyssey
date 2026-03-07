@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Create Community</title>
+</head>
+<body>
+
+<h2>Create a Community</h2>
+
+<form th:action="@{/communities/create}" method="post">
+  <label>Community Name:</label>
+  <input type="text" name="name" required>
+  <br><br>
+
+  <label>Description:</label>
+  <input type="text" name="description">
+  <br><br>
+
+  <button type="submit">Create Community</button>
+</form>
+
+<div th:if="${success}">
+  <p style="color: green;">Community created successfully!</p>
+</div>
+</body>
+</html>

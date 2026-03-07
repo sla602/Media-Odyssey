@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Promote Member</title>
+</head>
+<body>
+
+<h2>Promote Member to Moderator</h2>
+
+<form action="/communities/promote" method="post">
+
+    <label>Owner User ID:</label>
+    <input type="number" name="actingUserId" required>
+    <br><br>
+
+    <label>Target User ID:</label>
+    <input type="number" name="targetUserId" required>
+    <br><br>
+
+    <label>Community ID:</label>
+    <input type="number" name="communityId" required>
+    <br><br>
+
+    <button type="submit">Promote</button>
+    <div th:if="${success}">
+        <p style="color: green;">User created successfully!</p>
+    </div>
+</form>
+</body>
+</html>
