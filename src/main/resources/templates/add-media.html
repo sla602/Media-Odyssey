@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <title>Add Media – Media Odyssey</title>
+</head>
+<body>
+
+<h1>Add New Media</h1>
+
+<form th:action="@{/community/add}" method="post">
+
+    <label>Title</label><br/>
+    <input type="text" name="title" placeholder="e.g. Interstellar" required /><br/><br/>
+
+    <label>Category</label><br/>
+    <select name="category" required>
+        <option value="">Select...</option>
+        <option value="Movie">Movie</option>
+        <option value="Game">Game</option>
+        <option value="Song">Song</option>
+    </select><br/><br/>
+
+    <label>Views</label><br/>
+    <input type="number" name="views" min="0" placeholder="0" /><br/><br/>
+
+    <label>Likes</label><br/>
+    <input type="number" name="likes" min="0" placeholder="0" /><br/><br/>
+
+    <!-- likesLastWeek is compared against current likes to compute the Fast-Rising growth % -->
+    <label>Likes 7 days ago</label><br/>
+    <small>Used for the Fast-Rising trending badge (growth %).</small><br/>
+    <input type="number" name="likesLastWeek" min="0" placeholder="0" /><br/><br/>
+
+    <button type="submit">Save</button>
+
+</form>
+
+<br/>
+<a href="/community">Back to Community</a>
+
+</body>
+</html>

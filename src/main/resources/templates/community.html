@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <title>Community Favourites – Media Odyssey</title>
+</head>
+<body>
+
+<!-- ── Page Header ───────────────────────────────────────────────────────── -->
+<h1>Community Favourites</h1>
+<a href="/community/add">+ Add New Media</a>
+
+<hr/>
+
+<!-- ── Sort Links ────────────────────────────────────────────────────────── -->
+<a href="/community">Top 10 (Score)</a> |
+<a href="/community?sort=likes">Most Liked</a> |
+<a href="/community?sort=views">Most Viewed</a>
+
+<hr/>
+
+<!-- ── Live Search Bar ───────────────────────────────────────────────────── -->
+<!--
+    Filters the list in real time as the user types.
+    JavaScript .filter() runs on the rendered card elements (no server round-trip).
+-->
+<label for="searchBar">Search:</label>
+<input id="searchBar" type="text" placeholder="Type a title..." autocomplete="off"/>
+
+<hr/>
+
+<!-- ── Category Tabs ─────────────────────────────────────────────────────── -->
+<!--
+    Clicking a tab filters the card grid by category instantly (no page reload).
+    JavaScript shows/hides cards by data-cat without re-fetching from the server.
+-->
+<div>
+    <button class="tab-btn active" data-cat="ALL">All</button>
+    <button class="tab-btn" data-cat="Movie">Movies</button>
+    <button class="tab-btn" data-cat="Game">Games</button>
+    <button class="tab-btn" data-cat="Song">Songs</button>
+</div>
+
+<hr/>
+
+<!-- ── Fast-Rising Top 5 (Trending) ──────────────────────────────────────── -->
+<!--
+    Items shown here have the highest weekly like growth: (likes - likesLastWeek).
+    The badge shows growth % only when isTrending() returns true (growth >= 10%).
+    Sorted server-side by MediaRepository.findTop5Trending().
+-->
+<h2>Fast-Rising This Week (Top 5)</h2>
+
+<div id="trendingGrid">
+    <div th:each="m : ${trending}">
+
+        <strong th:text="${m.title}">Title</strong>
+        <em th:text="'[' + ${m.category} + ']'">[Category]</em>
+
+        <!-- Trending badge: only rendered when weekly growth >= 10% -->
+        <span th:if="${m.trending}"
+              th:text="'▲ ' + ${#numbers.formatDecimal(m.trendingGrowth, 1, 0)} + '%'">
+        </span>
+
+        <span> | Views: </span><span th:text="${m.views}">0</span>
+        <span> | Likes: </span><span th:text="${m.likes}">0</span>
+        <span> | Score: </span><span th:text="${m.totalScore}">0</span>
+
+    </div>
+</div>
+
+<hr/>
+
+<!-- ── Media List ─────────────────────────────────────────────────────────── -->
+<!--
+    Default view: Top 10 ranked by Point System (views*1 + likes*5).
+    Switches to full list sorted by likes or views when sort param is set.
+    Each card stores data-cat and data-title for client-side filtering.
+-->
+<h2>Top 10 Ranked</h2>
+
+<div id="top10Grid">
+    <div th:each="m, stat : ${mediaList}"
+         th:attr="data-cat=${m.category}, data-title=${m.title}">
+
+        <strong th:text="${stat.index + 1} + '. ' + ${m.title}">1. Title</strong>
+        <em th:text="'[' + ${m.category} + ']'">[Category]</em>
+
+        <!-- Trending badge if this ranked item also qualifies as fast-rising -->
+        <span th:if="${m.trending}"
+              th:text="'▲ ' + ${#numbers.formatDecimal(m.trendingGrowth, 1, 0)} + '%'">
+        </span>
+
+        <p>
+            Views: <span class="views-cnt" th:text="${m.views}">0</span> |
+            Likes: <span class="likes-cnt" th:text="${m.likes}">0</span> |
+            Score: <span class="score-val" th:text="${m.totalScore}">0</span>
+        </p>
+
+        <!-- Like button — one click per session, updates count and score instantly -->
+        <button class="like-btn" th:attr="data-id=${m.id}">
+            Like (<span class="like-count" th:text="${m.likes}">0</span>)
+        </button>
+
+    </div>
+</div><!-- /#top10Grid -->
+
+<!-- ── JavaScript ─────────────────────────────────────────────────────────── -->
+<script>
+
+    // ── Tab switching — no page reload ──────────────────────────────────────
+    const tabBtns = document.querySelectorAll('.tab-btn');
+    const cards   = document.querySelectorAll('#top10Grid > div');
+
+    tabBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            // Mark the clicked tab as active
+            tabBtns.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+
+            // Re-apply both tab filter and current search query together
+            const query = document.getElementById('searchBar').value.trim();
+            applyFilters(btn.dataset.cat, query);
+        });
+    });
+
+    // ── Live search — filters list as the user types ──────────────────────
+    document.getElementById('searchBar').addEventListener('input', e => {
+        const activeCat = document.querySelector('.tab-btn.active').dataset.cat;
+        applyFilters(activeCat, e.target.value.trim());
+    });
+
+    /**
+     * applyFilters — show/hide cards without a server request.
+     * A card is visible only when BOTH conditions are true:
+     *   1. Its category matches the active tab (or tab is "ALL")
+     *   2. Its title includes the current search query (case-insensitive)
+     */
+    function applyFilters(cat, query) {
+        cards.forEach(card => {
+            const matchCat   = (cat === 'ALL') || (card.dataset.cat === cat);
+            const matchQuery = !query ||
+                (card.dataset.title || '').toLowerCase().includes(query.toLowerCase());
+            card.style.display = (matchCat && matchQuery) ? '' : 'none';
+        });
+    }
+
+    // ── Like button — Optimistic UI ──────────────────────────────────────────
+    /*
+     * Clicking Like:
+     *  1. Button is marked .liked immediately to prevent double-clicks this session
+     *  2. Like count increments on screen before the server responds
+     *  3. AJAX confirms the new count and updated totalScore from the server
+     */
+    document.querySelectorAll('.like-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            if (btn.classList.contains('liked')) return; // already liked this session
+            btn.classList.add('liked');
+
+            const id      = btn.dataset.id;
+            const card    = btn.closest('div');
+            const countEl = btn.querySelector('.like-count');
+            const scoreEl = card.querySelector('.score-val');
+            const cntEl   = card.querySelector('.likes-cnt');
+
+            // Optimistic increment
+            const newLikes = parseInt(countEl.textContent) + 1;
+            countEl.textContent          = newLikes;
+            if (cntEl) cntEl.textContent = newLikes;
+
+            // Sync to server
+            fetch(`/community/like/${id}`, { method: 'POST' })
+                .then(r => r.json())
+                .then(data => {
+                    // Confirm with server values
+                    countEl.textContent          = data.likes;
+                    if (cntEl) cntEl.textContent = data.likes;
+                    scoreEl.textContent          = data.totalScore;
+                })
+                .catch(() => { /* optimistic state stays on network error */ });
+        });
+    });
+
+</script>
+
+</body>
+</html>
