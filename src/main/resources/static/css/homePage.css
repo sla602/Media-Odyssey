@@ -8,7 +8,12 @@ header {
     top: 0px; 
     left: 0px;
     right: 0px; 
-    
+    height: 80px; 
+    z-index: 1000;
+
+    display: flex;
+    align-items: center;
+    gap: 5px; 
 }
 
 .logo {
@@ -48,12 +53,17 @@ header {
     font-size: 18px;
 }
 
+/* BODY ///////////////////////////////////////// */ 
+.main-content {
+    padding-top: 80px;
+    padding-left: 25px;
+}
+
 .board {
     width: 150px;
     height: 150px;
     border-radius: 12px;
 
-    position: absolute;
     display: flex;
     justify-content: center;
     align-items: center;
