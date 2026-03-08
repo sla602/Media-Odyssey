@@ -46,8 +46,8 @@
 <!-- ── Fast-Rising Top 5 (Trending) ──────────────────────────────────────── -->
 <!--
     Items shown here have the highest weekly like growth: (likes - likesLastWeek).
-    The badge shows growth % only when isTrending() returns true (growth >= 10%).
-    Sorted server-side by MediaRepository.findTop5Trending().
+    likesLastWeek is updated automatically every Sunday by TrendingScheduler.
+    The badge only shows when isTrending() is true (growth >= 10%).
 -->
 <h2>Fast-Rising This Week (Top 5)</h2>
 
@@ -73,20 +73,20 @@
 
 <!-- ── Media List ─────────────────────────────────────────────────────────── -->
 <!--
-    Default view: Top 10 ranked by Point System (views*1 + likes*5).
-    Switches to full list sorted by likes or views when sort param is set.
-    Each card stores data-cat and data-title for client-side filtering.
+    Default: Top 10 by Point System. Switches to full list when sort param is set.
+    data-id is used by JS for AJAX calls.
+    data-cat and data-title are used by JS for client-side tab/search filtering.
 -->
 <h2>Top 10 Ranked</h2>
 
 <div id="top10Grid">
     <div th:each="m, stat : ${mediaList}"
-         th:attr="data-cat=${m.category}, data-title=${m.title}">
+         th:attr="data-id=${m.id}, data-cat=${m.category}, data-title=${m.title}">
 
         <strong th:text="${stat.index + 1} + '. ' + ${m.title}">1. Title</strong>
         <em th:text="'[' + ${m.category} + ']'">[Category]</em>
 
-        <!-- Trending badge if this ranked item also qualifies as fast-rising -->
+        <!-- Trending badge if this item also qualifies as fast-rising -->
         <span th:if="${m.trending}"
               th:text="'▲ ' + ${#numbers.formatDecimal(m.trendingGrowth, 1, 0)} + '%'">
         </span>
@@ -97,7 +97,11 @@
             Score: <span class="score-val" th:text="${m.totalScore}">0</span>
         </p>
 
-        <!-- Like button — one click per session, updates count and score instantly -->
+        <!--
+            Like button:
+            - Disabled visually once clicked (session prevents server-side duplicate too)
+            - AJAX updates count and score instantly (Optimistic UI)
+        -->
         <button class="like-btn" th:attr="data-id=${m.id}">
             Like (<span class="like-count" th:text="${m.likes}">0</span>)
         </button>
@@ -108,17 +112,33 @@
 <!-- ── JavaScript ─────────────────────────────────────────────────────────── -->
 <script>
 
+    // ── Auto view count on page load ─────────────────────────────────────────
+    /*
+     * Sends a POST /community/view/{id} for each visible media card on load.
+     * The server uses HttpSession to ensure each item is counted only once
+     * per session, so refreshing the page does not inflate view counts.
+     */
+    document.querySelectorAll('#top10Grid > div[data-id]').forEach(card => {
+        const id = card.dataset.id;
+        fetch(`/community/view/${id}`, { method: 'POST' })
+            .then(r => r.json())
+            .then(data => {
+                // Update the view count display with the server-confirmed value
+                const viewEl = card.querySelector('.views-cnt');
+                if (viewEl) viewEl.textContent = data.views;
+                card.querySelector('.score-val').textContent = data.totalScore;
+            })
+            .catch(() => { /* silently fail — count stays as rendered */ });
+    });
+
     // ── Tab switching — no page reload ──────────────────────────────────────
     const tabBtns = document.querySelectorAll('.tab-btn');
     const cards   = document.querySelectorAll('#top10Grid > div');
 
     tabBtns.forEach(btn => {
         btn.addEventListener('click', () => {
-            // Mark the clicked tab as active
             tabBtns.forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
-
-            // Re-apply both tab filter and current search query together
             const query = document.getElementById('searchBar').value.trim();
             applyFilters(btn.dataset.cat, query);
         });
@@ -148,14 +168,15 @@
     // ── Like button — Optimistic UI ──────────────────────────────────────────
     /*
      * Clicking Like:
-     *  1. Button is marked .liked immediately to prevent double-clicks this session
-     *  2. Like count increments on screen before the server responds
-     *  3. AJAX confirms the new count and updated totalScore from the server
+     *  1. Button disabled immediately (client-side guard)
+     *  2. Count increments on screen before server responds (optimistic)
+     *  3. Server checks HttpSession — if already liked, liked:false is returned
+     *     and the count is reverted to the server value
      */
     document.querySelectorAll('.like-btn').forEach(btn => {
         btn.addEventListener('click', () => {
-            if (btn.classList.contains('liked')) return; // already liked this session
-            btn.classList.add('liked');
+            if (btn.disabled) return;
+            btn.disabled = true; // prevent double-click while request is in flight
 
             const id      = btn.dataset.id;
             const card    = btn.closest('div');
@@ -164,20 +185,29 @@
             const cntEl   = card.querySelector('.likes-cnt');
 
             // Optimistic increment
-            const newLikes = parseInt(countEl.textContent) + 1;
-            countEl.textContent          = newLikes;
-            if (cntEl) cntEl.textContent = newLikes;
+            const optimisticLikes = parseInt(countEl.textContent) + 1;
+            countEl.textContent          = optimisticLikes;
+            if (cntEl) cntEl.textContent = optimisticLikes;
 
-            // Sync to server
             fetch(`/community/like/${id}`, { method: 'POST' })
                 .then(r => r.json())
                 .then(data => {
-                    // Confirm with server values
+                    if (!data.liked) {
+                        // Already liked this session — revert the optimistic update
+                        btn.disabled = true;
+                        btn.textContent = 'Already liked';
+                    }
+                    // Always confirm with server values
                     countEl.textContent          = data.likes;
                     if (cntEl) cntEl.textContent = data.likes;
                     scoreEl.textContent          = data.totalScore;
                 })
-                .catch(() => { /* optimistic state stays on network error */ });
+                .catch(() => {
+                    // Re-enable on network error so the user can retry
+                    btn.disabled = false;
+                    countEl.textContent          = parseInt(countEl.textContent) - 1;
+                    if (cntEl) cntEl.textContent = parseInt(cntEl.textContent) - 1;
+                });
         });
     });
 

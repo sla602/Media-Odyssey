@@ -21,16 +21,8 @@
         <option value="Song">Song</option>
     </select><br/><br/>
 
-    <label>Views</label><br/>
-    <input type="number" name="views" min="0" placeholder="0" /><br/><br/>
-
-    <label>Likes</label><br/>
-    <input type="number" name="likes" min="0" placeholder="0" /><br/><br/>
-
-    <!-- likesLastWeek is compared against current likes to compute the Fast-Rising growth % -->
-    <label>Likes 7 days ago</label><br/>
-    <small>Used for the Fast-Rising trending badge (growth %).</small><br/>
-    <input type="number" name="likesLastWeek" min="0" placeholder="0" /><br/><br/>
+    <!-- views, likes, and likesLastWeek all start at 0 automatically -->
+    <!-- likesLastWeek is managed by TrendingScheduler every Sunday   -->
 
     <button type="submit">Save</button>
 

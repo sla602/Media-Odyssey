@@ -28,7 +28,10 @@ public class Media {
 
     @PrePersist
     public void prePersist() {
-        this.createdAt = LocalDateTime.now();
+        this.createdAt     = LocalDateTime.now();
+        this.views         = 0;
+        this.likes         = 0;
+        this.likesLastWeek = 0;
     }
 
     // ── Computed fields (not stored in DB) ────────────────────────────────────
