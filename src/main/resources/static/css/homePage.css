@@ -210,3 +210,30 @@ header {
     color: rgb(217, 0, 255);
     font-family: 'Space Grotesk';
 }
+
+.admin-view-btn {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 999;
+
+    padding: 10px 16px;
+    background-color: #7B3FE4;
+    color: white;
+
+    font-size: 14px;
+    font-weight: 600;
+    font-family: 'Space Grotesk';
+
+    border-radius: 8px;
+    text-decoration: none;
+    border: none;
+
+    cursor: pointer;
+
+    box-shadow: 0px 4px 10px rgba(0,0,0,0.3);
+}
+
+.admin-view-btn:hover {
+    background-color: #9256ff;
+}
