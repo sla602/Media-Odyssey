@@ -26,4 +26,10 @@ public class MappingController {
     public String navToTrendingTab() {
         return "trending";
     }
+
+    /* ADMIN BUTTON TO USER */
+    @GetMapping("/admin/users")
+    public String navToUserDB() {
+        return "user"; 
+    }
 }
