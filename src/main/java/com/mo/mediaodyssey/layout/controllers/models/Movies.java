@@ -1,4 +1,4 @@
-package com.mo.mediaodyssey.models;
+package com.mo.mediaodyssey.layout.controllers.models;
 
 import java.util.List;
 

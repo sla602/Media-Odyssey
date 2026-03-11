@@ -1,10 +1,10 @@
-package com.mo.mediaodyssey.services;
+package com.mo.mediaodyssey.layout.controllers.services;
 
 import java.util.List;
 
 import org.springframework.stereotype.Service;
 
-import com.mo.mediaodyssey.models.Boards;
+import com.mo.mediaodyssey.layout.controllers.models.Boards;
 import com.mo.mediaodyssey.repository.BoardsRepository;
 
 @Service

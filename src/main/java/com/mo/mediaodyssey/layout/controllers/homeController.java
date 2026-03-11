@@ -1,10 +1,10 @@
-package com.mo.mediaodyssey.controllers;
+package com.mo.mediaodyssey.layout.controllers;
 
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 
-import com.mo.mediaodyssey.services.BoardsService;
+import com.mo.mediaodyssey.layout.controllers.services.BoardsService;
 
 @Controller
 public class homeController {

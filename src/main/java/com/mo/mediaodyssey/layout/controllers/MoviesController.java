@@ -1,4 +1,4 @@
-package com.mo.mediaodyssey.controllers;
+package com.mo.mediaodyssey.layout.controllers;
 
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -6,8 +6,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.mo.mediaodyssey.models.Movies;
-import com.mo.mediaodyssey.services.MoviesService;
+import com.mo.mediaodyssey.layout.controllers.models.Movies;
+import com.mo.mediaodyssey.layout.controllers.services.MoviesService;
 
 @RestController
 public class MoviesController {

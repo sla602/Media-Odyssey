@@ -1,4 +1,4 @@
-package com.mo.mediaodyssey.controllers;
+package com.mo.mediaodyssey.layout.controllers;
 
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -6,8 +6,8 @@ import org.springframework.web.bind.annotation.GetMapping;
 @Controller
 public class MappingController {
 
-    /* This Controller is to navigates elements like create board icon, home icon, elements in side bar, and 
-    elements view in singular board layout */
+    /* This Controller is to navigates elements like create board icon, home icon, 
+    elements in side bar, and elements view in singular board layout */
 
     /* HEADER ELEMENTS */
     @GetMapping("/homeReturn")

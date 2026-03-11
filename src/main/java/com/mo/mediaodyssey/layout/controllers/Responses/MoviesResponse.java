@@ -1,8 +1,8 @@
-package com.mo.mediaodyssey.Responses;
+package com.mo.mediaodyssey.layout.controllers.Responses;
 
 import java.util.List;
 
-import com.mo.mediaodyssey.models.Movies;
+import com.mo.mediaodyssey.layout.controllers.models.Movies;
 
 public class MoviesResponse {
 

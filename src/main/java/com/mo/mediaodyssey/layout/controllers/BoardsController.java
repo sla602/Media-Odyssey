@@ -1,22 +1,15 @@
-package com.mo.mediaodyssey.controllers;
-
-import java.util.List;
+package com.mo.mediaodyssey.layout.controllers;
 
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
-import org.springframework.web.bind.annotation.RequestParam;
 
-import com.mo.mediaodyssey.models.Boards;
-import com.mo.mediaodyssey.services.BoardsService;
+import com.mo.mediaodyssey.layout.controllers.models.Boards;
+import com.mo.mediaodyssey.layout.controllers.services.BoardsService;
 
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-
-
 
 
 @Controller

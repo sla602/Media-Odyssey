@@ -1,11 +1,11 @@
-package com.mo.mediaodyssey.services;
+package com.mo.mediaodyssey.layout.controllers.services;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
-import com.mo.mediaodyssey.Responses.MoviesResponse;
-import com.mo.mediaodyssey.models.Movies;
+import com.mo.mediaodyssey.layout.controllers.Responses.MoviesResponse;
+import com.mo.mediaodyssey.layout.controllers.models.Movies;
 
 @Service
 public class MoviesService {
