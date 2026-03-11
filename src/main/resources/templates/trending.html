@@ -8,8 +8,11 @@
         <link rel="stylesheet" th:href="@{/css/homePage.css}">
     </head>
     <body>
-        <!-- header space for logo, home return icon, search bar and username + avatar display -->
+        <!--header (display logo[sidebar toggle], homeReturn icon, search bar, user's name and avatar)-->
         <div th:replace="fragments/header :: header"></div>
+
+        <!-- A side bar that contains features (can be discussed). Side bar can be folded -->
+        <div th:replace="fragments/sidebar :: sideBar"></div>
 
         <!-- Implement what you want from here -->
          <!-- ── Main Content ── -->
