@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Dashboard</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        h1, h3 { margin-bottom: 10px; }
+        ul { list-style: none; padding-left: 0; }
+        li { padding: 5px 0; }
+        .section { margin-bottom: 30px; }
+        .community-link, .friend-name { margin-right: 10px; }
+        button { margin-left: 5px; }
+        form { display: inline; }
+    </style>
+
+    <!-- css paths:
+    + global (HTML body)
+    + fragments (header + sidebar) -->
+    <link rel="stylesheet" th:href="@{/layout/css/global.css}">
+    <link rel="stylesheet" th:href="@{/layout/css/fragments.css}">
+</head>
+<body>
+
+    <!--header (display logo[sidebar toggle], homeReturn icon, search bar, user's name and avatar)-->
+    <div th:replace="boardsLayout/fragments/header :: header"></div>
+
+    <!-- A side bar that contains features (can be discussed). Side bar can be folded
+    Please use the MO logo to work with side bar if needed -->
+    <div th:replace="boardsLayout/fragments/sidebar :: sideBar"></div>
+
+<h1 class="dashboardTitle">Welcome to MediaOdyssey</h1>
+<p>You are logged in.</p>
+
+<hr>
+
+<div class="section">
+    <h3>Community Actions</h3>
+    <a th:href="@{/communities/create}"><button>Create Community</button></a>
+    <a th:href="@{/templates/communities}"><button>Join Community</button></a>
+</div>
+
+<div class="section">
+    <h3>Your Communities</h3>
+    <ul>
+        <li th:each="community : ${myCommunities}">
+            <a th:href="@{/communities/{id}(id=${community.id})}"
+               th:text="${community.name}"
+               class="community-link">Community Name</a>
+        </li>
+        <li th:if="${#lists.isEmpty(myCommunities)}">You have not joined any communities yet.</li>
+    </ul>
+</div>
+
+<div class="section">
+    <h3>Moderation</h3>
+
+    <a th:href="@{/communities/mod-community}">
+        <button>Moderation Panel</button>
+    </a>
+
+</div>
+
+<!-- FRIEND LIST -->
+<div class="section">
+    <h3>Your Friends</h3>
+
+    <ul>
+
+        <li th:each="friend : ${friends}">
+            <span th:text="${friend.username}"></span>
+        </li>
+
+        <li th:if="${#lists.isEmpty(friends)}">
+            You don't have any friends yet.
+        </li>
+
+    </ul>
+</div>
+
+
+<!-- INCOMING FRIEND REQUESTS -->
+<div class="section">
+    <h3>Incoming Friend Requests</h3>
+
+    <ul>
+
+        <li th:each="r : ${requests}">
+
+            <span th:text="${r.senderUsername}"></span>
+
+            <form th:action="@{/users/friends/accept}" method="post">
+
+                <input type="hidden"
+                       name="requestId"
+                       th:value="${r.requestId}" />
+
+                <button type="submit">Accept</button>
+
+            </form>
+
+        </li>
+
+        <li th:if="${#lists.isEmpty(requests)}">
+            No incoming friend requests.
+        </li>
+
+    </ul>
+
+</div>
+
+
+<!-- SUGGESTED FRIENDS -->
+<div class="section">
+    <h3>Suggested Friends</h3>
+
+    <ul>
+
+        <li th:each="user : ${suggested}">
+
+            <span th:text="${user.username}"></span>
+
+            <form th:action="@{/users/friends/request}" method="post">
+
+                <input type="hidden"
+                       name="friendId"
+                       th:value="${user.id}" />
+
+                <button type="submit">Add Friend</button>
+
+            </form>
+
+        </li>
+
+        <li th:if="${#lists.isEmpty(suggested)}">
+            No suggestions right now.
+        </li>
+
+    </ul>
+
+</div>
+
+    <!-- This js script path: ensures sidebar + header logic -->
+    <script th:src="@{/layout/js/fragments.js}"></script>
+
+</body>
+</html>
