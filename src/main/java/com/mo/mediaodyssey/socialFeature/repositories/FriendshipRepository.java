@@ -20,7 +20,7 @@ public interface FriendshipRepository extends JpaRepository<Friendship, Integer>
     boolean existsByFriendIdAndUserId(Integer userId, Integer friendId);
 
     @Query("""
-SELECT new com.mo.mediaodyssey.models.DTO.FriendRequestDTO(
+SELECT new com.mo.mediaodyssey.socialFeature.models.DTO.FriendRequestDTO(
     f.id,
     u.id,
     u.username

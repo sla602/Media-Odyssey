@@ -3,10 +3,10 @@ package com.mo.mediaodyssey.socialFeature.controllers;
 import com.mo.mediaodyssey.shared.model.User;
 import com.mo.mediaodyssey.auth.repository.UserRepository;
 import com.mo.mediaodyssey.socialFeature.enums.RoleType;
-import com.mo.mediaodyssey.socialFeature.models.CommunityRole;
+import com.mo.mediaodyssey.socialFeature.models.SocialSpaceRole;
 import com.mo.mediaodyssey.socialFeature.models.DTO.CommentDTO;
 import com.mo.mediaodyssey.socialFeature.models.Post;
-import com.mo.mediaodyssey.socialFeature.repositories.CommunityRoleRepository;
+import com.mo.mediaodyssey.socialFeature.repositories.SocialSpaceRoleRepository;
 import com.mo.mediaodyssey.socialFeature.services.CommentService;
 import com.mo.mediaodyssey.socialFeature.services.PostService;
 import jakarta.servlet.http.HttpSession;
@@ -26,14 +26,14 @@ public class PostController {
 
     private final PostService postService;
     private final CommentService commentService;
-    private final CommunityRoleRepository communityRoleRepo;
+    private final SocialSpaceRoleRepository roleRepo;
     private final UserRepository userRepo;
 
     public PostController(PostService postService, CommentService commentService,
-            CommunityRoleRepository communityRoleRepo, UserRepository userRepo) {
+                          SocialSpaceRoleRepository communityRoleRepo, UserRepository userRepo) {
         this.postService = postService;
         this.commentService = commentService;
-        this.communityRoleRepo = communityRoleRepo;
+        this.roleRepo = communityRoleRepo;
         this.userRepo = userRepo;
     }
 
@@ -89,11 +89,11 @@ public class PostController {
             Post post = postService.getPostById(postId);
             postService.deletePost(userId.intValue(), postId);
             redirectAttributes.addFlashAttribute("success", "Post deleted successfully");
-            return "redirect:/communities/" + post.getCommunityId();
+            return "redirect:/communities/" + post.getSocialSpaceId();
         } catch (RuntimeException e) {
             Post post = postService.getPostById(postId);
             redirectAttributes.addFlashAttribute("error", e.getMessage());
-            return "redirect:/communities/" + post.getCommunityId();
+            return "redirect:/communities/" + post.getSocialSpaceId();
         }
     }
 
@@ -114,8 +114,8 @@ public class PostController {
         RoleType currentUserRole = null;
 
         if (currentUserId != null) {
-            Optional<CommunityRole> roleOpt = communityRoleRepo
-                    .findByUserIdAndCommunityId(currentUserId.intValue(), post.getCommunityId());
+            Optional<SocialSpaceRole> roleOpt = roleRepo
+                    .findByUserIdAndSocialSpaceId(currentUserId.intValue(), post.getSocialSpaceId());
             if (roleOpt.isPresent()) {
                 currentUserRole = roleOpt.get().getRoleType();
             }

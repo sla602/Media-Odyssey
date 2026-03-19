@@ -8,19 +8,19 @@ import java.time.Instant;
 
 @Entity
 @Table(
-        name = "community_role",
+        name = "social_space_role",
         uniqueConstraints = {
                 @UniqueConstraint(
-                        name = "uk_user_community",
-                        columnNames = {"user_id", "community_id"}
+                        name = "uk_user_social_space",
+                        columnNames = {"user_id", "social_space_id"}
                 )
         },
         indexes = {
                 @Index(name="idx_role_user", columnList = "user_id"),
-                @Index(name = "idx_role_community", columnList = "community_id")
+                @Index(name = "idx_role_social_space", columnList = "social_space_id")
         }
 )
-public class CommunityRole {
+public class SocialSpaceRole {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
@@ -31,8 +31,8 @@ public class CommunityRole {
     private Integer userId;
 
 
-    @Column(name = "community_id", nullable = false)
-    private Integer communityId;
+    @Column(name = "social_space_id", nullable = false)
+    private Integer socialSpaceId;
 
 
     @Enumerated(EnumType.STRING)
@@ -43,11 +43,11 @@ public class CommunityRole {
     private Instant assignedAt = Instant.now();
 
 
-    protected  CommunityRole(){}
+    protected SocialSpaceRole(){}
 
-    public CommunityRole(Integer userId, Integer communityId, RoleType role){
+    public SocialSpaceRole(Integer userId, Integer socialSpaceId, RoleType role){
         this.userId = userId;
-        this.communityId = communityId;
+        this.socialSpaceId = socialSpaceId;
         this.roleType = role;
     }
 
@@ -55,8 +55,8 @@ public class CommunityRole {
         return userId;
     }
 
-    public Integer getCommunityId() {
-        return communityId;
+    public Integer getSocialSpaceId() {
+        return socialSpaceId;
     }
 
     public RoleType getRoleType() {

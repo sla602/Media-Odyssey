@@ -2,15 +2,15 @@ package com.mo.mediaodyssey.socialFeature.services;
 
 import com.mo.mediaodyssey.socialFeature.enums.RoleType;
 import com.mo.mediaodyssey.socialFeature.models.Comment;
-import com.mo.mediaodyssey.socialFeature.models.Community;
-import com.mo.mediaodyssey.socialFeature.models.CommunityRole;
-import com.mo.mediaodyssey.socialFeature.models.DTO.CommunityDTO;
-import com.mo.mediaodyssey.socialFeature.models.DTO.CommunityMemberDTO;
+import com.mo.mediaodyssey.socialFeature.models.SocialSpace;
+import com.mo.mediaodyssey.socialFeature.models.DTO.SocialSpaceDTO;
+import com.mo.mediaodyssey.socialFeature.models.DTO.SocialSpaceMemberDTO;
+import com.mo.mediaodyssey.socialFeature.models.SocialSpaceRole;
 import com.mo.mediaodyssey.socialFeature.models.Post;
 import com.mo.mediaodyssey.socialFeature.repositories.CommentRepository;
-import com.mo.mediaodyssey.socialFeature.repositories.CommunityRepository;
-import com.mo.mediaodyssey.socialFeature.repositories.CommunityRoleRepository;
 import com.mo.mediaodyssey.socialFeature.repositories.PostRepository;
+import com.mo.mediaodyssey.socialFeature.repositories.SocialSpaceRepository;
+import com.mo.mediaodyssey.socialFeature.repositories.SocialSpaceRoleRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -19,19 +19,19 @@ import java.util.List;
 
 @Service
 @Transactional
-public class CommuService {
+public class SocialService {
 
-    private final CommunityRepository communityRepository;
-    private final CommunityRoleRepository roleRepository;
+    private final SocialSpaceRepository socialSpaceRepository;
+    private final SocialSpaceRoleRepository roleRepository;
     private final PostRepository postRepository;
     private final CommentRepository commentRepository;
     private final PermissionService permissionService;
     private final CommentService commentService;
 
-    public CommuService(CommunityRepository communityRepository,
-                        CommunityRoleRepository roleRepository, PermissionService permissionService, PostRepository postRepository, CommentRepository commentRepository, CommentService commentService
+    public SocialService(SocialSpaceRepository socialSpaceRepository,
+                        SocialSpaceRoleRepository roleRepository, PermissionService permissionService, PostRepository postRepository, CommentRepository commentRepository, CommentService commentService
     ) {
-        this.communityRepository = communityRepository;
+        this.socialSpaceRepository = socialSpaceRepository;
         this.roleRepository = roleRepository;
         this.permissionService = permissionService;
 
@@ -40,60 +40,61 @@ public class CommuService {
         this.commentService = commentService;
     }
 
-
-
-    public void createCommunity(
+    // TODO: collapsed by board
+    public void createSocialSpace(
             Integer creatorId,
             String name,
             String description) {
 
-        Community community = new Community(name,description,creatorId);
+        SocialSpace socialSpace = new SocialSpace(name,description,creatorId);
 
 
-        communityRepository.save(community);
+        socialSpaceRepository.save(socialSpace);
 
         // Creator becomes OWNER
-        CommunityRole role = new CommunityRole(creatorId,community.getId(), RoleType.OWNER);
+        SocialSpaceRole role = new SocialSpaceRole(creatorId,socialSpace.getId(), RoleType.OWNER);
 
         roleRepository.save(role);
     }
 
-
-    public void joinCommunity(Integer userId, Integer communityId) {
+    // TODO: collapsed by board
+    public void joinSocialSpace(Integer userId, Integer socialSpaceId) {
 
         if (roleRepository
-                .findByUserIdAndCommunityId(userId, communityId)
+                .findByUserIdAndSocialSpaceId(userId, socialSpaceId)
                 .isPresent()) {
             throw new IllegalStateException("Already a member");
         }
 
-        CommunityRole role = new CommunityRole(userId,communityId,RoleType.MEMBER);
+        SocialSpaceRole role = new SocialSpaceRole(userId,socialSpaceId,RoleType.MEMBER);
 
         roleRepository.save(role);
     }
 
-    public void leaveCommunity(Integer userId, Integer communityId) {
-        CommunityRole role = roleRepository
-                .findByUserIdAndCommunityId(userId, communityId)
+
+    // TODO: collapsed by board
+    public void leaveSocialSpace(Integer userId, Integer socialSpaceId) {
+        SocialSpaceRole role = roleRepository
+                .findByUserIdAndSocialSpaceId(userId, socialSpaceId)
                 .orElseThrow(() -> new RuntimeException("User not a member"));
 
         if (role.getRoleType().isOwner()) {
             throw new RuntimeException("Owner cannot leave community. Transfer ownership first.");
         }
 
-        roleRepository.deleteByUserIdAndCommunityId(userId, communityId);
+        roleRepository.deleteByUserIdAndSocialSpaceId(userId, socialSpaceId);
     }
 
-    public void createPost(Integer userId, Integer communityId, String title, String content) {
+    public void createPost(Integer userId, Integer socialSpaceId, String title, String content) {
         // Check permission
-        permissionService.canCreatePost(userId, communityId);
+        permissionService.canCreatePost(userId, socialSpaceId);
 
         // check if user is member of community
-        roleRepository.findByUserIdAndCommunityId(userId, communityId)
+        roleRepository.findByUserIdAndSocialSpaceId(userId, socialSpaceId)
                 .orElseThrow(() -> new RuntimeException("User not a member of this community"));
 
         // Create post
-        Post post = new Post(communityId,userId,title,content);
+        Post post = new Post(socialSpaceId,userId,title,content);
 
 
         postRepository.save(post);
@@ -103,10 +104,10 @@ public class CommuService {
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new RuntimeException("Post not found"));
 
-        Integer communityId = post.getCommunityId();
+        Integer socialSpaceId = post.getSocialSpaceId();
 
         // Check permission to edit posts
-        permissionService.canEditPost(userId, communityId);
+        permissionService.canEditPost(userId, socialSpaceId);
 
         // Only the author can edit
         if (!post.getAuthorId().equals(userId)) {
@@ -124,9 +125,9 @@ public class CommuService {
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new RuntimeException("Post not found"));
 
-        Integer communityId = post.getCommunityId();
+        Integer socialSpaceId = post.getSocialSpaceId();
 
-        permissionService.canCreateComment(userId, communityId);
+        permissionService.canCreateComment(userId, socialSpaceId);
 
         commentService.createComment(userId, postId, content);
     }
@@ -138,9 +139,9 @@ public class CommuService {
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new RuntimeException("Post not found"));
 
-        Integer communityId = post.getCommunityId();
+        Integer socialSpaceId = post.getSocialSpaceId();
 
-        permissionService.canCreateComment(userId, communityId);
+        permissionService.canCreateComment(userId, socialSpaceId);
 
         commentService.replyToComment(userId, parentCommentId, content);
     }
@@ -153,7 +154,7 @@ public class CommuService {
         Post post = postRepository.findById(comment.getPostId())
                 .orElseThrow(() -> new RuntimeException("Post not found"));
 
-        permissionService.canEditComment(userId, post.getCommunityId());
+        permissionService.canEditComment(userId, post.getSocialSpaceId());
 
         if(!comment.getAuthorId().equals(userId)){
             throw new RuntimeException("Members can only edit their own comments");
@@ -166,14 +167,14 @@ public class CommuService {
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new RuntimeException("Post not found"));
 
-        Integer communityId = post.getCommunityId();
+        Integer socialSpaceId = post.getSocialSpaceId();
 
         // Check permission to delete posts
-        permissionService.canDeletePost(actingUserId, communityId);
+        permissionService.canDeletePost(actingUserId, socialSpaceId);
 
         // Ownership check
-        CommunityRole actingRole = roleRepository
-                .findByUserIdAndCommunityId(actingUserId, communityId)
+        SocialSpaceRole actingRole = roleRepository
+                .findByUserIdAndSocialSpaceId(actingUserId, socialSpaceId)
                 .orElseThrow(() -> new RuntimeException("User not in community"));
 
         if (actingRole.getRoleType().isMember() && !post.getAuthorId().equals(actingUserId)) {
@@ -191,13 +192,13 @@ public class CommuService {
         Post post = postRepository.findById(comment.getPostId())
                 .orElseThrow(() -> new RuntimeException("Post not found"));
 
-        Integer communityId = post.getCommunityId();
+        Integer socialSpaceId = post.getSocialSpaceId();
 
         // Check permission
-        permissionService.canDeleteComment(actingUserId, communityId);
+        permissionService.canDeleteComment(actingUserId, socialSpaceId);
 
-        CommunityRole actingRole = roleRepository
-                .findByUserIdAndCommunityId(actingUserId, communityId)
+        SocialSpaceRole actingRole = roleRepository
+                .findByUserIdAndSocialSpaceId(actingUserId, socialSpaceId)
                 .orElseThrow(() -> new RuntimeException("User not in community"));
 
         // Members can only delete their own comments
@@ -212,13 +213,13 @@ public class CommuService {
 
 
 
-    public void promoteMember(Integer actingUserId, Integer targetUserId, Integer communityId) {
+    public void promoteMember(Integer actingUserId, Integer targetUserId, Integer socialSpaceId) {
 
-        permissionService.canPromoteMember(actingUserId, communityId);
+        permissionService.canPromoteMember(actingUserId, socialSpaceId);
 
 
-        CommunityRole targetRole = roleRepository
-                .findByUserIdAndCommunityId(targetUserId, communityId)
+        SocialSpaceRole targetRole = roleRepository
+                .findByUserIdAndSocialSpaceId(targetUserId, socialSpaceId)
                 .orElseThrow(() -> new RuntimeException("Target user not in community"));
 
         targetRole.setRoleType(RoleType.MODERATOR);
@@ -229,12 +230,12 @@ public class CommuService {
 
     public void demoteModerator(Integer actingUserId,
                                 Integer targetUserId,
-                                Integer communityId) {
+                                Integer socialSpaceId) {
 
-        permissionService.canDemoteModerator(actingUserId, communityId);
+        permissionService.canDemoteModerator(actingUserId, socialSpaceId);
 
-        CommunityRole targetRole = roleRepository
-                .findByUserIdAndCommunityId(targetUserId, communityId)
+        SocialSpaceRole targetRole = roleRepository
+                .findByUserIdAndSocialSpaceId(targetUserId, socialSpaceId)
                 .orElseThrow(() -> new RuntimeException("Target user not in community"));
 
         if (!targetRole.getRoleType().isModerator()) {
@@ -247,16 +248,16 @@ public class CommuService {
 
     public void transferOwnership(Integer actingUserId,
                                   Integer targetUserId,
-                                  Integer communityId) {
+                                  Integer socialSpaceId) {
 
-        permissionService.canTransferOwnership(actingUserId, communityId);
+        permissionService.canTransferOwnership(actingUserId, socialSpaceId);
 
-        CommunityRole currentOwner = roleRepository
-                .findByUserIdAndCommunityId(actingUserId, communityId)
+        SocialSpaceRole currentOwner = roleRepository
+                .findByUserIdAndSocialSpaceId(actingUserId, socialSpaceId)
                 .orElseThrow(() -> new RuntimeException("You are not owner"));
 
-        CommunityRole newOwner = roleRepository
-                .findByUserIdAndCommunityId(targetUserId, communityId)
+        SocialSpaceRole newOwner = roleRepository
+                .findByUserIdAndSocialSpaceId(targetUserId, socialSpaceId)
                 .orElseThrow(() -> new RuntimeException("Target user not in community"));
 
         // Swap roles
@@ -269,78 +270,78 @@ public class CommuService {
 
 
 
-    public void kickMember(Integer actingUserId, Integer targetUserId, Integer communityId) {
+    public void kickMember(Integer actingUserId, Integer targetUserId, Integer socialSpaceId) {
 
-        permissionService.canKickMember(actingUserId, communityId);
+        permissionService.canKickMember(actingUserId, socialSpaceId);
 
-        CommunityRole targetRole = roleRepository
-                .findByUserIdAndCommunityId(targetUserId, communityId)
+        SocialSpaceRole targetRole = roleRepository
+                .findByUserIdAndSocialSpaceId(targetUserId, socialSpaceId)
                 .orElseThrow(() -> new RuntimeException("Target user not in community"));
 
         if (targetRole.getRoleType().isOwner()) {
             throw new RuntimeException("Cannot kick the owner");
         }
 
-        roleRepository.deleteByUserIdAndCommunityId(targetUserId, communityId);
+        roleRepository.deleteByUserIdAndSocialSpaceId(targetUserId, socialSpaceId);
     }
 
 
-    public void editCommunity(Integer actingUserId, Integer communityId, String newName, String newDescription) {
+    public void editSocialSpace(Integer actingUserId, Integer socialSpaceId, String newName, String newDescription) {
 
-        permissionService.canEditCommunity(actingUserId, communityId);
+        permissionService.canEditSocialSpace(actingUserId, socialSpaceId);
 
-        Community community = communityRepository.findById(communityId)
-                .orElseThrow(() -> new RuntimeException("Community not found"));
+        SocialSpace socialSpace = socialSpaceRepository.findById(socialSpaceId)
+                .orElseThrow(() -> new RuntimeException("SocialSpace not found"));
 
-        community.setName(newName);
-        community.setDescription(newDescription);
-        communityRepository.save(community);
+        socialSpace.setName(newName);
+        socialSpace.setDescription(newDescription);
+        socialSpaceRepository.save(socialSpace);
     }
 
-    public void deleteCommunity(Integer actingUserId, Integer communityId) {
+    public void deleteSocialSpace(Integer actingUserId, Integer socialSpaceId) {
 
-        permissionService.canDeleteCommunity(actingUserId, communityId);
+        permissionService.canDeleteSocialSpace(actingUserId, socialSpaceId);
 
-        Community community = communityRepository.findById(communityId)
-                .orElseThrow(() -> new RuntimeException("Community not found"));
+        SocialSpace community = socialSpaceRepository.findById(socialSpaceId)
+                .orElseThrow(() -> new RuntimeException("SocialSpace not found"));
 
         // Delete all roles first
-        List<CommunityRole> roles = roleRepository.findByCommunityId(communityId);
+        List<SocialSpaceRole> roles = roleRepository.findBySocialSpaceId(socialSpaceId);
         roleRepository.deleteAll(roles);
 
-        communityRepository.delete(community);
+        socialSpaceRepository.delete(community);
     }
 
 
-    public Integer getMemberCount(Integer communityId) {
-        return roleRepository.countByCommunityId(communityId);
+    public Integer getMemberCount(Integer socialSpaceId) {
+        return roleRepository.countBySocialSpaceId(socialSpaceId);
     }
 
-    public Community getCommunityById(Integer communityId) {
+    public SocialSpace getSocialSpaceById(Integer socialSpaceId) {
 
-        return communityRepository.findById(communityId)
-                .orElseThrow(() -> new RuntimeException("Community not found"));
+        return socialSpaceRepository.findById(socialSpaceId)
+                .orElseThrow(() -> new RuntimeException("SocialSpace not found"));
     }
 
 
-    public List<Community> getAllCommunities() {
-        return communityRepository.findAll();
+    public List<SocialSpace> getAllCommunities() {
+        return socialSpaceRepository.findAll();
     }
 
-    public List<Community> getUserCommunities(Integer userId) {
-        return roleRepository.findCommunitiesByUserId(userId);
+    public List<SocialSpace> getUserCommunities(Integer userId) {
+        return roleRepository.findSocialSpacesByUserId(userId);
     }
 
-    public List<CommunityMemberDTO> getCommunityMembers(Integer communityId) {
-        return roleRepository.findCommunityMembers(communityId);
+    public List<SocialSpaceMemberDTO> getSocialSpaceMembers(Integer socialSpaceId) {
+        return roleRepository.findSocialSpaceMembers(socialSpaceId);
     }
 
-    public List<CommunityDTO> getOwnedCommunities(Integer userId) {
-        return roleRepository.findCommunitiesOwnedByUser(userId);
+    public List<SocialSpaceDTO> getOwnedCommunities(Integer userId) {
+        return roleRepository.findSocialSpacesOwnedByUser(userId);
     }
 
-    public List<CommunityMemberDTO> searchCommunityMembers(Integer userId,String search) {
-        return roleRepository.searchCommunityMembers(userId,search);
+    public List<SocialSpaceMemberDTO> searchSocialSpaceMembers(Integer userId,String search) {
+        return roleRepository.searchSocialSpaceMembers(userId,search);
     }
 
 }

@@ -16,6 +16,7 @@ public class CommentService {
 
     private final CommentRepository commentRepo;
 
+    //need to use user Repository to save comments
     public CommentService(CommentRepository commentRepo, UserRepository userRepository) {
         this.commentRepo = commentRepo;
     }

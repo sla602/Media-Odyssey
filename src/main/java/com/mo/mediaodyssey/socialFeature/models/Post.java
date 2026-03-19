@@ -8,7 +8,7 @@ import java.time.Instant;
 @Entity
 @Table(name="post",
 indexes = {
-        @Index(name = "idx_post_community", columnList = "community_id"),
+        @Index(name = "idx_post_social_space_id", columnList = "social_space_id"),
         @Index(name = "idx_post_author", columnList = "author_id")
 })
 public class Post {
@@ -16,8 +16,9 @@ public class Post {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
-    @Column(name = "community_id", nullable = false)
-    private Integer communityId;
+
+    @Column(name = "social_space_id", nullable = false)
+    private Integer socialSpaceId;
 
     @Column(name = "author_id", nullable = false)
     private Integer authorId;
@@ -33,8 +34,8 @@ public class Post {
 
     protected Post() {}
 
-    public Post(Integer communityId, Integer authorId, String title, String content) {
-        this.communityId = communityId;
+    public Post(Integer socialSpaceId, Integer authorId, String title, String content) {
+        this.socialSpaceId = socialSpaceId;
         this.authorId = authorId;
         this.title = title;
         this.content = content;
@@ -45,8 +46,8 @@ public class Post {
         return id;
     }
 
-    public Integer getCommunityId() {
-        return communityId;
+    public Integer getSocialSpaceId() {
+        return socialSpaceId;
     }
 
     public Integer getAuthorId() {

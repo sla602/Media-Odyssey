@@ -7,11 +7,11 @@ import java.time.Instant;
 
 
 @Entity
-@Table(name = "community",
+@Table(name = "social_space",
 indexes = {
-        @Index(name="idx_community_name", columnList = "name", unique = true)
+        @Index(name="idx_social_space_name", columnList = "name", unique = true)
 })
-public class Community {
+public class SocialSpace {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
@@ -29,9 +29,9 @@ public class Community {
     @Column(nullable = false, updatable = false)
     private Instant createdAt = Instant.now();
 
-    protected Community() {}
+    protected SocialSpace() {}
 
-    public Community(String name, String description, Integer createdByUserId) {
+    public SocialSpace(String name, String description, Integer createdByUserId) {
         this.name = name;
         this.description = description;
         this.createdByUserId = createdByUserId;

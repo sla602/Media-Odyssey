@@ -1,11 +1,11 @@
 package com.mo.mediaodyssey.socialFeature.services;
 
 import com.mo.mediaodyssey.socialFeature.enums.RoleType;
-import com.mo.mediaodyssey.socialFeature.models.CommunityRole;
+import com.mo.mediaodyssey.socialFeature.models.SocialSpaceRole;
 import com.mo.mediaodyssey.socialFeature.models.DTO.PostDTO;
 import com.mo.mediaodyssey.socialFeature.models.Post;
-import com.mo.mediaodyssey.socialFeature.repositories.CommunityRoleRepository;
 import com.mo.mediaodyssey.socialFeature.repositories.PostRepository;
+import com.mo.mediaodyssey.socialFeature.repositories.SocialSpaceRoleRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -16,14 +16,14 @@ import java.util.List;
 public class PostService {
 
     private final PostRepository postRepo;
-    private final CommunityRoleRepository roleRepo;
+    private final SocialSpaceRoleRepository roleRepo;
 
-    public PostService(PostRepository postRepo, CommunityRoleRepository roleRepo){
+    public PostService(PostRepository postRepo, SocialSpaceRoleRepository roleRepo){
         this.postRepo = postRepo;
         this.roleRepo = roleRepo;
     }
 
-    //Create a new post in a community by a user.
+    //Create a new post in a socialSpace by a user.
 
     public void createPost(Integer userId, Integer communityId, String title, String content){
         Post post = new Post(communityId, userId, title, content);
@@ -43,8 +43,8 @@ public class PostService {
         }
 
         // Check if acting user is a moderator or owner in the community
-        RoleType role = roleRepo.findByUserIdAndCommunityId(actingUserId, post.getCommunityId())
-                .map(CommunityRole::getRoleType)
+        RoleType role = roleRepo.findByUserIdAndSocialSpaceId(actingUserId, post.getSocialSpaceId())
+                .map(SocialSpaceRole::getRoleType)
                 .orElse(null);
 
         if(role == RoleType.OWNER || role == RoleType.MODERATOR){
@@ -56,7 +56,7 @@ public class PostService {
     }
 
 
-    public List<PostDTO> getPostsByCommunityId(Integer communityId){
+    public List<PostDTO> getPostsBySocialSpaceId(Integer communityId){
         return postRepo.findPostsWithUserByCommunityId(communityId);
     }
 
