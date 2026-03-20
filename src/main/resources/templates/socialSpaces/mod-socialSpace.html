@@ -62,16 +62,16 @@
     <h2>Moderation Panel</h2>
 
 
-    <form method="get" th:action="@{/templates/socialSpaces/mod-community}">
+    <form method="get" th:action="@{/socialSpaces/mod-socialSpace}">
 
-        <select name="communityId">
+        <select name="socialSpaceId">
 
             <option value="">Select Community</option>
 
-            <option th:each="community : ${communities}"
-                    th:value="${community.communityId}"
-                    th:text="${community.communityName}"
-                    th:selected="${community.communityId == communityId}">
+            <option th:each="socialSpace : ${socialSpaces}"
+                    th:value="${socialSpace.socialSpaceId}"
+                    th:text="${socialSpace.socialSpaceName}"
+                    th:selected="${socialSpace.socialSpaceId == socialSpaceId}">
             </option>
 
         </select>
@@ -83,22 +83,22 @@
 
     <!-- SEARCH BAR -->
 
-    <div class="section" th:if="${communityId != null}">
+<!--    <div class="section" th:if="${socialSpaceId != null}">-->
 
-        <form method="get" th:action="@{/templates/socialSpaces/mod-community}">
+<!--        <form method="get" th:action="@{/socialSpaces/mod-socialSpace}">-->
 
-            <input type="hidden" name="communityId" th:value="${communityId}">
+<!--            <input type="hidden" name="socialSpaceId" th:value="${socialSpaceId}">-->
 
-            <input type="text"
-                   name="search"
-                   placeholder="Search username..."
-                   th:value="${search}">
+<!--            <input type="text"-->
+<!--                   name="search"-->
+<!--                   placeholder="Search username..."-->
+<!--                   th:value="${search}">-->
 
-            <button type="submit">Search</button>
+<!--            <button type="submit">Search</button>-->
 
-        </form>
+<!--        </form>-->
 
-    </div>
+<!--    </div>-->
 
 
     <!-- MEMBERS LIST -->
@@ -117,17 +117,17 @@
 
                 <div class="actions">
 
-                    <form method="post" th:action="@{/templates/socialSpaces/{communityId}/promote(communityId=${communityId})}">
+                    <form method="post" th:action="@{/socialSpaces/{socialSpaceId}/promote(socialSpaceId=${socialSpaceId})}">
                         <input type="hidden" name="targetUserId" th:value="${member.userId}">
                         <button type="submit">Promote</button>
                     </form>
 
-                    <form method="post" th:action="@{/templates/socialSpaces/{communityId}/kick(communityId=${communityId})}">
+                    <form method="post" th:action="@{/socialSpaces/{socialSpaceId}/kick(socialSpaceId=${socialSpaceId})}">
                         <input type="hidden" name="targetUserId" th:value="${member.userId}">
                         <button type="submit">Kick</button>
                     </form>
 
-                    <form method="post" th:action="@{/templates/socialSpaces/{communityId}/transfer(communityId=${communityId})}">
+                    <form method="post" th:action="@{/socialSpaces/{socialSpaceId}/transfer(socialSpaceId=${socialSpaceId})}">
                         <input type="hidden" name="targetUserId" th:value="${member.userId}">
                         <button type="submit">Transfer</button>
                     </form>
@@ -157,13 +157,13 @@
 
                 <div class="actions">
                     <!-- Demote -->
-                    <form method="post" th:action="@{/templates/socialSpaces/{communityId}/demote(communityId=${communityId})}">
+                    <form method="post" th:action="@{/socialSpaces/{socialSpaceId}/demote(socialSpaceId=${socialSpaceId})}">
                         <input type="hidden" name="targetUserId" th:value="${member.userId}">
                         <button>Demote</button>
                     </form>
 
                     <!-- Transfer ownership -->
-                    <form method="post" th:action="@{/templates/socialSpaces/{communityId}/transfer(communityId=${communityId})}">
+                    <form method="post" th:action="@{socialSpaces/{socialSpaceId}/transfer(socialSpaceId=${socialSpaceId})}">
                         <input type="hidden" name="targetUserId" th:value="${member.userId}">
                         <button>Transfer</button>
                     </form>

@@ -62,7 +62,7 @@ public class FriendshipService {
     }
 
     public List<User> getSuggestedFriends(Long userId) {
-        List<Integer> socialSpaceIds = socialService.getUserCommunities(userId.intValue()).stream()
+        List<Integer> socialSpaceIds = socialService.getUserSocialSpaces(userId.intValue()).stream()
                 .map(SocialSpace::getId)
                 .collect(Collectors.toList());
 

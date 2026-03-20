@@ -5,18 +5,18 @@
 </head>
 <body>
 
-<h1 th:text="${community.name}">Community Name</h1>
-<p th:text="${community.description}">Community Description</p>
+<h1 th:text="${socialSpace.name}">Community Name</h1>
+<p th:text="${socialSpace.description}">Community Description</p>
 
 <hr>
 
-<form th:action="@{/templates/socialSpaces/{id}/join(id=${community.id})}" method="post">
+<form th:action="@{/templates/socialSpaces/{id}/join(id=${socialSpace.id})}" method="post">
     <button type="submit">Join Community</button>
 </form>
 
 <br>
 
-<a th:href="@{/posts/create/{id}(id=${community.id})}">
+<a th:href="@{/posts/create/{id}(id=${socialSpace.id})}">
     <button>Create Post</button>
 </a>
 

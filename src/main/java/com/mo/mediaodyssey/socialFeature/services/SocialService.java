@@ -41,20 +41,25 @@ public class SocialService {
     }
 
     // TODO: collapsed by board
-    public void createSocialSpace(
+    public SocialSpace createSocialSpace(
             Integer creatorId,
             String name,
             String description) {
 
-        SocialSpace socialSpace = new SocialSpace(name,description,creatorId);
-
+        SocialSpace socialSpace = new SocialSpace(name, description, creatorId);
 
         socialSpaceRepository.save(socialSpace);
 
         // Creator becomes OWNER
-        SocialSpaceRole role = new SocialSpaceRole(creatorId,socialSpace.getId(), RoleType.OWNER);
+        SocialSpaceRole role = new SocialSpaceRole(
+                creatorId,
+                socialSpace.getId(),
+                RoleType.OWNER
+        );
 
         roleRepository.save(role);
+
+        return socialSpace; // ✅ THIS is the key line
     }
 
     // TODO: collapsed by board
@@ -324,11 +329,11 @@ public class SocialService {
     }
 
 
-    public List<SocialSpace> getAllCommunities() {
+    public List<SocialSpace> getAllSocialSpaces() {
         return socialSpaceRepository.findAll();
     }
 
-    public List<SocialSpace> getUserCommunities(Integer userId) {
+    public List<SocialSpace> getUserSocialSpaces(Integer userId) {
         return roleRepository.findSocialSpacesByUserId(userId);
     }
 
@@ -336,7 +341,7 @@ public class SocialService {
         return roleRepository.findSocialSpaceMembers(socialSpaceId);
     }
 
-    public List<SocialSpaceDTO> getOwnedCommunities(Integer userId) {
+    public List<SocialSpaceDTO> getOwnedSocialSpaces(Integer userId) {
         return roleRepository.findSocialSpacesOwnedByUser(userId);
     }
 

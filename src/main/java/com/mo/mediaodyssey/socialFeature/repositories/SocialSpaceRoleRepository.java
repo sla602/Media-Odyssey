@@ -18,14 +18,14 @@ public interface SocialSpaceRoleRepository extends JpaRepository<SocialSpaceRole
 
     Optional<SocialSpaceRole> findByUserIdAndSocialSpaceId(Integer userId, Integer SocialSpaceId);
 
-    boolean existsByUserIdAndSocialSpaceId(Integer userId, Integer communityId);
+    boolean existsByUserIdAndSocialSpaceId(Integer userId, Integer socialSpaceId);
 
-    List<SocialSpaceRole> findBySocialSpaceId(Integer communityId);
+    List<SocialSpaceRole> findBySocialSpaceId(Integer socialSpaceId);
 
 
-    List<SocialSpaceRole> findBySocialSpaceIdAndRoleType(Integer communityId, RoleType role);
+    List<SocialSpaceRole> findBySocialSpaceIdAndRoleType(Integer socialSpaceId, RoleType role);
 
-    void deleteByUserIdAndSocialSpaceId(Integer userId, Integer communityId);
+    void deleteByUserIdAndSocialSpaceId(Integer userId, Integer socialSpaceId);
 
 
 

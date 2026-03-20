@@ -39,14 +39,14 @@
 
     <tbody>
 
-    <!--/*@thymesVar id="community" type="com.mo.mediaodyssey.socialFeature.models.Community"*/-->
+    <!--/*@thymesVar id="socialSpace" type="com.mo.mediaodyssey.socialFeature.models.SocialSpace"*/-->
 
-    <tr th:each="community : ${communities}"
+    <tr th:each="socialSpace : ${socialSpaces}"
         class="clickable-row"
-        th:onclick="|window.location='/communities/' + ${community.id}|">
+        th:onclick="|window.location='/socialSpaces/' + ${socialSpace.id}|">
 
-        <td th:text="${community.name}">Community Name</td>
-        <td th:text="${community.description}">Description</td>
+        <td th:text="${socialSpace.name}">Community Name</td>
+        <td th:text="${socialSpace.description}">Description</td>
 
     </tr>
 

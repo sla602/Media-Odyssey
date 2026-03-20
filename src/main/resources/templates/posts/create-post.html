@@ -15,7 +15,7 @@
 
 <h1>Create a New Post</h1>
 
-<form th:action="@{/posts/create/{communityId}(communityId=${communityId})}" method="post">
+<form th:action="@{/posts/create/{socialSpaceId}(socialSpaceId=${socialSpaceId})}" method="post">
     <input type="text" name="title" placeholder="Post title" required>
     <textarea name="content" placeholder="Post content" required></textarea>
     <button type="submit">Create Post</button>
@@ -23,7 +23,7 @@
 
 <br>
 
-<a th:href="@{/templates/socialSpaces/{id}(id=${communityId})}">
+<a th:href="@{/templates/socialSpaces/{id}(id=${socialSpaceId})}">
     <button>Back to Community</button>
 </a>
 </body>

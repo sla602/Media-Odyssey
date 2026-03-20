@@ -24,9 +24,9 @@ SELECT new com.mo.mediaodyssey.socialFeature.models.DTO.PostDTO(
 )
 FROM Post p
 JOIN User u ON p.authorId = u.id
-WHERE p.socialSpaceId = :communityId
+WHERE p.socialSpaceId = :socialSpaceId
 ORDER BY p.createdAt DESC
 """)
-    List<PostDTO> findPostsWithUserByCommunityId(@Param("social_space_id") Integer socialSpaceId);
+    List<PostDTO> findPostsWithUserByCommunityId(@Param("socialSpaceId") Integer socialSpaceId);
 
 }

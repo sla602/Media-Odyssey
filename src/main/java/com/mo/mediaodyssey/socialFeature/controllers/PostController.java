@@ -30,21 +30,21 @@ public class PostController {
     private final UserRepository userRepo;
 
     public PostController(PostService postService, CommentService commentService,
-                          SocialSpaceRoleRepository communityRoleRepo, UserRepository userRepo) {
+                          SocialSpaceRoleRepository socialSpaceRoleRepo, UserRepository userRepo) {
         this.postService = postService;
         this.commentService = commentService;
-        this.roleRepo = communityRoleRepo;
+        this.roleRepo = socialSpaceRoleRepo;
         this.userRepo = userRepo;
     }
 
-    @GetMapping("/create/{communityId}")
-    public String showCreatePostForm(@PathVariable Integer communityId, Model model) {
-        model.addAttribute("communityId", communityId);
+    @GetMapping("/create/{socialSpaceId}")
+    public String showCreatePostForm(@PathVariable Integer socialSpaceId, Model model) {
+        model.addAttribute("socialSpaceId", socialSpaceId);
         return "posts/create-post";
     }
 
-    @PostMapping("/create/{communityId}")
-    public String createPost(@PathVariable Integer communityId,
+    @PostMapping("/create/{socialSpaceId}")
+    public String createPost(@PathVariable Integer socialSpaceId,
             @RequestParam String title,
             @RequestParam String content,
             HttpSession session,
@@ -55,9 +55,9 @@ public class PostController {
         User user = (User) authentication.getPrincipal();
         Long userId = user.getId();
 
-        postService.createPost(userId.intValue(), communityId, title, content);
+        postService.createPost(userId.intValue(), socialSpaceId, title, content);
         redirectAttributes.addFlashAttribute("success", "Post created successfully");
-        return "redirect:/communities/" + communityId;
+        return "redirect:/socialSpaces/" + socialSpaceId;
     }
 
     @GetMapping("/{postId}/edit")
@@ -89,11 +89,11 @@ public class PostController {
             Post post = postService.getPostById(postId);
             postService.deletePost(userId.intValue(), postId);
             redirectAttributes.addFlashAttribute("success", "Post deleted successfully");
-            return "redirect:/communities/" + post.getSocialSpaceId();
+            return "redirect:/socialSpaces/" + post.getSocialSpaceId();
         } catch (RuntimeException e) {
             Post post = postService.getPostById(postId);
             redirectAttributes.addFlashAttribute("error", e.getMessage());
-            return "redirect:/communities/" + post.getSocialSpaceId();
+            return "redirect:/socialSpaces/" + post.getSocialSpaceId();
         }
     }
 

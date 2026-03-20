@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Dashboard</title>
+
     <style>
         body { font-family: Arial, sans-serif; margin: 20px; }
         h1, h3 { margin-bottom: 10px; }
@@ -15,48 +16,57 @@
         form { display: inline; }
     </style>
 
-    <!-- css paths:
-    + global (HTML body)
-    + fragments (header + sidebar) -->
-    <link rel="stylesheet" th:href="@{/layout/css/global.css}">
-    <link rel="stylesheet" th:href="@{/layout/css/fragments.css}">
+    <link rel="stylesheet" th:href="@{/layout/css/homePage.css}">
 </head>
 <body>
 
-    <!--header (display logo[sidebar toggle], homeReturn icon, search bar, user's name and avatar)-->
-    <div th:replace="boardsLayout/fragments/header :: header"></div>
+<!--&lt;!&ndash; Header &ndash;&gt;-->
+<!--<div th:replace="fragments/header :: header"></div>-->
 
-    <!-- A side bar that contains features (can be discussed). Side bar can be folded
-    Please use the MO logo to work with side bar if needed -->
-    <div th:replace="boardsLayout/fragments/sidebar :: sideBar"></div>
+<!--&lt;!&ndash; Sidebar &ndash;&gt;-->
+<!--<div th:replace="fragments/sidebar :: sideBar"></div>-->
 
 <h1 class="dashboardTitle">Welcome to MediaOdyssey</h1>
 <p>You are logged in.</p>
 
 <hr>
 
+<!-- COMMUNITY ACTIONS -->
 <div class="section">
     <h3>Community Actions</h3>
-    <a th:href="@{/templates/socialSpaces/create}"><button>Create Community</button></a>
-    <a th:href="@{/templates/socialSpaces}"><button>Join Community</button></a>
+    <a th:href="@{/socialSpaces/create}">
+        <button>Create Community</button>
+    </a>
+    <a th:href="@{/socialSpaces}">
+        <button>Join Community</button>
+    </a>
 </div>
 
+<!-- USER COMMUNITIES -->
 <div class="section">
     <h3>Your Communities</h3>
     <ul>
-        <li th:each="community : ${myCommunities}">
-            <a th:href="@{/templates/socialSpaces/{id}(id=${community.id})}"
-               th:text="${community.name}"
-               class="community-link">Community Name</a>
+
+        <li th:each="socialSpace : ${mySocialSpaces}">
+            <a th:href="@{/socialSpaces/{id}(id=${socialSpace.id})}"
+               th:text="${socialSpace.name}"
+               class="community-link">
+                Community Name
+            </a>
         </li>
-        <li th:if="${#lists.isEmpty(myCommunities)}">You have not joined any communities yet.</li>
+
+        <li th:if="${#lists.isEmpty(mySocialSpaces)}">
+            You have not joined any communities yet.
+        </li>
+
     </ul>
 </div>
 
+<!-- MODERATION -->
 <div class="section">
     <h3>Moderation</h3>
 
-    <a th:href="@{/templates/socialSpaces/mod-community}">
+    <a th:href="@{/socialSpaces/mod-socialSpace}">
         <button>Moderation Panel</button>
     </a>
 
@@ -79,7 +89,6 @@
     </ul>
 </div>
 
-
 <!-- INCOMING FRIEND REQUESTS -->
 <div class="section">
     <h3>Incoming Friend Requests</h3>
@@ -87,19 +96,14 @@
     <ul>
 
         <li th:each="r : ${requests}">
-
             <span th:text="${r.senderUsername}"></span>
 
-            <form th:action="@{/users/friends/accept}" method="post">
-
+            <form th:action="@{/socialSpaces/friends/accept}" method="post">
                 <input type="hidden"
                        name="requestId"
                        th:value="${r.requestId}" />
-
                 <button type="submit">Accept</button>
-
             </form>
-
         </li>
 
         <li th:if="${#lists.isEmpty(requests)}">
@@ -107,9 +111,7 @@
         </li>
 
     </ul>
-
 </div>
-
 
 <!-- SUGGESTED FRIENDS -->
 <div class="section">
@@ -118,19 +120,14 @@
     <ul>
 
         <li th:each="user : ${suggested}">
-
             <span th:text="${user.username}"></span>
 
-            <form th:action="@{/users/friends/request}" method="post">
-
+            <form th:action="@{/socialSpaces/friends/request}" method="post">
                 <input type="hidden"
                        name="friendId"
                        th:value="${user.id}" />
-
                 <button type="submit">Add Friend</button>
-
             </form>
-
         </li>
 
         <li th:if="${#lists.isEmpty(suggested)}">
@@ -138,11 +135,9 @@
         </li>
 
     </ul>
-
 </div>
 
-    <!-- This js script path: ensures sidebar + header logic -->
-    <script th:src="@{/layout/js/fragments.js}"></script>
+<script th:src="@{/layout/js/homePage.js}"></script>
 
 </body>
 </html>
