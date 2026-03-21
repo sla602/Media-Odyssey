@@ -1,9 +1,14 @@
 package com.mo.mediaodyssey.socialFeature.services;
 
 import com.mo.mediaodyssey.auth.repository.UserRepository;
+import com.mo.mediaodyssey.socialFeature.enums.RoleType;
 import com.mo.mediaodyssey.socialFeature.models.Comment;
 import com.mo.mediaodyssey.socialFeature.models.DTO.CommentDTO;
+import com.mo.mediaodyssey.socialFeature.models.Post;
+import com.mo.mediaodyssey.socialFeature.models.SocialSpaceRole;
 import com.mo.mediaodyssey.socialFeature.repositories.CommentRepository;
+import com.mo.mediaodyssey.socialFeature.repositories.PostRepository;
+import com.mo.mediaodyssey.socialFeature.repositories.SocialSpaceRoleRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -15,21 +20,21 @@ import java.util.stream.Collectors;
 public class CommentService {
 
     private final CommentRepository commentRepo;
-
     //need to use user Repository to save comments
-    public CommentService(CommentRepository commentRepo, UserRepository userRepository) {
+    public CommentService(CommentRepository commentRepo) {
         this.commentRepo = commentRepo;
+
     }
 
     public void createComment(Integer userId, Integer postId, String content) {
-        Comment comment = new Comment(postId, userId, null, content);
+        Comment comment = new Comment(postId, userId, null, content,false);
         commentRepo.save(comment);
     }
 
     public void replyToComment(Integer userId, Integer parentCommentId, String content) {
         Comment parent = commentRepo.findById(parentCommentId)
                 .orElseThrow(() -> new IllegalStateException("Parent comment not found"));
-        Comment reply = new Comment(parent.getPostId(), userId, parentCommentId, content);
+        Comment reply = new Comment(parent.getPostId(), userId, parentCommentId, content,false);
         commentRepo.save(reply);
     }
 
@@ -73,5 +78,20 @@ public class CommentService {
         for (CommentDTO reply : replies) {
             appendReplies(reply, depth + 1, repliesMap, result);
         }
+    }
+
+
+
+    public void softDeleteComment(Integer commentId) {
+
+        Comment comment = commentRepo.findById(commentId).orElseThrow(()-> new RuntimeException("Comment not found"));
+        
+        if (comment.isDeleted()) {
+            throw new RuntimeException("Comment already deleted");
+        }
+
+        comment.setDeleted(true);
+
+        comment.setContent("[deleted]");
     }
 }

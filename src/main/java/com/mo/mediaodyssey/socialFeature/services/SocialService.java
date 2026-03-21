@@ -59,7 +59,7 @@ public class SocialService {
 
         roleRepository.save(role);
 
-        return socialSpace; // ✅ THIS is the key line
+        return socialSpace;
     }
 
     // TODO: collapsed by board
@@ -156,6 +156,10 @@ public class SocialService {
         Comment comment = commentRepository.findById(commentId)
                 .orElseThrow(() -> new RuntimeException("Comment not found"));
 
+
+        if (comment.isDeleted()) {
+            throw new RuntimeException("Deleted comments cannot be edited");
+        }
         Post post = postRepository.findById(comment.getPostId())
                 .orElseThrow(() -> new RuntimeException("Post not found"));
 
@@ -191,6 +195,7 @@ public class SocialService {
     }
 
     public void deleteComment(Integer actingUserId, Integer commentId) {
+
         Comment comment = commentRepository.findById(commentId)
                 .orElseThrow(() -> new RuntimeException("Comment not found"));
 
@@ -199,20 +204,18 @@ public class SocialService {
 
         Integer socialSpaceId = post.getSocialSpaceId();
 
-        // Check permission
         permissionService.canDeleteComment(actingUserId, socialSpaceId);
 
         SocialSpaceRole actingRole = roleRepository
                 .findByUserIdAndSocialSpaceId(actingUserId, socialSpaceId)
                 .orElseThrow(() -> new RuntimeException("User not in community"));
 
-        // Members can only delete their own comments
-        if (actingRole.getRoleType().isMember() && !comment.getAuthorId().equals(actingUserId)) {
+        if (actingRole.getRoleType().isMember() &&
+                !comment.getAuthorId().equals(actingUserId)) {
             throw new RuntimeException("Members can only delete their own comments");
         }
 
-        // Moderators and owners can delete any comment
-        commentRepository.delete(comment);
+        commentService.softDeleteComment(commentId);
     }
 
 

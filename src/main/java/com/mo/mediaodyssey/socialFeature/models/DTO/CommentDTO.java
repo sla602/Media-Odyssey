@@ -1,5 +1,7 @@
 package com.mo.mediaodyssey.socialFeature.models.DTO;
 
+import com.mo.mediaodyssey.socialFeature.enums.RoleType;
+
 public class CommentDTO {
 
     private Integer id;
@@ -8,6 +10,7 @@ public class CommentDTO {
     private Integer parentId;
     private String content;
     private String username;
+    private boolean deleted;
     private int depth;
 
     public CommentDTO(Integer id,
@@ -16,7 +19,8 @@ public class CommentDTO {
                       Integer parentId,
                       String content,
                       String username,
-                      int depth) {
+                      int depth,
+                      boolean deleted) {
         this.id = id;
         this.postId = postId;
         this.authorId = authorId;
@@ -24,6 +28,7 @@ public class CommentDTO {
         this.content = content;
         this.username = username;
         this.depth = depth;
+        this.deleted = deleted;
     }
 
     public Integer getId() { return id; }
@@ -33,6 +38,10 @@ public class CommentDTO {
     public String getContent() { return content; }
     public String getUsername() { return username; }
     public int getDepth() { return depth; }
+
+    public boolean isDeleted() {
+        return deleted;
+    }
 
     public void setDepth(int depth) {
         this.depth = depth;

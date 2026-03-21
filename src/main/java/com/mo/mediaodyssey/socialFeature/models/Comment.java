@@ -1,6 +1,7 @@
 package com.mo.mediaodyssey.socialFeature.models;
 
 
+import com.mo.mediaodyssey.socialFeature.enums.RoleType;
 import jakarta.persistence.*;
 
 import java.time.Instant;
@@ -33,13 +34,19 @@ public class Comment {
     @Column(nullable = false, updatable = false)
     private Instant createdAt = Instant.now();
 
+
+
+    @Column(nullable = false)
+    private boolean deleted;
+
     protected Comment() {}
 
-    public Comment(Integer postId, Integer authorId, Integer parentId, String content) {
+    public Comment(Integer postId, Integer authorId, Integer parentId, String content, boolean deleted) {
         this.postId = postId;
         this.authorId = authorId;
         this.parentId = parentId;
         this.content = content;
+        this.deleted = deleted;
     }
 
     public Integer getId() {
@@ -62,6 +69,11 @@ public class Comment {
         return content;
     }
 
+    public void setDeleted(boolean deleted) {
+        this.deleted = deleted;
+    }
+
+    public boolean isDeleted(){return deleted;}
     public void setContent(String content) {
         this.content = content;
     }

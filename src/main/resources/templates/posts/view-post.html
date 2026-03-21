@@ -87,14 +87,24 @@
      th:style="'margin-left:' + ${comment.depth * 30} + 'px;'"
      class="comment">
 
+    <!-- Username -->
     <p>
-        <b th:text="${comment.username}"></b>
+        <b th:text="${comment.deleted ? 'Unknown' : comment.username}"></b>
     </p>
 
-    <p th:text="${comment.content}"></p>
+    <!-- Content -->
+    <!-- COMMENT CONTENT -->
 
-    <!-- edit -->
-    <form th:if="${comment.authorId == currentUserId}"
+    <p th:if="${comment.deleted}">
+        <i>[deleted]</i>
+    </p>
+
+    <p th:if="${!comment.deleted}"
+       th:text="${comment.content}">
+    </p>
+
+    <!-- EDIT -->
+    <form th:if="${comment.authorId == currentUserId and !comment.deleted}"
           th:action="@{/comments/{id}/edit(id=${comment.id})}"
           method="post">
 
@@ -103,17 +113,19 @@
                th:value="${comment.content}"
                required>
 
-        <button>Edit</button>
+        <button type="submit">Edit</button>
     </form>
 
-    <!-- delete -->
-    <form th:action="@{/comments/{id}/delete(id=${comment.id})}"
+    <!-- DELETE -->
+    <form th:if="${!comment.deleted}"
+          th:action="@{/comments/{id}/delete(id=${comment.id})}"
           method="post">
         <button>Delete</button>
     </form>
 
-    <!-- reply -->
-    <form th:action="@{/comments/reply/{id}(id=${comment.id})}"
+    <!-- REPLY -->
+    <form th:if="${!comment.deleted}"
+          th:action="@{/comments/reply/{id}(id=${comment.id})}"
           method="post">
 
         <input type="text"

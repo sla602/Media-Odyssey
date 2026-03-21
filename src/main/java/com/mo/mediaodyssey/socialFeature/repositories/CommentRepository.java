@@ -10,20 +10,6 @@ import java.util.List;
 
 public interface CommentRepository extends JpaRepository<Comment,Integer> {
 
-    List<Comment> findByPostId(Integer postId);
-
-    List<Comment> findByAuthorId(Integer authorId);
-
-    List<Comment> findByParentId(Integer parentId);
-
-    List<Comment> findByPostIdAndParentIdIsNull(Integer postId);
-
-    void deleteByPostId(Integer postId);
-
-    List<Comment> findByPostIdOrderByParentIdAscCreatedAtAsc(Integer postId);
-
-    List<Comment> findByPostIdOrderByCreatedAtAsc(Integer postId);
-
     @Query("""
 SELECT new com.mo.mediaodyssey.socialFeature.models.DTO.CommentDTO(
     c.id,
@@ -32,7 +18,8 @@ SELECT new com.mo.mediaodyssey.socialFeature.models.DTO.CommentDTO(
     c.parentId,
     c.content,
     u.username,
-    0
+    0,
+    c.deleted
 )
 FROM Comment c
 JOIN User u ON c.authorId = u.id
