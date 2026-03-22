@@ -60,21 +60,33 @@ public class PostController {
         return "redirect:/socialSpaces/" + socialSpaceId;
     }
 
-    @GetMapping("/{postId}/edit")
-    public String showEditPostForm(@PathVariable Integer postId, HttpSession session,
-            Model model, RedirectAttributes redirectAttributes, Authentication authentication) {
+    @PostMapping("/{postId}/edit")
+    public String updatePost(
+            @PathVariable Integer postId,
+            @RequestParam String title,
+            @RequestParam String content,
+            RedirectAttributes redirectAttributes,
+            Authentication authentication) {
 
-        // TODO: changed to use id from /auth. Please clean up in future.
         User user = (User) authentication.getPrincipal();
-        Long userId = user.getId();
+        Integer currentUserId = user.getId().intValue();
 
         Post post = postService.getPostById(postId);
-        if (!post.getAuthorId().equals(userId.intValue())) {
+
+        // Only author is allowed to edit
+        if (!post.getAuthorId().equals(currentUserId)) {
             redirectAttributes.addFlashAttribute("error", "You can only edit your own posts");
             return "redirect:/posts/" + postId;
         }
-        model.addAttribute("post", post);
-        return "posts/view-post";
+
+        try {
+            postService.updatePost(postId, title, content);
+            redirectAttributes.addFlashAttribute("success", "Post updated successfully");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("error", "Failed to update post: " + e.getMessage());
+        }
+
+        return "redirect:/posts/" + postId;
     }
 
     @PostMapping("/{postId}/delete")

@@ -109,26 +109,27 @@ public class SocialService {
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new RuntimeException("Post not found"));
 
-        Integer socialSpaceId = post.getSocialSpaceId();
-
-        // Check permission to edit posts
-        permissionService.canEditPost(userId, socialSpaceId);
-
-        // Only the author can edit
+        // Only author can edit — moderators/owners cannot
         if (!post.getAuthorId().equals(userId)) {
-            throw new RuntimeException("Members can only edit their own posts");
+            throw new RuntimeException("You can only edit your own posts");
         }
+
+        // Optional membership check
+        Integer socialSpaceId = post.getSocialSpaceId();
+        roleRepository.findByUserIdAndSocialSpaceId(userId, socialSpaceId)
+                .orElseThrow(() -> new RuntimeException("You are not a member of this space"));
 
         post.setTitle(newTitle);
         post.setContent(newContent);
         postRepository.save(post);
     }
 
+    // In SocialService.java
 
-    public void createComment(Integer userId, Integer postId, String content){
-
+    // Create a top-level comment on a post
+    public void createComment(Integer userId, Integer postId, String content) {
         Post post = postRepository.findById(postId)
-                .orElseThrow(() -> new RuntimeException("Post not found"));
+                .orElseThrow(() -> new RuntimeException("Post not found with id: " + postId));
 
         Integer socialSpaceId = post.getSocialSpaceId();
 
@@ -137,12 +138,12 @@ public class SocialService {
         commentService.createComment(userId, postId, content);
     }
 
-    public void replyToComment(Integer userId, Integer parentCommentId, String content){
-
+    // Create a reply to an existing comment
+    public void replyToComment(Integer userId, Integer parentCommentId, String content) {
         Integer postId = commentService.getParentPostId(parentCommentId);
 
         Post post = postRepository.findById(postId)
-                .orElseThrow(() -> new RuntimeException("Post not found"));
+                .orElseThrow(() -> new RuntimeException("Post not found for comment id: " + parentCommentId));
 
         Integer socialSpaceId = post.getSocialSpaceId();
 
@@ -151,26 +152,55 @@ public class SocialService {
         commentService.replyToComment(userId, parentCommentId, content);
     }
 
-    public void editComment(Integer userId, Integer commentId, String newContent){
-
+    // Edit an existing comment
+    public void editComment(Integer userId, Integer commentId, String newContent) {
         Comment comment = commentRepository.findById(commentId)
-                .orElseThrow(() -> new RuntimeException("Comment not found"));
-
+                .orElseThrow(() -> new RuntimeException("Comment not found with id: " + commentId));
 
         if (comment.isDeleted()) {
-            throw new RuntimeException("Deleted comments cannot be edited");
+            throw new RuntimeException("Cannot edit a deleted comment");
         }
+
+        // Only the original author is allowed to edit — no exceptions
+        if (!comment.getAuthorId().equals(userId)) {
+            throw new RuntimeException("You can only edit your own comments");
+        }
+
+        // Optional: still make sure the user is in the space (good practice)
         Post post = postRepository.findById(comment.getPostId())
-                .orElseThrow(() -> new RuntimeException("Post not found"));
+                .orElseThrow(() -> new RuntimeException("Post not found for comment id: " + commentId));
 
-        permissionService.canEditComment(userId, post.getSocialSpaceId());
+        Integer socialSpaceId = post.getSocialSpaceId();
 
-        if(!comment.getAuthorId().equals(userId)){
-            throw new RuntimeException("Members can only edit their own comments");
-        }
+        roleRepository.findByUserIdAndSocialSpaceId(userId, socialSpaceId)
+                .orElseThrow(() -> new RuntimeException("You are not a member of this space"));
 
+        // Perform the edit
         commentService.updateCommentContent(commentId, newContent);
     }
+
+    // Soft-delete a comment
+    public void deleteComment(Integer actingUserId, Integer commentId) {
+        Comment comment = commentRepository.findById(commentId)
+                .orElseThrow(() -> new RuntimeException("Comment not found with id: " + commentId));
+
+        Post post = postRepository.findById(comment.getPostId())
+                .orElseThrow(() -> new RuntimeException("Post not found for comment id: " + commentId));
+
+        Integer socialSpaceId = post.getSocialSpaceId();
+
+        // Only check DELETE_COMMENT permission if it's NOT the user's own comment
+        if (!comment.getAuthorId().equals(actingUserId)) {
+            permissionService.canDeleteComment(actingUserId, socialSpaceId);
+        }
+
+        // Membership check (still required)
+        roleRepository.findByUserIdAndSocialSpaceId(actingUserId, socialSpaceId)
+                .orElseThrow(() -> new RuntimeException("User is not a member of this social space"));
+
+        commentService.softDeleteComment(commentId);
+    }
+
 
     public void deletePost(Integer actingUserId, Integer postId) {
         Post post = postRepository.findById(postId)
@@ -178,48 +208,17 @@ public class SocialService {
 
         Integer socialSpaceId = post.getSocialSpaceId();
 
-        // Check permission to delete posts
-        permissionService.canDeletePost(actingUserId, socialSpaceId);
+        boolean isOwnPost = post.getAuthorId().equals(actingUserId);
 
-        // Ownership check
-        SocialSpaceRole actingRole = roleRepository
-                .findByUserIdAndSocialSpaceId(actingUserId, socialSpaceId)
-                .orElseThrow(() -> new RuntimeException("User not in community"));
-
-        if (actingRole.getRoleType().isMember() && !post.getAuthorId().equals(actingUserId)) {
-            throw new RuntimeException("Members can only delete their own posts");
+        if (!isOwnPost) {
+            permissionService.canDeletePost(actingUserId, socialSpaceId);
         }
 
-        // Moderators and owners can delete any post
+        roleRepository.findByUserIdAndSocialSpaceId(actingUserId, socialSpaceId)
+                .orElseThrow(() -> new RuntimeException("User is not a member of this social space"));
+
         postRepository.delete(post);
     }
-
-    public void deleteComment(Integer actingUserId, Integer commentId) {
-
-        Comment comment = commentRepository.findById(commentId)
-                .orElseThrow(() -> new RuntimeException("Comment not found"));
-
-        Post post = postRepository.findById(comment.getPostId())
-                .orElseThrow(() -> new RuntimeException("Post not found"));
-
-        Integer socialSpaceId = post.getSocialSpaceId();
-
-        permissionService.canDeleteComment(actingUserId, socialSpaceId);
-
-        SocialSpaceRole actingRole = roleRepository
-                .findByUserIdAndSocialSpaceId(actingUserId, socialSpaceId)
-                .orElseThrow(() -> new RuntimeException("User not in community"));
-
-        if (actingRole.getRoleType().isMember() &&
-                !comment.getAuthorId().equals(actingUserId)) {
-            throw new RuntimeException("Members can only delete their own comments");
-        }
-
-        commentService.softDeleteComment(commentId);
-    }
-
-
-
 
     public void promoteMember(Integer actingUserId, Integer targetUserId, Integer socialSpaceId) {
 

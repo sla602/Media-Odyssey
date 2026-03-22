@@ -89,7 +89,8 @@
 
     <!-- Username -->
     <p>
-        <b th:text="${comment.deleted ? 'Unknown' : comment.username}"></b>
+        <b th:text="${comment.username}"></b>
+        <span th:if="${comment.deleted}" style="color: #888; font-size: 0.9em;"> (deleted)</span>
     </p>
 
     <!-- Content -->

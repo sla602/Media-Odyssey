@@ -16,5 +16,4 @@ public interface SocialSpaceRepository extends JpaRepository<SocialSpace,Integer
     boolean existsByName(String name);
 
 
-
 }

@@ -1,7 +1,5 @@
 package com.mo.mediaodyssey.socialFeature.models.DTO;
 
-import com.mo.mediaodyssey.socialFeature.enums.RoleType;
-
 public class CommentDTO {
 
     private Integer id;

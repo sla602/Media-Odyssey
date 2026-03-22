@@ -61,6 +61,16 @@ public class PostService {
     }
 
 
+    public void updatePost(Integer postId, String newTitle, String newContent) {
+        Post post = postRepo.findById(postId)
+                .orElseThrow(() -> new IllegalStateException("Post not found"));
+
+        post.setTitle(newTitle);
+        post.setContent(newContent);
+
+        postRepo.save(post);
+    }
+
     public Post getPostById(Integer postId){
         return postRepo.findById(postId)
                 .orElseThrow(() -> new IllegalStateException("Post not found"));

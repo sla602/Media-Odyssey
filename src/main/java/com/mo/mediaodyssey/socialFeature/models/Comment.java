@@ -1,7 +1,7 @@
 package com.mo.mediaodyssey.socialFeature.models;
 
 
-import com.mo.mediaodyssey.socialFeature.enums.RoleType;
+
 import jakarta.persistence.*;
 
 import java.time.Instant;
