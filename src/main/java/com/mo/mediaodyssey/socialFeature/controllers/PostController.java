@@ -90,7 +90,7 @@ public class PostController {
     }
 
     @PostMapping("/{postId}/delete")
-    public String deletePost(@PathVariable Integer postId, HttpSession session,
+    public String deletePost(@PathVariable Integer postId,
             RedirectAttributes redirectAttributes, Authentication authentication) {
 
         // TODO: changed to use id from /auth. Please clean up in future.

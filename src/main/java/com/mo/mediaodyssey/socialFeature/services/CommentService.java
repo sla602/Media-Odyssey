@@ -23,12 +23,12 @@ public class CommentService {
         this.commentRepo = commentRepo;
     }
 
-    // ================== CREATE ==================
+    // CREATE
     @Transactional
     public void createComment(Integer userId, Integer postId, String content) {
         Comment comment = new Comment(postId, userId, null, content, false);
         commentRepo.save(comment);
-        entityManager.flush();                    // ← guarantees write
+        entityManager.flush();
     }
 
     @Transactional
@@ -41,7 +41,7 @@ public class CommentService {
         entityManager.flush();
     }
 
-    // ================== EDIT ==================
+    // EDIT
     @Transactional
     public void updateCommentContent(Integer commentId, String newContent) {
         Comment comment = commentRepo.findById(commentId)
@@ -53,10 +53,10 @@ public class CommentService {
 
         comment.setContent(newContent);
         commentRepo.save(comment);
-        entityManager.flush();                    // ← guarantees write
+        entityManager.flush();
     }
 
-    // ================== DELETE (soft) ==================
+    // DELETE (soft)
     @Transactional
     public void softDeleteComment(Integer commentId) {
         Comment comment = commentRepo.findById(commentId)
@@ -70,10 +70,10 @@ public class CommentService {
         comment.setContent("[deleted]");
 
         commentRepo.save(comment);
-        entityManager.flush();                    // ← THIS WAS THE MISSING PIECE
+        entityManager.flush();
     }
 
-    // ================== READ ==================
+    // READ
     public Integer getParentPostId(Integer commentId) {
         return commentRepo.findById(commentId)
                 .orElseThrow(() -> new IllegalStateException("Comment not found"))
