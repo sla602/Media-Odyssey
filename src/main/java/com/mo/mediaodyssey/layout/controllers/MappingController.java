@@ -23,7 +23,7 @@ public class MappingController {
     /* Temporary, social feature is in dashboard so there will be a dashboard element in sidebar.*/
     @GetMapping("/dashboardTab")
     public String navToDashboard() {
-        return "users/dashboard";
+        return "socialSpaces/dashboard";
     }
     
     /* Bring user to the page specifically for trending feature */
