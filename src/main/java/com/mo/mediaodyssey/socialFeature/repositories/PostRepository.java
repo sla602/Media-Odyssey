@@ -15,18 +15,19 @@ public interface PostRepository extends JpaRepository<Post,Integer> {
     boolean existsByIdAndAuthorId(Integer postId, Integer authorId);
 
     @Query("""
-SELECT new com.mo.mediaodyssey.socialFeature.models.DTO.PostDTO(
+
+            SELECT new com.mo.mediaodyssey.socialFeature.models.DTO.PostDTO(
     p.id,
     p.socialSpaceId,
     p.title,
     p.content,
-    u.username
+    u.username,
+    p.deleted
 )
 FROM Post p
 JOIN User u ON p.authorId = u.id
 WHERE p.socialSpaceId = :socialSpaceId
 ORDER BY p.createdAt DESC
 """)
-    List<PostDTO> findPostsWithUserByCommunityId(@Param("socialSpaceId") Integer socialSpaceId);
-
+    List<PostDTO> findPostsWithUserBySocialSpaceId(@Param("socialSpaceId") Integer socialSpaceId);
 }

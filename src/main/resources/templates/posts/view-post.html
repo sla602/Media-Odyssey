@@ -40,117 +40,116 @@
 
 <body>
 
-<!-- POST -->
-<div class="post-box">
+<main class="container">
 
-    <h2 th:text="${post.title}">Post title</h2>
+    <!-- Post Content -->
+    <article class="post-detail">
 
-    <p>
-        <b>Author:</b>
-        <span th:text="${postUsername}"></span>
-    </p>
+        <div th:if="${post.deleted}" class="deleted-notice">
+            <h1 th:text="${post.title}"></h1>
+            <p class="muted">[Deleted].</p>
+            <p>Originally posted by <strong th:text="${postUsername}"></strong></p>
+        </div>
 
-    <p th:text="${post.content}"></p>
+        <div th:unless="${post.deleted}">
+            <h1 th:text="${post.title}">Post Title</h1>
 
-    <!-- POST ACTIONS -->
-    <div th:if="${currentUserId != null}" class="comment-actions">
+            <div class="post-meta">
+                <span>Posted by <strong th:text="${postUsername}"></strong></span>
+                <span>•</span>
+                <!-- <span th:text="${#temporals.format(post.createdAt, 'MMM dd, yyyy HH:mm')}"></span> -->
+            </div>
 
-        <!-- EDIT POST -->
-        <form th:if="${post.authorId == currentUserId}"
-              th:action="@{/posts/{id}/edit(id=${post.id})}"
-              method="get">
+            <div class="post-content" th:utext="${post.content}">
+                Post content...
+            </div>
 
-            <button type="submit">Edit</button>
+            <!-- Post Actions (edit / delete) -->
+            <div class="post-actions" th:if="${currentUserId != null}">
+                <!-- Edit button - only author -->
+                <a th:if="${currentUserId == post.authorId}"
+                   th:href="@{/posts/{id}/edit(id=${post.id})}"
+                   class="btn btn-secondary">Edit Post</a>
 
-        </form>
+                <!-- Delete button - author OR moderator/owner -->
+                <form th:if="${currentUserId == post.authorId or currentUserRole == 'MODERATOR' or currentUserRole == 'OWNER'}"
+                      th:action="@{/posts/{id}/delete(id=${post.id})}"
+                      method="post"
+                      onsubmit="return confirm('Are you sure you want to delete this post?');">
+                    <button type="submit" class="btn btn-danger">Delete Post</button>
+                </form>
+            </div>
+        </div>
 
-        <!-- DELETE POST -->
-        <form th:action="@{/posts/{id}/delete(id=${post.id})}"
-              method="post">
-
-            <button type="submit">Delete</button>
-
-        </form>
-
-    </div>
-
-</div>
-
+    </article>
 
 <hr>
 
-<h3>Comments</h3>
 
+<!-- Comments Section -->
+<section class="comments-section">
+    <h2>Comments (<span th:text="${comments.size()}">0</span>)</h2>
 
-<!-- COMMENT LIST -->
-<div th:each="comment : ${comments}"
-     th:style="'margin-left:' + ${comment.depth * 30} + 'px;'"
-     class="comment">
+    <!-- Comment List -->
+    <div th:each="comment : ${comments}"
+         th:style="'margin-left: ' + ${comment.depth * 30} + 'px;'"
+         class="comment-thread">
 
-    <!-- Username -->
-    <p>
-        <b th:text="${comment.username}"></b>
-        <span th:if="${comment.deleted}" style="color: #888; font-size: 0.9em;"> (deleted)</span>
-    </p>
+        <div class="comment" th:classappend="${comment.deleted ? 'deleted-comment' : ''}">
 
-    <!-- Content -->
-    <!-- COMMENT CONTENT -->
+            <!-- Username -->
+            <div class="comment-header">
+                <strong th:text="${comment.deleted ? '[Deleted]' : comment.username}"></strong>
+            </div>
 
-    <p th:if="${comment.deleted}">
-        <i>[deleted]</i>
-    </p>
+            <!-- Content -->
+            <div class="comment-content">
+                <p th:if="${comment.deleted}">
+                    <em>[Comment deleted]</em>
+                </p>
+                <p th:unless="${comment.deleted}" th:text="${comment.content}">
+                    Comment text...
+                </p>
+            </div>
 
-    <p th:if="${!comment.deleted}"
-       th:text="${comment.content}">
-    </p>
+            <!-- Comment Actions -->
+            <div class="comment-actions" th:if="${currentUserId != null and !comment.deleted}">
+                <!-- Reply -->
+                <form th:action="@{/comments/reply/{id}(id=${comment.id})}" method="post">
+                    <input type="text" name="content" placeholder="Reply..." required>
+                    <button type="submit">Reply</button>
+                </form>
 
-    <!-- EDIT -->
-    <form th:if="${comment.authorId == currentUserId and !comment.deleted}"
-          th:action="@{/comments/{id}/edit(id=${comment.id})}"
-          method="post">
+                <!-- Edit - only own comment -->
+                <form th:if="${currentUserId == comment.authorId}"
+                      th:action="@{/comments/{id}/edit(id=${comment.id})}" method="post">
+                    <input type="text" name="newContent" th:value="${comment.content}" required>
+                    <button type="submit">Edit</button>
+                </form>
 
-        <input type="text"
-               name="newContent"
-               th:value="${comment.content}"
-               required>
+                <!-- Delete - own comment (or mod/owner if you allow) -->
+                <form th:action="@{/comments/{id}/delete(id=${comment.id})}" method="post">
+                    <button type="submit">Delete</button>
+                </form>
+            </div>
 
-        <button type="submit">Edit</button>
-    </form>
+        </div>
+    </div>
 
-    <!-- DELETE -->
-    <form th:if="${!comment.deleted}"
-          th:action="@{/comments/{id}/delete(id=${comment.id})}"
-          method="post">
-        <button>Delete</button>
-    </form>
+    <!-- No comments message -->
+    <p th:if="${comments.isEmpty()}" class="muted">No comments yet.</p>
 
-    <!-- REPLY -->
-    <form th:if="${!comment.deleted}"
-          th:action="@{/comments/reply/{id}(id=${comment.id})}"
-          method="post">
+    <!-- Add new top-level comment form -->
+    <div class="add-comment" th:if="${currentUserId != null}">
+        <h3>Leave a comment</h3>
+        <form th:action="@{/comments/post/{postId}(postId=${post.id})}" method="post">
+            <textarea name="content" rows="4" placeholder="Write your comment..." required></textarea>
+            <button type="submit">Post Comment</button>
+        </form>
+    </div>
+</section>
 
-        <input type="text"
-               name="content"
-               placeholder="Reply..."
-               required>
-
-        <button>Reply</button>
-    </form>
-
-</div>
-<!-- ADD COMMENT TO POST -->
-<div th:if="${currentUserId != null}" class="add-comment">
-    <h4>Leave a comment:</h4>
-    <form th:action="@{/comments/post/{postId}(postId=${post.id})}" method="post">
-        <textarea name="content" rows="3" placeholder="Write your comment here..." required
-                  style="width:100%; padding:8px;"></textarea>
-        <br>
-        <button type="submit">Post Comment</button>
-    </form>
-</div>
-
-
-
+</main>
 
 </body>
 </html>

@@ -29,16 +29,20 @@ public class Post {
     @Column(nullable = false, length = 10000)
     private String content;
 
+    @Column(nullable = false)
+    private boolean deleted = false;
+
     @Column(nullable = false, updatable = false)
     private Instant createdAt = Instant.now();
 
     protected Post() {}
 
-    public Post(Integer socialSpaceId, Integer authorId, String title, String content) {
+    public Post(Integer socialSpaceId, Integer authorId, String title, String content, boolean deleted) {
         this.socialSpaceId = socialSpaceId;
         this.authorId = authorId;
         this.title = title;
         this.content = content;
+        this.deleted = deleted;
     }
 
 
@@ -74,5 +78,12 @@ public class Post {
         this.content = content;
     }
 
+    public boolean isDeleted() {
+        return deleted;
+    }
+
+    public void setDeleted(boolean deleted) {
+        this.deleted = deleted;
+    }
 
 }

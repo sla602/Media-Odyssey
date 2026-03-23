@@ -110,34 +110,30 @@ public class PostController {
     }
 
     @GetMapping("/{postId}")
-    public String viewPost(@PathVariable Integer postId, Model model, HttpSession session,
-            Authentication authentication) {
+    public String viewPost(@PathVariable Integer postId, Model model, Authentication authentication) {
+
         Post post = postService.getPostById(postId);
+
         String username = userRepo.findById((long) post.getAuthorId())
                 .map(User::getUsername)
                 .orElse("Unknown");
 
         List<CommentDTO> comments = commentService.getCommentsWithDepth(postId);
 
-        // TODO: changed to use id from /auth. Please clean up in future.
-        User user = (User) authentication.getPrincipal();
-        Long currentUserId = user.getId();
+        User currentUser = (User) authentication.getPrincipal();
+        Integer currentUserId = currentUser.getId().intValue();
 
-        RoleType currentUserRole = null;
-
-        if (currentUserId != null) {
-            Optional<SocialSpaceRole> roleOpt = roleRepo
-                    .findByUserIdAndSocialSpaceId(currentUserId.intValue(), post.getSocialSpaceId());
-            if (roleOpt.isPresent()) {
-                currentUserRole = roleOpt.get().getRoleType();
-            }
-        }
+        RoleType currentUserRole = roleRepo.findByUserIdAndSocialSpaceId(currentUserId, post.getSocialSpaceId())
+                .map(SocialSpaceRole::getRoleType)
+                .orElse(null);
 
         model.addAttribute("post", post);
         model.addAttribute("postUsername", username);
         model.addAttribute("comments", comments);
-        model.addAttribute("currentUserId", currentUserId.intValue());
+        model.addAttribute("currentUserId", currentUserId);
         model.addAttribute("currentUserRole", currentUserRole);
+        model.addAttribute("postId", postId);
+        model.addAttribute("socialSpaceId", post.getSocialSpaceId());
 
         return "posts/view-post";
     }

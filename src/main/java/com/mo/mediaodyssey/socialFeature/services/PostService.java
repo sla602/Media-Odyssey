@@ -26,7 +26,7 @@ public class PostService {
     //Create a new post in a socialSpace by a user.
 
     public void createPost(Integer userId, Integer communityId, String title, String content){
-        Post post = new Post(communityId, userId, title, content);
+        Post post = new Post(communityId, userId, title, content,false);
         postRepo.save(post);
     }
 
@@ -36,19 +36,23 @@ public class PostService {
         Post post = postRepo.findById(postId)
                 .orElseThrow(() -> new IllegalStateException("Post not found"));
 
-        // Author can delete
-        if(post.getAuthorId().equals(actingUserId)){
-            postRepo.delete(post);
+        // Author can soft-delete
+        if (post.getAuthorId().equals(actingUserId)) {
+            post.setDeleted(true);
+            post.setContent("[deleted]");
+            postRepo.save(post);
             return;
         }
 
-        // Check if acting user is a moderator or owner in the community
+        // Moderator / Owner can soft-delete any post
         RoleType role = roleRepo.findByUserIdAndSocialSpaceId(actingUserId, post.getSocialSpaceId())
                 .map(SocialSpaceRole::getRoleType)
                 .orElse(null);
 
-        if(role == RoleType.OWNER || role == RoleType.MODERATOR){
-            postRepo.delete(post);
+        if (role == RoleType.OWNER || role == RoleType.MODERATOR) {
+            post.setDeleted(true);
+            post.setContent("[deleted]");
+            postRepo.save(post);
             return;
         }
 
@@ -57,7 +61,7 @@ public class PostService {
 
 
     public List<PostDTO> getPostsBySocialSpaceId(Integer communityId){
-        return postRepo.findPostsWithUserByCommunityId(communityId);
+        return postRepo.findPostsWithUserBySocialSpaceId(communityId);
     }
 
 
