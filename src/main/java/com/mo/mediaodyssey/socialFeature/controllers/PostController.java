@@ -18,7 +18,6 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.util.List;
-import java.util.Optional;
 
 @Controller
 @RequestMapping("/posts")
@@ -58,6 +57,49 @@ public class PostController {
         postService.createPost(userId.intValue(), socialSpaceId, title, content);
         redirectAttributes.addFlashAttribute("success", "Post created successfully");
         return "redirect:/socialSpaces/" + socialSpaceId;
+    }
+
+    @GetMapping("/{postId}/edit")
+    public String showEditPost(@PathVariable Integer postId,
+                               Model model,
+                               Authentication authentication,
+                               RedirectAttributes redirectAttributes) {
+
+        Post post = postService.getPostById(postId);
+        User user = (User) authentication.getPrincipal();
+        Integer currentUserId = user.getId().intValue();
+
+        if (!post.getAuthorId().equals(currentUserId)) {
+            redirectAttributes.addFlashAttribute("error", "You can only edit your own posts");
+            return "redirect:/posts/" + postId;
+        }
+
+        // We still need to load everything for the view
+        String username = userRepo.findById((long) post.getAuthorId())
+                .map(User::getUsername)
+                .orElse("Unknown");
+
+        List<CommentDTO> comments = commentService.getCommentsWithDepth(postId);
+
+        User currentUser = (User) authentication.getPrincipal();
+        Integer currUserId = currentUser.getId().intValue();
+
+        RoleType currentUserRole = roleRepo.findByUserIdAndSocialSpaceId(currUserId, post.getSocialSpaceId())
+                .map(SocialSpaceRole::getRoleType)
+                .orElse(null);
+
+        model.addAttribute("post", post);
+        model.addAttribute("postUsername", username);
+        model.addAttribute("comments", comments);
+        model.addAttribute("currentUserId", currUserId);
+        model.addAttribute("currentUserRole", currentUserRole);
+        model.addAttribute("postId", postId);
+        model.addAttribute("socialSpaceId", post.getSocialSpaceId());
+
+        // Tell the template we are in edit mode
+        model.addAttribute("editMode", true);
+
+        return "posts/view-post";
     }
 
     @PostMapping("/{postId}/edit")

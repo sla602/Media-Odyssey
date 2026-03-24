@@ -42,7 +42,6 @@
 
 <main class="container">
 
-    <!-- Post Content -->
     <article class="post-detail">
 
         <div th:if="${post.deleted}" class="deleted-notice">
@@ -52,33 +51,67 @@
         </div>
 
         <div th:unless="${post.deleted}">
-            <h1 th:text="${post.title}">Post Title</h1>
 
-            <div class="post-meta">
-                <span>Posted by <strong th:text="${postUsername}"></strong></span>
-                <span>•</span>
-                <!-- <span th:text="${#temporals.format(post.createdAt, 'MMM dd, yyyy HH:mm')}"></span> -->
-            </div>
+            <!-- EDIT MODE -->
+            <div th:if="${editMode}" class="edit-mode">
+                <form th:action="@{/posts/{id}/edit(id=${post.id})}" method="post">
 
-            <div class="post-content" th:utext="${post.content}">
-                Post content...
-            </div>
+                    <div class="form-group">
+                        <label for="title">Title:</label>
+                        <input type="text"
+                               id="title"
+                               name="title"
+                               th:value="${post.title}"
+                               class="form-control" required />
+                    </div>
 
-            <!-- Post Actions (edit / delete) -->
-            <div class="post-actions" th:if="${currentUserId != null}">
-                <!-- Edit button - only author -->
-                <a th:if="${currentUserId == post.authorId}"
-                   th:href="@{/posts/{id}/edit(id=${post.id})}"
-                   class="btn btn-secondary">Edit Post</a>
+                    <div class="form-group">
+                        <label for="content">Content:</label>
+                        <textarea id="content"
+                                  name="content"
+                                  rows="10"
+                                  class="form-control" th:text="${post.content}"> required>
+                    </textarea>
+                    </div>
 
-                <!-- Delete button - author OR moderator/owner -->
-                <form th:if="${currentUserId == post.authorId or currentUserRole == 'MODERATOR' or currentUserRole == 'OWNER'}"
-                      th:action="@{/posts/{id}/delete(id=${post.id})}"
-                      method="post"
-                      onsubmit="return confirm('Are you sure you want to delete this post?');">
-                    <button type="submit" class="btn btn-danger">Delete Post</button>
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary">Save Changes</button>
+                        <a th:href="@{/posts/{id}(id=${post.id})}" class="btn btn-secondary">Cancel</a>
+                    </div>
                 </form>
             </div>
+
+            <!-- NORMAL VIEW MODE -->
+            <div th:unless="${editMode}">
+                <h1 th:text="${post.title}">Post Title</h1>
+
+                <div class="post-meta">
+                    <span>Posted by <strong th:text="${postUsername}"></strong></span>
+                    <span>•</span>
+                    <!-- <span th:text="${#temporals.format(post.createdAt, 'MMM dd, yyyy HH:mm')}"></span> -->
+                </div>
+
+                <div class="post-content" th:utext="${post.content != null ? post.content : ''}">
+                    Post content...
+                </div>
+
+                <!-- Post Actions -->
+                <div class="post-actions" th:if="${currentUserId != null}">
+                    <!-- Edit button - only author -->
+                    <a th:if="${currentUserId == post.authorId}"
+                       th:href="@{/posts/{id}/edit(id=${post.id})}"
+                       class="btn btn-secondary">Edit Post</a>
+
+                    <!-- Delete button -->
+                    <form th:if="${currentUserId == post.authorId or currentUserRole == 'MODERATOR' or currentUserRole == 'OWNER'}"
+                          th:action="@{/posts/{id}/delete(id=${post.id})}"
+                          method="post"
+                          onsubmit="return confirm('Are you sure you want to delete this post?');">
+                        <button type="submit" class="btn btn-danger">Delete Post</button>
+                    </form>
+                </div>
+            </div>
+
         </div>
 
     </article>
@@ -88,11 +121,11 @@
 
 <!-- Comments Section -->
 <section class="comments-section">
-    <h2>Comments (<span th:text="${comments.size()}">0</span>)</h2>
+    <h2>Comments (<span th:text="${#lists.size(comments)}">0</span>)</h2>
 
     <!-- Comment List -->
     <div th:each="comment : ${comments}"
-         th:style="'margin-left: ' + ${comment.depth * 30} + 'px;'"
+         th:style="'margin-left: ' + ${(comment.depth != null ? comment.depth : 0) * 30} + 'px;'"
          class="comment-thread">
 
         <div class="comment" th:classappend="${comment.deleted ? 'deleted-comment' : ''}">
@@ -137,7 +170,7 @@
     </div>
 
     <!-- No comments message -->
-    <p th:if="${comments.isEmpty()}" class="muted">No comments yet.</p>
+    <p th:if="${#lists.isEmpty(comments)}" class="muted">No comments yet.</p>
 
     <!-- Add new top-level comment form -->
     <div class="add-comment" th:if="${currentUserId != null}">

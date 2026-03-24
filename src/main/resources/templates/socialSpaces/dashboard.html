@@ -47,11 +47,10 @@
     <h3>Your Communities</h3>
     <ul>
 
-        <li th:each="socialSpace : ${mySocialSpaces}">
-            <a th:href="@{/socialSpaces/{id}(id=${socialSpace.id})}"
-               th:text="${socialSpace.name}"
+        <li th:each="space : ${mySocialSpaces}">
+            <a th:href="@{/socialSpaces/{id}(id=${space.socialSpaceId})}"
+               th:text="${space.socialSpaceName}"
                class="community-link">
-                Community Name
             </a>
         </li>
 
@@ -113,27 +112,52 @@
     </ul>
 </div>
 
+<!-- FRIEND LIST -->
+<div class="section">
+    <h3>Your Friends</h3>
+    <ul>
+        <li th:each="friend : ${friends}">
+            <span th:text="${friend.username}"></span>   <!-- or ${friend.email} if you prefer -->
+        </li>
+        <li th:if="${#lists.isEmpty(friends)}">
+            You don't have any friends yet.
+        </li>
+    </ul>
+</div>
+
+<!-- INCOMING FRIEND REQUESTS -->
+<div class="section">
+    <h3>Incoming Friend Requests</h3>
+    <ul>
+        <li th:each="r : ${requests}">
+            <span th:text="${r.senderEmail}"></span>   <!-- Fixed: now uses senderEmail -->
+
+            <form th:action="@{/socialSpaces/friends/accept}" method="post">
+                <input type="hidden" name="requestId" th:value="${r.requestId}" />
+                <button type="submit">Accept</button>
+            </form>
+        </li>
+        <li th:if="${#lists.isEmpty(requests)}">
+            No incoming friend requests.
+        </li>
+    </ul>
+</div>
+
 <!-- SUGGESTED FRIENDS -->
 <div class="section">
     <h3>Suggested Friends</h3>
-
     <ul>
-
         <li th:each="user : ${suggested}">
-            <span th:text="${user.username}"></span>
+            <span th:text="${user.email}"></span>
 
             <form th:action="@{/socialSpaces/friends/request}" method="post">
-                <input type="hidden"
-                       name="friendId"
-                       th:value="${user.id}" />
+                <input type="hidden" name="friendId" th:value="${user.id}" />
                 <button type="submit">Add Friend</button>
             </form>
         </li>
-
         <li th:if="${#lists.isEmpty(suggested)}">
             No suggestions right now.
         </li>
-
     </ul>
 </div>
 

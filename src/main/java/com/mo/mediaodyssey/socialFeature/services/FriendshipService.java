@@ -3,6 +3,7 @@ package com.mo.mediaodyssey.socialFeature.services;
 import com.mo.mediaodyssey.auth.model.User;
 import com.mo.mediaodyssey.auth.repository.UserRepository;
 import com.mo.mediaodyssey.socialFeature.models.DTO.FriendRequestDTO;
+import com.mo.mediaodyssey.socialFeature.models.DTO.SocialSpaceDTO;
 import com.mo.mediaodyssey.socialFeature.models.Friendship;
 import com.mo.mediaodyssey.socialFeature.models.SocialSpace;
 import com.mo.mediaodyssey.socialFeature.repositories.FriendshipRepository;
@@ -63,7 +64,7 @@ public class FriendshipService {
 
     public List<User> getSuggestedFriends(Long userId) {
         List<Integer> socialSpaceIds = socialService.getUserSocialSpaces(userId.intValue()).stream()
-                .map(SocialSpace::getId)
+                .map(SocialSpaceDTO::getSocialSpaceId)
                 .collect(Collectors.toList());
 
         List<User> candidates = userRepo.findUsersInSocialSpacesExcludingFriends(userId, socialSpaceIds);
