@@ -42,24 +42,24 @@
     </a>
 </div>
 
-<!-- USER COMMUNITIES -->
-<div class="section">
-    <h3>Your Communities</h3>
-    <ul>
+<!--&lt;!&ndash; USER COMMUNITIES &ndash;&gt;-->
+<!--<div class="section">-->
+<!--    <h3>Your Communities</h3>-->
+<!--    <ul>-->
 
-        <li th:each="space : ${mySocialSpaces}">
-            <a th:href="@{/socialSpaces/{id}(id=${space.socialSpaceId})}"
-               th:text="${space.socialSpaceName}"
-               class="community-link">
-            </a>
-        </li>
+<!--        <li th:each="space : ${mySocialSpaces}">-->
+<!--            <a th:href="@{/socialSpaces/{id}(id=${space.socialSpaceId})}"-->
+<!--               th:text="${space.socialSpaceName}"-->
+<!--               class="community-link">-->
+<!--            </a>-->
+<!--        </li>-->
 
-        <li th:if="${#lists.isEmpty(mySocialSpaces)}">
-            You have not joined any communities yet.
-        </li>
+<!--        <li th:if="${#lists.isEmpty(mySocialSpaces)}">-->
+<!--            You have not joined any communities yet.-->
+<!--        </li>-->
 
-    </ul>
-</div>
+<!--    </ul>-->
+<!--</div>-->
 
 <!-- MODERATION -->
 <div class="section">
@@ -95,7 +95,7 @@
     <ul>
 
         <li th:each="r : ${requests}">
-            <span th:text="${r.senderUsername}"></span>
+            <span th:text="${r.senderEmail}"></span>
 
             <form th:action="@{/socialSpaces/friends/accept}" method="post">
                 <input type="hidden"
@@ -112,36 +112,7 @@
     </ul>
 </div>
 
-<!-- FRIEND LIST -->
-<div class="section">
-    <h3>Your Friends</h3>
-    <ul>
-        <li th:each="friend : ${friends}">
-            <span th:text="${friend.username}"></span>   <!-- or ${friend.email} if you prefer -->
-        </li>
-        <li th:if="${#lists.isEmpty(friends)}">
-            You don't have any friends yet.
-        </li>
-    </ul>
-</div>
 
-<!-- INCOMING FRIEND REQUESTS -->
-<div class="section">
-    <h3>Incoming Friend Requests</h3>
-    <ul>
-        <li th:each="r : ${requests}">
-            <span th:text="${r.senderEmail}"></span>   <!-- Fixed: now uses senderEmail -->
-
-            <form th:action="@{/socialSpaces/friends/accept}" method="post">
-                <input type="hidden" name="requestId" th:value="${r.requestId}" />
-                <button type="submit">Accept</button>
-            </form>
-        </li>
-        <li th:if="${#lists.isEmpty(requests)}">
-            No incoming friend requests.
-        </li>
-    </ul>
-</div>
 
 <!-- SUGGESTED FRIENDS -->
 <div class="section">

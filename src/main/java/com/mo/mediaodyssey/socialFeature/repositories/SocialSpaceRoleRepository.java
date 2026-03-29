@@ -25,15 +25,15 @@ public interface SocialSpaceRoleRepository extends JpaRepository<SocialSpaceRole
      * Returns SocialSpaceDTO for all communities the user has joined
      */
     @Query("""
-        SELECT new com.mo.mediaodyssey.socialFeature.models.DTO.SocialSpaceDTO(
-            ss.id,
-            ss.name
-        )
-        FROM SocialSpace ss
-        JOIN SocialSpaceRole ssr ON ss.id = ssr.socialSpaceId
-        WHERE ssr.userId = :userId
-        """)
-    List<SocialSpaceDTO> findSocialSpacesByUserId(@Param("userId") Integer userId);
+    SELECT new com.mo.mediaodyssey.socialFeature.models.DTO.SocialSpaceDTO(
+        ss.id,
+        ss.name
+    )
+    FROM SocialSpaceRole ssr
+    JOIN SocialSpace ss ON ssr.socialSpaceId = ss.id
+    WHERE ssr.userId = :userId
+    """)
+    List<SocialSpaceDTO> findSocialSpacesInvolvedByUserId(@Param("userId") Integer userId);
 
     /**
      * Returns members of a social space as SocialSpaceMemberDTO
@@ -78,18 +78,18 @@ public interface SocialSpaceRoleRepository extends JpaRepository<SocialSpaceRole
      * Returns only communities owned by the user as SocialSpaceDTO
      */
     @Query("""
-        SELECT new com.mo.mediaodyssey.socialFeature.models.DTO.SocialSpaceDTO(
-            ss.id,
-            ss.name
-        )
-        FROM SocialSpaceRole ssr
-        JOIN SocialSpace ss ON ssr.socialSpaceId = ss.id
-        WHERE ssr.userId = :userId
-          AND ssr.roleType = com.mo.mediaodyssey.socialFeature.enums.RoleType.OWNER
-        """)
+    SELECT new com.mo.mediaodyssey.socialFeature.models.DTO.SocialSpaceDTO(
+        ss.id,
+        ss.name
+    )
+    FROM SocialSpaceRole ssr
+    JOIN SocialSpace ss ON ssr.socialSpaceId = ss.id
+    WHERE ssr.userId = :userId
+    """)
     List<SocialSpaceDTO> findSocialSpacesOwnedByUser(@Param("userId") Integer userId);
 
 
     Integer countBySocialSpaceId(Integer socialSpaceId);
 
+    boolean existsByUserIdAndSocialSpaceId(Integer userId, Integer socialSpaceId);
 }

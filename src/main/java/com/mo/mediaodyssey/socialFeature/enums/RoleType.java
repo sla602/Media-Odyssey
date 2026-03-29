@@ -4,6 +4,8 @@ import java.util.Set;
 
 public enum RoleType {
 
+    NONE(Set.of()), //No Permissions
+
     MEMBER(Set.of(
             Permission.CREATE_POST,
             Permission.CREATE_COMMENT,
@@ -57,6 +59,8 @@ public enum RoleType {
     public boolean isMember() {
         return this == MEMBER;
     }
+
+    public boolean isNone()      { return this == NONE; }
 
     public boolean isStaff() {
         return this == MODERATOR || this == OWNER;

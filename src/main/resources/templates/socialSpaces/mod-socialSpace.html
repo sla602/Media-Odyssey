@@ -102,21 +102,16 @@
 
 
     <!-- MEMBERS LIST -->
-
-    <div class="section" th:if="${members != null}">
-
+    <div class="section" th:if="${members != null and !#lists.isEmpty(members)}">
         <h3>Members</h3>
-
         <div class="scroll-box">
-
             <div class="member-row"
                  th:each="member : ${members}"
-                 th:if="${member.roleType.toString() == 'MEMBER'}">
+                 th:if="${member.roleType.name() == 'MEMBER'}">
 
                 <span th:text="${member.username}"></span>
 
                 <div class="actions">
-
                     <form method="post" th:action="@{/socialSpaces/{socialSpaceId}/promote(socialSpaceId=${socialSpaceId})}">
                         <input type="hidden" name="targetUserId" th:value="${member.userId}">
                         <button type="submit">Promote</button>
@@ -129,76 +124,51 @@
 
                     <form method="post" th:action="@{/socialSpaces/{socialSpaceId}/transfer(socialSpaceId=${socialSpaceId})}">
                         <input type="hidden" name="targetUserId" th:value="${member.userId}">
-                        <button type="submit">Transfer</button>
+                        <button type="submit">Transfer Ownership</button>
                     </form>
-
                 </div>
-
             </div>
-
         </div>
-
     </div>
 
-
     <!-- MODERATORS -->
-
-    <div class="section" th:if="${members != null}">
-
+    <div class="section" th:if="${members != null and !#lists.isEmpty(members)}">
         <h3>Moderators</h3>
-
         <div class="scroll-box">
-
             <div class="member-row"
                  th:each="member : ${members}"
-                 th:if="${member.roleType.toString() == 'MODERATOR'}">
+                 th:if="${member.roleType.name() == 'MODERATOR'}">
 
                 <span th:text="${member.username}"></span>
 
                 <div class="actions">
-                    <!-- Demote -->
                     <form method="post" th:action="@{/socialSpaces/{socialSpaceId}/demote(socialSpaceId=${socialSpaceId})}">
                         <input type="hidden" name="targetUserId" th:value="${member.userId}">
-                        <button>Demote</button>
+                        <button type="submit">Demote</button>
                     </form>
 
-                    <!-- Transfer ownership -->
-                    <form method="post" th:action="@{socialSpaces/{socialSpaceId}/transfer(socialSpaceId=${socialSpaceId})}">
+                    <form method="post" th:action="@{/socialSpaces/{socialSpaceId}/transfer(socialSpaceId=${socialSpaceId})}">
                         <input type="hidden" name="targetUserId" th:value="${member.userId}">
-                        <button>Transfer</button>
+                        <button type="submit">Transfer Ownership</button>
                     </form>
                 </div>
-
             </div>
-
         </div>
-
     </div>
 
     <!-- OWNER -->
-
-    <div class="section" th:if="${members != null}">
-
+    <div class="section" th:if="${members != null and !#lists.isEmpty(members)}">
         <h3>Owner</h3>
-
         <div class="scroll-box">
-
             <div class="member-row"
                  th:each="member : ${members}"
-                 th:if="${member.roleType.toString() == 'OWNER'}">
+                 th:if="${member.roleType.name() == 'OWNER'}">
 
                 <span th:text="${member.username}"></span>
-
-                <span>(Owner)</span>
-
+                <span class="owner-label">(Owner)</span>
             </div>
-
         </div>
-
     </div>
-
-
-</div>
 
 </body>
 </html>

@@ -15,6 +15,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @Transactional
@@ -55,12 +56,24 @@ public class SocialService {
     }
 
     public void joinSocialSpace(Integer userId, Integer socialSpaceId) {
-        if (roleRepository.findByUserIdAndSocialSpaceId(userId, socialSpaceId).isPresent()) {
-            throw new IllegalStateException("Already a member");
+        Optional<SocialSpaceRole> existingRoleOpt = roleRepository
+                .findByUserIdAndSocialSpaceId(userId, socialSpaceId);
+
+        if (existingRoleOpt.isPresent()) {
+            RoleType role = existingRoleOpt.get().getRoleType();
+
+            if (role.isOwner()) {
+                throw new IllegalStateException("You are already the owner of this community.");
+            } else if (role.isModerator()) {
+                throw new IllegalStateException("You are already a moderator in this community.");
+            } else {
+                throw new IllegalStateException("You are already a member of this community.");
+            }
         }
 
-        SocialSpaceRole role = new SocialSpaceRole(userId, socialSpaceId, RoleType.MEMBER);
-        roleRepository.save(role);
+        // Add as new member
+        SocialSpaceRole newRole = new SocialSpaceRole(userId, socialSpaceId, RoleType.MEMBER);
+        roleRepository.save(newRole);
     }
 
     public void leaveSocialSpace(Integer userId, Integer socialSpaceId) {
@@ -77,32 +90,32 @@ public class SocialService {
 
 
 
-    public void createPost(Integer userId, Integer socialSpaceId, String title, String content) {
-        permissionService.canCreatePost(userId, socialSpaceId);
-
-        roleRepository.findByUserIdAndSocialSpaceId(userId, socialSpaceId)
-                .orElseThrow(() -> new RuntimeException("User not a member of this community"));
-
-        Post post = new Post(socialSpaceId, userId, title, content, false);
-        postRepository.save(post);
-    }
-
-    public void editPost(Integer userId, Integer postId, String newTitle, String newContent) {
-        Post post = postRepository.findById(postId)
-                .orElseThrow(() -> new RuntimeException("Post not found"));
-
-        if (!post.getAuthorId().equals(userId)) {
-            throw new RuntimeException("You can only edit your own posts");
-        }
-
-        Integer socialSpaceId = post.getSocialSpaceId();
-        roleRepository.findByUserIdAndSocialSpaceId(userId, socialSpaceId)
-                .orElseThrow(() -> new RuntimeException("You are not a member of this space"));
-
-        post.setTitle(newTitle);
-        post.setContent(newContent);
-        postRepository.save(post);
-    }
+//    public void createPost(Integer userId, Integer socialSpaceId, String title, String content) {
+//        permissionService.canCreatePost(userId, socialSpaceId);
+//
+//        roleRepository.findByUserIdAndSocialSpaceId(userId, socialSpaceId)
+//                .orElseThrow(() -> new RuntimeException("User not a member of this community"));
+//
+//        Post post = new Post(socialSpaceId, userId, title, content, false);
+//        postRepository.save(post);
+//    }
+//
+//    public void editPost(Integer userId, Integer postId, String newTitle, String newContent) {
+//        Post post = postRepository.findById(postId)
+//                .orElseThrow(() -> new RuntimeException("Post not found"));
+//
+//        if (!post.getAuthorId().equals(userId)) {
+//            throw new RuntimeException("You can only edit your own posts");
+//        }
+//
+//        Integer socialSpaceId = post.getSocialSpaceId();
+//        roleRepository.findByUserIdAndSocialSpaceId(userId, socialSpaceId)
+//                .orElseThrow(() -> new RuntimeException("You are not a member of this space"));
+//
+//        post.setTitle(newTitle);
+//        post.setContent(newContent);
+//        postRepository.save(post);
+//    }
 
     // Comment methods remain the same (they already delegate properly)
     public void createComment(Integer userId, Integer postId, String content) {
@@ -160,7 +173,7 @@ public class SocialService {
         commentService.softDeleteComment(commentId);
     }
 
-    // ==================== Role & Moderation Methods ====================
+    // Role & Moderation Methods
 
     public void promoteMember(Integer actingUserId, Integer targetUserId, Integer socialSpaceId) {
         permissionService.canPromoteMember(actingUserId, socialSpaceId);
@@ -261,7 +274,7 @@ public class SocialService {
      * Returns list of SocialSpaceDTO for the user's joined communities
      */
     public List<SocialSpaceDTO> getUserSocialSpaces(Integer userId) {
-        return roleRepository.findSocialSpacesByUserId(userId);
+        return roleRepository.findSocialSpacesInvolvedByUserId(userId);
     }
 
     public List<SocialSpaceMemberDTO> getSocialSpaceMembers(Integer socialSpaceId) {
@@ -274,5 +287,9 @@ public class SocialService {
 
     public List<SocialSpaceMemberDTO> searchSocialSpaceMembers(Integer socialSpaceId, String search) {
         return roleRepository.searchSocialSpaceMembers(socialSpaceId, search);
+    }
+
+    public boolean isUserInSocialSpace(Integer userId, Integer socialSpaceId) {
+        return roleRepository.existsByUserIdAndSocialSpaceId(userId, socialSpaceId);
     }
 }

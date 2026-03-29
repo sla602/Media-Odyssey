@@ -86,12 +86,18 @@ public class PermissionService {
 
     public boolean hasPermission(Integer userId, Integer socialSpaceId, Permission permission) {
 
-        Optional<SocialSpaceRole> roleOpt =
-                roleRepository.findByUserIdAndSocialSpaceId(userId, socialSpaceId);
+        Optional<SocialSpaceRole> roleOpt = roleRepository.findByUserIdAndSocialSpaceId(userId, socialSpaceId);
 
-        if (roleOpt.isEmpty()) return false;
+        if (roleOpt.isEmpty()) {
+            return false;
+        }
 
         return roleOpt.get().getRoleType().hasPermission(permission);
+    }
+
+
+    public boolean isUserInSocialSpace(Integer userId, Integer socialSpaceId) {
+        return roleRepository.existsByUserIdAndSocialSpaceId(userId, socialSpaceId);
     }
 
     //TODO: collapse with board
