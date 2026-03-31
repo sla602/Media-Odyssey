@@ -8,26 +8,27 @@ import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 
-public interface PostRepository extends JpaRepository<Post,Integer> {
+public interface PostRepository extends JpaRepository<Post,Long> {
 
-    List<Post> findByAuthorId(Integer authorId);
+    List<Post> findByAuthorId(Long authorId);
 
-    boolean existsByIdAndAuthorId(Integer postId, Integer authorId);
+    boolean existsByIdAndAuthorId(Long postId, Long authorId);
 
     @Query("""
 
             SELECT new com.mo.mediaodyssey.socialFeature.models.DTO.PostDTO(
     p.id,
-    p.socialSpaceId,
+    p.boardId,
+    p.authorId,
     p.title,
     p.content,
-    u.username,
-    p.deleted
+    p.deleted,
+    p.createdAt
 )
 FROM Post p
 JOIN User u ON p.authorId = u.id
-WHERE p.socialSpaceId = :socialSpaceId
+WHERE p.boardId = :boardId
 ORDER BY p.createdAt DESC
 """)
-    List<PostDTO> findPostsWithUserBySocialSpaceId(@Param("socialSpaceId") Integer socialSpaceId);
+    List<PostDTO> findPostsWithUserByBoardId(@Param("boardId") Long boardId);
 }

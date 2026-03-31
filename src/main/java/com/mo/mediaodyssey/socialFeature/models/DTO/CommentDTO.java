@@ -2,19 +2,19 @@ package com.mo.mediaodyssey.socialFeature.models.DTO;
 
 public class CommentDTO {
 
-    private Integer id;
-    private Integer postId;
-    private Integer authorId;
-    private Integer parentId;
+    private Long id;
+    private Long postId;
+    private Long authorId;
+    private Long parentId;
     private String content;
     private String username;
     private boolean deleted;
     private int depth;
 
-    public CommentDTO(Integer id,
-                      Integer postId,
-                      Integer authorId,
-                      Integer parentId,
+    public CommentDTO(Long id,
+                      Long postId,
+                      Long authorId,
+                      Long parentId,
                       String content,
                       String username,
                       int depth,
@@ -29,10 +29,10 @@ public class CommentDTO {
         this.deleted = deleted;
     }
 
-    public Integer getId() { return id; }
-    public Integer getPostId() { return postId; }
-    public Integer getAuthorId() { return authorId; }
-    public Integer getParentId() { return parentId; }
+    public Long getId() { return id; }
+    public Long getPostId() { return postId; }
+    public Long getAuthorId() { return authorId; }
+    public Long getParentId() { return parentId; }
     public String getContent() { return content; }
     public String getUsername() { return username; }
     public int getDepth() { return depth; }

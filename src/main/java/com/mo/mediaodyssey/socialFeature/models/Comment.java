@@ -17,16 +17,16 @@ public class Comment {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer id;
+    private Long id;
 
     @Column(name = "post_id", nullable = false)
-    private Integer postId;
+    private Long postId;
 
     @Column(name = "author_id", nullable = false)
-    private Integer authorId;
+    private Long authorId;
 
     @Column(name = "parent_id")
-    private Integer parentId;
+    private Long parentId;
 
     @Column(nullable = false, length = 5000)
     private String content;
@@ -41,7 +41,7 @@ public class Comment {
 
     protected Comment() {}
 
-    public Comment(Integer postId, Integer authorId, Integer parentId, String content, boolean deleted) {
+    public Comment(Long postId, Long authorId, Long parentId, String content, boolean deleted) {
         this.postId = postId;
         this.authorId = authorId;
         this.parentId = parentId;
@@ -49,19 +49,19 @@ public class Comment {
         this.deleted = deleted;
     }
 
-    public Integer getId() {
+    public Long getId() {
         return id;
     }
 
-    public Integer getPostId() {
+    public Long getPostId() {
         return postId;
     }
 
-    public Integer getAuthorId() {
+    public Long getAuthorId() {
         return authorId;
     }
 
-    public Integer getParentId() {
+    public Long getParentId() {
         return parentId;
     }
 

@@ -8,20 +8,20 @@ import java.time.Instant;
 @Entity
 @Table(name="post",
 indexes = {
-        @Index(name = "idx_post_social_space_id", columnList = "social_space_id"),
+        @Index(name = "idx_post_board_id", columnList = "board_id"),
         @Index(name = "idx_post_author", columnList = "author_id")
 })
 public class Post {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer id;
+    private Long id;
 
 
-    @Column(name = "social_space_id", nullable = false)
-    private Integer socialSpaceId;
+    @Column(name = "board_id", nullable = false)
+    private Long boardId;
 
     @Column(name = "author_id", nullable = false)
-    private Integer authorId;
+    private Long authorId;
 
     @Column(nullable = false, length = 200)
     private String title;
@@ -37,8 +37,8 @@ public class Post {
 
     protected Post() {}
 
-    public Post(Integer socialSpaceId, Integer authorId, String title, String content, boolean deleted) {
-        this.socialSpaceId = socialSpaceId;
+    public Post(Long boardId, Long authorId, String title, String content, boolean deleted) {
+        this.boardId = boardId;
         this.authorId = authorId;
         this.title = title;
         this.content = content;
@@ -46,15 +46,15 @@ public class Post {
     }
 
 
-    public Integer getId() {
+    public Long getId() {
         return id;
     }
 
-    public Integer getSocialSpaceId() {
-        return socialSpaceId;
+    public Long getBoardId() {
+        return boardId;
     }
 
-    public Integer getAuthorId() {
+    public Long getAuthorId() {
         return authorId;
     }
 

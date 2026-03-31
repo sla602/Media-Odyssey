@@ -63,18 +63,77 @@
                 <!-- This section will be reserved for Post (Prab) -->
                 <div class="board-POST-container" id="postsContainer"></div>
 
-                <!-- MEDIA: this section is to display the media, which is whatever user has put in the board. 
-                Aim for now: show movies -->
-                <div class="board-MEDIA-container" id="mediaContainer" style="display: none;">
 
-                    <!-- === Movie cards display ==== -->
-                    <div class="movie-card-display">
-                        <h1> movie </h1>
+                <!-- Create Post Form -->
+                <div class="create-post-section">
+                    <form th:action="@{/boards/display/{id}/posts(id=${board.id})}" method="post" class="create-post-form">
+                        <input type="text" name="title" class="post-input-title"
+                               placeholder="Post title" maxlength="200" required/>
+                        <textarea name="content" class="post-input-content"
+                                  placeholder="What's on your mind?" maxlength="10000"
+                                  rows="4" required></textarea>
+                        <div class="create-post-actions">
+                            <button type="submit" class="btn-submit">Post</button>
+                        </div>
+                    </form>
+                </div>
 
-                        <div class="movie-card" th:each="movie : ${movies}"></div>
+                <!-- Post List -->
+                <div th:if="${#lists.isEmpty(posts)}">
+                    <p class="empty-message">No posts yet. Be the first to post!</p>
+                </div>
+
+                <div th:each="post : ${posts}" class="post-card">
+                    <!-- Clickable area — links to post view page -->
+                    <a th:href="@{/boards/display/{boardId}/posts/{postId}(boardId=${board.id}, postId=${post.id})}" class="post-card-link">
+                        <div class="post-card-header">
+                            <span class="post-author" th:text="'User #' + ${post.authorId}"></span>
+                            <span class="post-time" th:text="${#temporals.format(post.createdAt, 'MMM d, yyyy h:mm a')}"></span>
+                        </div>
+                        <h3 class="post-card-title" th:text="${post.title}"></h3>
+                        <p class="post-card-content" th:text="${post.content}"></p>
+                    </a>
+
+                    <!-- Action Buttons -->
+                    <div class="post-card-actions">
+
+                        <!-- OP viewing their own post: delete, edit, reply -->
+                        <th:block th:if="${post.authorId == currentUserId}">
+                            <form th:action="@{/boards/display/{boardId}/posts/{postId}/delete(boardId=${board.id}, postId=${post.id})}"
+                                  method="post" class="action-form">
+                                <button type="submit" class="action-btn action-delete"
+                                        onclick="return confirm('Delete this post?')">Delete</button>
+                            </form>
+                            <a th:href="@{/boards/display/{boardId}/posts/{postId}/edit(boardId=${board.id}, postId=${post.id})}"
+                               class="action-btn action-edit">Edit</a>
+                            <a th:href="@{/boards/display/{boardId}/posts/{postId}(boardId=${board.id}, postId=${post.id})}"
+                               class="action-btn action-reply">Reply</a>
+                        </th:block>
+
+                        <!-- Owner or Moderator viewing someone else's post: delete, reply, report -->
+                        <th:block th:if="${post.authorId != currentUserId and (currentUserRole == 'OWNER' or currentUserRole == 'MODERATOR')}">
+                            <form th:action="@{/boards/display/{boardId}/posts/{postId}/delete(boardId=${board.id}, postId=${post.id})}"
+                                  method="post" class="action-form">
+                                <button type="submit" class="action-btn action-delete"
+                                        onclick="return confirm('Delete this post?')">Delete</button>
+                            </form>
+                            <a th:href="@{/boards/display/{boardId}/posts/{postId}(boardId=${board.id}, postId=${post.id})}"
+                               class="action-btn action-reply">Reply</a>
+                            <a href="#" class="action-btn action-report">Report</a>
+                        </th:block>
+
+                        <!-- Regular member viewing someone else's post: reply, report -->
+                        <th:block th:if="${post.authorId != currentUserId and currentUserRole == 'MEMBER'}">
+                            <a th:href="@{/boards/display/{boardId}/posts/{postId}(boardId=${board.id}, postId=${post.id})}"
+                               class="action-btn action-reply">Reply</a>
+                            <a href="#" class="action-btn action-report">Report</a>
+                        </th:block>
+
                     </div>
                 </div>
             </div>
+
+
 
             <!-- Footer Section: in thoughts progress...-->
         </main>

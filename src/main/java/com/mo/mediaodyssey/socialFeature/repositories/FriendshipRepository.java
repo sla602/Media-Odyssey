@@ -8,16 +8,16 @@ import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 
-public interface FriendshipRepository extends JpaRepository<Friendship, Integer> {
+public interface FriendshipRepository extends JpaRepository<Friendship, Long> {
 
-    List<Friendship> findByUserIdOrFriendIdAndAcceptedTrue(Integer userId1, Integer userId2);
+    List<Friendship> findByUserIdOrFriendIdAndAcceptedTrue(Long userId1, Long userId2);
 
-//    Optional<Friendship> findByUserIdAndFriendId(Integer userId, Integer friendId);
-//    List<Friendship> findByFriendIdAndAcceptedFalse(Integer friendId);
+//    Optional<Friendship> findByUserIdAndFriendId(Long userId, Long friendId);
+//    List<Friendship> findByFriendIdAndAcceptedFalse(Long friendId);
 
-    boolean existsByUserIdAndFriendId(Integer userId, Integer friendId);
+    boolean existsByUserIdAndFriendId(Long userId, Long friendId);
 
-    boolean existsByFriendIdAndUserId(Integer userId, Integer friendId);
+    boolean existsByFriendIdAndUserId(Long userId, Long friendId);
 
     @Query("""
         SELECT new com.mo.mediaodyssey.socialFeature.models.DTO.FriendRequestDTO(
@@ -30,5 +30,5 @@ public interface FriendshipRepository extends JpaRepository<Friendship, Integer>
         WHERE f.friendId = :userId
           AND f.accepted = false
         """)
-    List<FriendRequestDTO> findIncomingRequests(@Param("userId") Integer userId);
+    List<FriendRequestDTO> findIncomingRequests(@Param("userId") Long userId);
 }

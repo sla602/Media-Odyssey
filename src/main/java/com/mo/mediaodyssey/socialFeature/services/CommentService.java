@@ -25,14 +25,14 @@ public class CommentService {
 
     // CREATE
     @Transactional
-    public void createComment(Integer userId, Integer postId, String content) {
+    public void createComment(Long userId, Long postId, String content) {
         Comment comment = new Comment(postId, userId, null, content, false);
         commentRepo.save(comment);
         entityManager.flush();
     }
 
     @Transactional
-    public void replyToComment(Integer userId, Integer parentCommentId, String content) {
+    public void replyToComment(Long userId, Long parentCommentId, String content) {
         Comment parent = commentRepo.findById(parentCommentId)
                 .orElseThrow(() -> new IllegalStateException("Parent comment not found"));
 
@@ -43,7 +43,7 @@ public class CommentService {
 
     // EDIT
     @Transactional
-    public void updateCommentContent(Integer commentId, String newContent) {
+    public void updateCommentContent(Long commentId, String newContent) {
         Comment comment = commentRepo.findById(commentId)
                 .orElseThrow(() -> new IllegalStateException("Comment not found"));
 
@@ -58,7 +58,7 @@ public class CommentService {
 
     // DELETE (soft)
     @Transactional
-    public void softDeleteComment(Integer commentId) {
+    public void softDeleteComment(Long commentId) {
         Comment comment = commentRepo.findById(commentId)
                 .orElseThrow(() -> new RuntimeException("Comment not found"));
 
@@ -74,17 +74,17 @@ public class CommentService {
     }
 
     // READ
-    public Integer getParentPostId(Integer commentId) {
+    public Long getParentPostId(Long commentId) {
         return commentRepo.findById(commentId)
                 .orElseThrow(() -> new IllegalStateException("Comment not found"))
                 .getPostId();
     }
 
     @Transactional(readOnly = true)
-    public List<CommentDTO> getCommentsWithDepth(Integer postId) {
+    public List<CommentDTO> getCommentsWithDepth(Long postId) {
         List<CommentDTO> comments = commentRepo.findCommentsWithUser(postId);
 
-        Map<Integer, List<CommentDTO>> repliesMap = comments.stream()
+        Map<Long, List<CommentDTO>> repliesMap = comments.stream()
                 .filter(c -> c.getParentId() != null)
                 .collect(Collectors.groupingBy(CommentDTO::getParentId));
 
@@ -99,7 +99,7 @@ public class CommentService {
     }
 
     private void appendReplies(CommentDTO comment, int depth,
-                               Map<Integer, List<CommentDTO>> repliesMap,
+                               Map<Long, List<CommentDTO>> repliesMap,
                                List<CommentDTO> result) {
         comment.setDepth(depth);
         result.add(comment);

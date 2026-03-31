@@ -1,30 +1,34 @@
 package com.mo.mediaodyssey.socialFeature.models.DTO;
 
+import java.time.Instant;
+
 public class PostDTO {
 
-    private Integer id;
-    private Integer socialSpaceId;
+    private Long id;
+    private Long boardId;
+    private Long authorId;
     private String title;
     private String content;
-    private String username;
     private boolean deleted;
+    private Instant createdAt;
 
-    public PostDTO(Integer id, Integer socialSpaceId, String title, String content, String username, boolean deleted){
+    public PostDTO(Long id, Long boardId, Long authorId, String title, String content,boolean deleted, Instant createdAt){
         this.id = id;
-        this.socialSpaceId = socialSpaceId;
+        this.boardId = boardId;
+        this.authorId = authorId;
         this.title = title;
         this.content = content;
-        this.username = username;
         this.deleted = deleted;
     }
 
-    public Integer getId(){ return id; }
-    public Integer getSocialSpaceId(){ return socialSpaceId; }
+    public Long getId(){ return id; }
+    public Long getBoardId(){ return boardId; }
+    public Long getAuthorId(){return authorId;}
     public String getTitle(){ return title; }
     public String getContent(){ return content; }
-    public String getUsername(){ return username; }
 
     public boolean isDeleted() {
         return deleted;
     }
+    public Instant getCreatedAt() { return createdAt;}
 }

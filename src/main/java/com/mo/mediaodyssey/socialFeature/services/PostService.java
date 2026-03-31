@@ -1,11 +1,11 @@
 package com.mo.mediaodyssey.socialFeature.services;
 
 import com.mo.mediaodyssey.socialFeature.enums.RoleType;
-import com.mo.mediaodyssey.socialFeature.models.SocialSpaceRole;
+import com.mo.mediaodyssey.layout.models.BoardRole;
 import com.mo.mediaodyssey.socialFeature.models.DTO.PostDTO;
 import com.mo.mediaodyssey.socialFeature.models.Post;
+import com.mo.mediaodyssey.layout.repositories.BoardRoleRepository;
 import com.mo.mediaodyssey.socialFeature.repositories.PostRepository;
-import com.mo.mediaodyssey.socialFeature.repositories.SocialSpaceRoleRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -16,37 +16,27 @@ import java.util.List;
 public class PostService {
 
     private final PostRepository postRepo;
-    private final SocialSpaceRoleRepository roleRepo;
+    private final BoardRoleRepository roleRepo;
 
-    public PostService(PostRepository postRepo, SocialSpaceRoleRepository roleRepo){
+    public PostService(PostRepository postRepo, BoardRoleRepository roleRepo) {
         this.postRepo = postRepo;
         this.roleRepo = roleRepo;
     }
 
-    //Create a new post in a socialSpace by a user.
-
-    public void createPost(Integer userId, Integer communityId, String title, String content){
-        Post post = new Post(communityId, userId, title, content,false);
+    public void createPost(Long userId, Long boardId, String title, String content) {
+        Post post = new Post(boardId, userId, title, content, false);
         postRepo.save(post);
     }
 
-    // Delete a post. Only the author, a community OWNER, or MODERATOR can delete it.
     @Transactional
-    public void deletePost(Integer actingUserId, Integer postId) {
+    public void deletePost(Long actingUserId, Long postId) {
         Post post = postRepo.findById(postId)
                 .orElseThrow(() -> new IllegalStateException("Post not found"));
 
-        // Author can soft-delete
-        if (post.getAuthorId().equals(actingUserId)) {
-            post.setDeleted(true);
-            post.setContent("[deleted]");
-            postRepo.save(post);
-            return;
-        }
 
         // Moderator / Owner can soft-delete any post
-        RoleType role = roleRepo.findByUserIdAndSocialSpaceId(actingUserId, post.getSocialSpaceId())
-                .map(SocialSpaceRole::getRoleType)
+        RoleType role = roleRepo.findByUserIdAndBoardId(actingUserId, post.getBoardId())
+                .map(BoardRole::getRoleType)
                 .orElse(null);
 
         if (role == RoleType.OWNER || role == RoleType.MODERATOR) {
@@ -59,34 +49,21 @@ public class PostService {
         throw new SecurityException("Not allowed to delete this post");
     }
 
-
-    public List<PostDTO> getPostsBySocialSpaceId(Integer communityId){
-        return postRepo.findPostsWithUserBySocialSpaceId(communityId);
+    public List<PostDTO> getPostsByBoardId(Long boardId) {
+        return postRepo.findPostsWithUserByBoardId(boardId);
     }
 
-
-    public void updatePost(Integer postId, String newTitle, String newContent) {
+    public void updatePost(Long postId, String newTitle, String newContent) {
         Post post = postRepo.findById(postId)
                 .orElseThrow(() -> new IllegalStateException("Post not found"));
 
         post.setTitle(newTitle);
         post.setContent(newContent);
-
         postRepo.save(post);
     }
 
-    public Post getPostById(Integer postId){
+    public Post getPostById(Long postId) {
         return postRepo.findById(postId)
                 .orElseThrow(() -> new IllegalStateException("Post not found"));
     }
-
-
-//    public List<Post> getPostsByAuthorId(Integer authorId){
-//        return postRepo.findByAuthorId(authorId);
-//    }
-//
-//
-//    public boolean existsByIdAndAuthorId(Integer postId, Integer authorId){
-//        return postRepo.existsByIdAndAuthorId(postId, authorId);
-//    }
 }

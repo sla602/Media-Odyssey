@@ -8,7 +8,7 @@ import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 
-public interface CommentRepository extends JpaRepository<Comment,Integer> {
+public interface CommentRepository extends JpaRepository<Comment,Long> {
 
     @Query("""
 SELECT new com.mo.mediaodyssey.socialFeature.models.DTO.CommentDTO(
@@ -26,6 +26,6 @@ JOIN User u ON c.authorId = u.id
 WHERE c.postId = :postId
 ORDER BY c.createdAt ASC
 """)
-    List<CommentDTO> findCommentsWithUser(@Param("postId") Integer postId);
+    List<CommentDTO> findCommentsWithUser(@Param("postId") Long postId);
 
 }
