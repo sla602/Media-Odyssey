@@ -38,17 +38,11 @@ public class ModerationService {
     // ─── Reports ─────────────────────────────────────────────────────
 
     public void reportPost(Long boardId, Long postId, Long reportedByUserId, Long contentAuthorId, String reason) {
-        if (reportRepo.existsByPostIdAndReportedByUserId(postId, reportedByUserId)) {
-            throw new IllegalStateException("You have already reported this post");
-        }
         Report report = Report.forPost(boardId, postId, reportedByUserId, contentAuthorId, reason);
         reportRepo.save(report);
     }
 
     public void reportComment(Long boardId, Long commentId, Long reportedByUserId, Long contentAuthorId, String reason) {
-        if (reportRepo.existsByCommentIdAndReportedByUserId(commentId, reportedByUserId)) {
-            throw new IllegalStateException("You have already reported this comment");
-        }
         Report report = Report.forComment(boardId, commentId, reportedByUserId, contentAuthorId, reason);
         reportRepo.save(report);
     }
@@ -96,10 +90,6 @@ public class ModerationService {
         BoardRole role = roleRepo.findByUserIdAndBoardId(targetUserId, boardId)
                 .orElseThrow(() -> new RuntimeException("User not in board"));
 
-        if (role.getRoleType().isOwner()) {
-            throw new RuntimeException("Cannot ban the owner");
-        }
-
         role.setRoleType(RoleType.BANNED);
         roleRepo.save(role);
     }
@@ -116,9 +106,6 @@ public class ModerationService {
         BoardRole role = roleRepo.findByUserIdAndBoardId(targetUserId, boardId)
                 .orElseThrow(() -> new RuntimeException("User not in board"));
 
-        if (!role.getRoleType().isBanned()) {
-            throw new RuntimeException("User is not banned");
-        }
 
         role.setRoleType(RoleType.MEMBER);
         roleRepo.save(role);

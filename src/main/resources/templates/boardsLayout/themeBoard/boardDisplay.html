@@ -171,7 +171,18 @@
                                 <th:block th:if="${!post.authorId.equals(currentUserId) and currentUserRole == 'MEMBER'}">
                                     <a th:href="@{/boards/display/{id}(id=${board.id}, view='post', postId=${post.id})}"
                                        class="action-btn action-reply">Reply</a>
-                                    <a href="#" class="action-btn action-report">Report</a>
+                                    <form th:action="@{/boards/display/{boardId}/posts/{postId}/report(
+        boardId=${board.id},
+        postId=${post.id})}"
+                                          method="post" class="action-form">
+
+                                        <input type="hidden" name="contentAuthorId" th:value="${post.authorId}" />
+                                        <input type="hidden" name="reason" value="Inappropriate content" />
+
+                                        <button type="submit" class="action-btn action-report">
+                                            Report
+                                        </button>
+                                    </form>
                                 </th:block>
                             </div>
                         </div>
@@ -217,7 +228,21 @@
                                 <a href="#" class="action-btn action-report">Report</a>
                             </th:block>
                             <th:block th:if="${!selectedPost.authorId.equals(currentUserId) and currentUserRole == 'MEMBER'}">
-                                <a href="#" class="action-btn action-report">Report</a>
+                                <form th:action="@{/boards/display/{boardId}/posts/{postId}/report(
+        boardId=${board.id},
+        postId=${selectedPost.id})}"
+                                      method="post" class="action-form">
+
+                                    <input type="hidden" name="contentAuthorId"
+                                           th:value="${selectedPost.authorId}" />
+
+                                    <input type="hidden" name="reason"
+                                           value="Inappropriate content" />
+
+                                    <button type="submit" class="action-btn action-report">
+                                        Report
+                                    </button>
+                                </form>
                             </th:block>
                         </div>
                     </div>
@@ -285,7 +310,17 @@
                                     <th:block th:if="${!comment.authorId.equals(currentUserId) and currentUserRole == 'MEMBER'}">
                                         <a href="#" class="action-btn action-reply"
                                            th:attr="onclick='toggleReply(' + ${comment.id} + ')'">Reply</a>
-                                        <a href="#" class="action-btn action-report">Report</a>
+                                        <form th:action="@{/boards/display/{boardId}/posts/{postId}/comments/{commentId}/report(
+        boardId=${board.id},
+        postId=${selectedPost.id},
+        commentId=${comment.id})}"
+                                              method="post">
+
+                                            <input type="hidden" name="contentAuthorId" th:value="${comment.authorId}" />
+                                            <input type="hidden" name="reason" value="Inappropriate content" />
+
+                                            <button type="submit">Report</button>
+                                        </form>
                                     </th:block>
                                 </div>
                             </div>
@@ -354,6 +389,22 @@
                                 <span class="post-time" th:text="${#temporals.format(report.createdAt, 'MMM d, yyyy h:mm a')}"></span>
                             </div>
                             <div class="report-card-body">
+                                <!-- POST CONTENT -->
+                                <div th:if="${postTitles[report.id] != null}">
+                                    <p><strong>Post Title:</strong>
+                                        <span th:text="${postTitles[report.id]}"></span>
+                                    </p>
+                                    <p><strong>Post Content:</strong>
+                                        <span th:text="${postContents[report.id]}"></span>
+                                    </p>
+                                </div>
+
+                                <!-- COMMENT CONTENT -->
+                                <div th:if="${commentContents[report.id] != null}">
+                                    <p><strong>Comment:</strong>
+                                        <span th:text="${commentContents[report.id]}"></span>
+                                    </p>
+                                </div>
                                 <p><strong>Reported by:</strong> User #<span th:text="${report.reportedByUserId}"></span></p>
                                 <p><strong>Content author:</strong> User #<span th:text="${report.contentAuthorId}"></span></p>
                                 <p><strong>Reason:</strong> <span th:text="${report.reason}"></span></p>
@@ -402,6 +453,14 @@
                                         <button type="submit" class="action-btn action-demote">Demote</button>
                                     </form>
                                 </th:block>
+                                <!-- Ban / Unban buttons for members who are not the OWNER and not the current user -->
+                                <th:block th:if="${member.roleType.name() != 'OWNER' and !member.userId.equals(currentUserId)}">
+                                    <!-- Unban button (if currently BANNED) -->
+                                    <th:block th:if="${member.roleType.name() == 'BANNED'}">
+                                        <form th:action="@{/boards/display/{boardId}/moderation/members/{userId}/unban(boardId=${board.id}, userId=${member.userId})}" method="post" class="action-form">
+                                            <button type="submit" class="action-btn action-unban" onclick="return confirm('Unban this member?')">Unban</button>
+                                        </form>
+                                    </th:block>
                                 <th:block th:if="${member.roleType.name() != 'OWNER' and !member.userId.equals(currentUserId)}">
                                     <form th:action="@{/boards/display/{boardId}/moderation/members/{userId}/ban(boardId=${board.id}, userId=${member.userId})}" method="post" class="action-form">
                                         <button type="submit" class="action-btn action-ban" onclick="return confirm('Ban this member?')">Ban</button>

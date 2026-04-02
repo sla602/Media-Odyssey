@@ -3,10 +3,13 @@ package com.mo.mediaodyssey.layout.controllers;
 import com.mo.mediaodyssey.layout.models.BoardRole;
 import com.mo.mediaodyssey.layout.repositories.BoardRoleRepository;
 import com.mo.mediaodyssey.socialFeature.enums.RoleType;
+import com.mo.mediaodyssey.socialFeature.models.Comment;
 import com.mo.mediaodyssey.socialFeature.models.DTO.CommentDTO;
 import com.mo.mediaodyssey.socialFeature.models.DTO.PostDTO;
 import com.mo.mediaodyssey.socialFeature.models.Post;
 import com.mo.mediaodyssey.socialFeature.models.Report;
+import com.mo.mediaodyssey.socialFeature.repositories.CommentRepository;
+import com.mo.mediaodyssey.socialFeature.repositories.PostRepository;
 import com.mo.mediaodyssey.socialFeature.repositories.ReportRepository;
 import com.mo.mediaodyssey.socialFeature.services.CommentService;
 import com.mo.mediaodyssey.socialFeature.services.ModerationService;
@@ -14,10 +17,7 @@ import com.mo.mediaodyssey.socialFeature.services.PostService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -51,8 +51,10 @@ public class BoardsController {
     private final CommentService commentService;
     private final ReportRepository reportRepository;
     private final ModerationService moderationService;
+    private final PostRepository postRepository;
+    private final CommentRepository commentRepository;
 
-    public BoardsController (BoardsService boardsService, BoardMediaRepository boardMediaRepository, MovieService movieService, PostService postService, BoardRoleRepository boardRoleRepository, CommentService commentService, ReportRepository reportRepository, ModerationService moderationService) {
+    public BoardsController (BoardsService boardsService, BoardMediaRepository boardMediaRepository, MovieService movieService, PostService postService, BoardRoleRepository boardRoleRepository, CommentService commentService, ReportRepository reportRepository, ModerationService moderationService, PostRepository postRepository, CommentRepository commentRepository) {
         this.boardsService = boardsService; 
         this.boardMediaRepository = boardMediaRepository;
         this.movieService = movieService;
@@ -61,6 +63,8 @@ public class BoardsController {
         this.commentService = commentService;
         this.reportRepository = reportRepository;
         this.moderationService = moderationService;
+        this.postRepository = postRepository;
+        this.commentRepository = commentRepository;
     }
 
 
@@ -187,7 +191,34 @@ public class BoardsController {
                         break;
                     default:
                         List<Report> reports = moderationService.getUnresolvedReports(id);
+                        Map<Long, String> postTitles = new HashMap<>();
+                        Map<Long, String> postContents = new HashMap<>();
+                        Map<Long, String> commentContents = new HashMap<>();
+
+                        for (Report report : reports) {
+
+                            // Fetch post data
+                            if (report.getPostId() != null) {
+                                postService.getPostById(report.getPostId()); // you already have this service
+
+                                postRepository.findById(report.getPostId()).ifPresent(post -> {
+                                    postTitles.put(report.getId(), post.getTitle());
+                                    postContents.put(report.getId(), post.getContent());
+                                });
+                            }
+
+                            // Fetch comment data
+                            if (report.getCommentId() != null) {
+                                commentRepository.findById(report.getCommentId()).ifPresent(comment -> {
+                                    commentContents.put(report.getId(), comment.getContent());
+                                });
+                            }
+                        }
+
                         model.addAttribute("reports", reports);
+                        model.addAttribute("postTitles", postTitles);
+                        model.addAttribute("postContents", postContents);
+                        model.addAttribute("commentContents", commentContents);
                         break;
                 }
                 break;
@@ -381,6 +412,12 @@ public class BoardsController {
     public String banFromReport(@PathVariable Long boardId, @PathVariable Long reportId) {
         moderationService.banFromReport(reportId);
         return "redirect:/boards/display/" + boardId + "?view=moderation&modTab=reports";
+    }
+
+    @PostMapping("/display/{boardId}/moderation/members/{userId}/unban")
+    public String unbanMember(@PathVariable Long boardId, @PathVariable Long userId) {
+        moderationService.unbanMember(userId, boardId);
+        return "redirect:/boards/display/" + boardId + "?view=moderation&modTab=members";
     }
 
     @PostMapping("/display/{boardId}/moderation/members/{userId}/ban")

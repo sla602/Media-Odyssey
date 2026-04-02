@@ -444,6 +444,22 @@ body {
 .action-demote { color: #fb923c; background: rgba(251, 146, 60, 0.1); border-color: rgba(251, 146, 60, 0.2); }
 .action-demote:hover { background: rgba(251, 146, 60, 0.25); color: #fdba74; }
 
+.action-unban {
+    color: #3b82f6; /* Blue text */
+    background: rgba(59, 130, 246, 0.15); /* Light blue background */
+    border-color: rgba(59, 130, 246, 0.3); /* Light blue border */
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s;
+}
+
+.action-unban:hover {
+    background: rgba(59, 130, 246, 0.3); /* Darker blue on hover */
+    color: #60a5fa; /* Lighter blue text on hover */
+}
+
 /* ===============================================================
         SINGLE POST VIEW
 ==================================================================*/
