@@ -67,6 +67,7 @@
                     <div class="board-meta">
                         <span class="board-type-badge" th:text="${board.board_type}"></span>
 
+
                         <!-- Join button (not a member yet) -->
                         <th:block th:if="${!isMember}">
                             <form th:action="@{/boards/display/{id}/join(id=${board.id})}" method="post" class="action-form">
@@ -77,7 +78,7 @@
                         <!-- Leave button (member but not owner) -->
                         <th:block th:if="${isMember and currentUserRole != 'OWNER'}">
                             <form th:action="@{/boards/display/{id}/leave(id=${board.id})}" method="post" class="action-form">
-                                <button type="submit" class="joined-btn" onclick="return confirm('Leave this board?')">Joined</button>
+                                <button type="submit" class="joined-btn" onclick="return confirm('Leave this board?')">Leave</button>
                             </form>
                         </th:block>
                     </div>

@@ -285,7 +285,7 @@ body {
         CREATE POST FORM
 ==================================================================*/
 
-.create-post-section { margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid rgba(99, 102, 241, 0.1); }
+.create-post-section { margin-top: 1.5rem; padding-top: 1.5rem; padding-bottom: 1.5rem; border-top: 1px solid rgba(99, 102, 241, 0.1); }
 
 .create-post-form {
     display: flex; flex-direction: column; gap: 0.75rem;
