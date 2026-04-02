@@ -1,6 +1,7 @@
 package com.mo.mediaodyssey.layout.repositories;
 
 import com.mo.mediaodyssey.layout.models.BoardRole;
+import com.mo.mediaodyssey.socialFeature.enums.RoleType;
 import com.mo.mediaodyssey.socialFeature.models.DTO.PostDTO;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -25,6 +26,9 @@ public interface BoardRoleRepository extends JpaRepository<BoardRole, Long> {
     void deleteByUserIdAndBoardId(Long userId, Long boardId);
 
     Long countByBoardId(Long boardId);
+
+    // All boards a user has joined (excluding banned)
+    List<BoardRole> findByUserIdAndRoleTypeNot(Long userId, RoleType roleType);
 
     // For ownership transfer
     List<BoardRole> findAllByBoardId(Long boardId);

@@ -78,6 +78,19 @@ public class BoardsService {
         boardsRepo.save(board);
     }
 
+    /**
+     * Returns all boards the user has joined (any role except BANNED).
+     * This replaces findBoardsByUser() for the homepage display.
+     */
+    public List<Boards> getJoinedBoards(Long userId) {
+        List<BoardRole> roles = roleRepo.findByUserIdAndRoleTypeNot(userId, RoleType.BANNED);
+
+        return roles.stream()
+                .map(role -> boardsRepo.findById(role.getBoardId()).orElse(null))
+                .filter(java.util.Objects::nonNull)
+                .collect(java.util.stream.Collectors.toList());
+    }
+
     public void deleteBoard(Long actingUserId, Long boardId) {
         permissionService.canDeleteBoard(actingUserId, boardId);
 
