@@ -36,6 +36,7 @@ public class Comment {
 
 
 
+
     @Column(nullable = false)
     private boolean deleted;
 

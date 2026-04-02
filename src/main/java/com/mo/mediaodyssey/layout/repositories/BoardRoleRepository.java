@@ -25,4 +25,31 @@ public interface BoardRoleRepository extends JpaRepository<BoardRole, Long> {
     void deleteByUserIdAndBoardId(Long userId, Long boardId);
 
     Long countByBoardId(Long boardId);
+
+    // For ownership transfer
+    List<BoardRole> findAllByBoardId(Long boardId);
+
+    // For members list (alphabetical by userId)
+    @Query("""
+    SELECT br
+    FROM BoardRole br
+    WHERE br.boardId = :boardId
+    ORDER BY br.userId ASC
+""")
+    List<BoardRole> findMembersByBoardId(@Param("boardId") Long boardId);
+
+
+    // Search members
+    @Query("""
+    SELECT br
+    FROM BoardRole br
+    WHERE br.boardId = :boardId
+    AND CAST(br.userId AS string) LIKE %:search%
+    ORDER BY br.userId ASC
+""")
+    List<BoardRole> searchMembersByBoardId(@Param("boardId") Long boardId,
+                                           @Param("search") String search);
+
+    // Hard delete support
+    void deleteByBoardId(Long boardId);
 }

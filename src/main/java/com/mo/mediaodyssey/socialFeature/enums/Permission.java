@@ -10,6 +10,7 @@ public enum Permission {
     //MODERATION
     DELETE_POST,
     KICK_MEMBER,
+    BAN_MEMBER,
     DELETE_COMMENT,
     REPORT,
 

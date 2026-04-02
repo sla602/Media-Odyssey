@@ -35,6 +35,30 @@
                 </div> --> 
 
                 <div class="board-Info">
+                    <!-- STAFF CONTROLS -->
+                    <div class="board-staff-tabs"
+                         th:if="${currentUserRole == 'OWNER' or currentUserRole == 'MODERATOR'}">
+
+                        <!-- Moderation -->
+                        <a th:href="@{/boards/display/{id}(id=${board.id}, view='moderation', modTab='reports')}"
+                           class="staff-tab-btn"
+                           th:classappend ="${currentView == 'moderation'} ? ' active'">
+                            Moderation
+
+                            <!-- REPORT BADGE -->
+                            <span class="report-badge" th:if="${reportCount > 0}">
+            <span th:text="${reportCount}"></span>
+        </span>
+                        </a>
+
+                        <!-- Ownership (ONLY OWNER) -->
+                        <a th:if="${currentUserRole == 'OWNER'}"
+                           th:href="@{/boards/display/{id}(id=${board.id}, view='settings')}"
+                           class="staff-tab-btn"
+                           th:classappend="${currentView == 'settings'} ? ' active'">
+                            Board Settings
+                        </a>
+                    </div>
                     <!-- BOARD TITLE -->
                     <h1 class="board-title" th:text="${board.board_name}"></h1>
 
@@ -55,91 +79,414 @@
             <!-- Middle Section: Community's Post + Media display -->
             <div class="board-middle">
                 <!-- Let user choose to either see the posts or the media in this board-->
-                <div class="middle-select">
-                    <button class="board-post active" id="postsBtn">POST</button>
-                    <button class="board-media active" id="mediaBtn">MEDIA</button>
-                </div>
+
+
+                <!-- ================================================================
+                    VIEW: POST LIST (default when currentView == 'posts')
+                    ================================================================ -->
+                <th:block th:if="${currentView == 'posts'}">
+
+                    <div class="middle-select">
+                        <button class="board-post active" id="postsBtn">POST</button>
+                        <button class="board-media" id="mediaBtn">MEDIA</button>
+                    </div>
 
                 <!-- This section will be reserved for Post (Prab) -->
-                <div class="board-POST-container" id="postsContainer"></div>
+                    <div class="board-POST-container" id="postsContainer">
 
-
-                <!-- Create Post Form -->
-                <div class="create-post-section">
-                    <form th:action="@{/boards/display/{id}/posts(id=${board.id})}" method="post" class="create-post-form">
-                        <input type="text" name="title" class="post-input-title"
-                               placeholder="Post title" maxlength="200" required/>
-                        <textarea name="content" class="post-input-content"
-                                  placeholder="What's on your mind?" maxlength="10000"
-                                  rows="4" required></textarea>
-                        <div class="create-post-actions">
-                            <button type="submit" class="btn-submit">Post</button>
+                        <div th:if="${#lists.isEmpty(posts)}">
+                            <p class="empty-message">No posts yet. Be the first to post!</p>
                         </div>
-                    </form>
-                </div>
 
-                <!-- Post List -->
-                <div th:if="${#lists.isEmpty(posts)}">
-                    <p class="empty-message">No posts yet. Be the first to post!</p>
-                </div>
+                        <div th:each="post : ${posts}" class="post-card">
+                            <a th:href="@{/boards/display/{id}(id=${board.id}, view='post', postId=${post.id})}"
+                               class="post-card-link">
+                                <div class="post-card-header">
+                                    <span class="post-author" th:text="'User #' + ${post.authorId}"></span>
+                                    <span class="post-time"
+                                          th:text="${#temporals.format(post.createdAt, 'MMM d, yyyy h:mm a')}"></span>
+                                </div>
+                                <h3 class="post-card-title" th:text="${post.title}"></h3>
+                                <p class="post-card-content" th:text="${post.content}"></p>
+                            </a>
 
-                <div th:each="post : ${posts}" class="post-card">
-                    <!-- Clickable area — links to post view page -->
-                    <a th:href="@{/boards/display/{boardId}/posts/{postId}(boardId=${board.id}, postId=${post.id})}" class="post-card-link">
-                        <div class="post-card-header">
-                            <span class="post-author" th:text="'User #' + ${post.authorId}"></span>
-                            <span class="post-time" th:text="${#temporals.format(post.createdAt, 'MMM d, yyyy h:mm a')}"></span>
+                            <div class="post-card-actions">
+                                <!-- OP: delete, edit, reply -->
+                                <th:block th:if="${post.authorId.equals(currentUserId)}">
+                                    <form th:action="@{/boards/display/{boardId}/posts/{postId}/delete(boardId=${board.id}, postId=${post.id})}"
+                                          method="post" class="action-form">
+                                        <button type="submit" class="action-btn action-delete"
+                                                onclick="return confirm('Delete this post?')">Delete</button>
+                                    </form>
+                                    <a th:href="@{/boards/display/{id}(id=${board.id}, view='post', postId=${post.id})}"
+                                       class="action-btn action-edit">Edit</a>
+                                    <a th:href="@{/boards/display/{id}(id=${board.id}, view='post', postId=${post.id})}"
+                                       class="action-btn action-reply">Reply</a>
+                                </th:block>
+
+                                <!-- Owner/Mod: delete, reply, report -->
+                                <th:block th:if="${!post.authorId.equals(currentUserId) and (currentUserRole == 'OWNER' or currentUserRole == 'MODERATOR')}">
+                                    <form th:action="@{/boards/display/{boardId}/posts/{postId}/delete(boardId=${board.id}, postId=${post.id})}"
+                                          method="post" class="action-form">
+                                        <button type="submit" class="action-btn action-delete"
+                                                onclick="return confirm('Delete this post?')">Delete</button>
+                                    </form>
+                                    <a th:href="@{/boards/display/{id}(id=${board.id}, view='post', postId=${post.id})}"
+                                       class="action-btn action-reply">Reply</a>
+                                    <a href="#" class="action-btn action-report">Report</a>
+                                </th:block>
+
+                                <!-- Member: reply, report -->
+                                <th:block th:if="${!post.authorId.equals(currentUserId) and currentUserRole == 'MEMBER'}">
+                                    <a th:href="@{/boards/display/{id}(id=${board.id}, view='post', postId=${post.id})}"
+                                       class="action-btn action-reply">Reply</a>
+                                    <a href="#" class="action-btn action-report">Report</a>
+                                </th:block>
+                            </div>
                         </div>
-                        <h3 class="post-card-title" th:text="${post.title}"></h3>
-                        <p class="post-card-content" th:text="${post.content}"></p>
-                    </a>
 
-                    <!-- Action Buttons -->
-                    <div class="post-card-actions">
-
-                        <!-- OP viewing their own post: delete, edit, reply -->
-                        <th:block th:if="${post.authorId == currentUserId}">
-                            <form th:action="@{/boards/display/{boardId}/posts/{postId}/delete(boardId=${board.id}, postId=${post.id})}"
-                                  method="post" class="action-form">
-                                <button type="submit" class="action-btn action-delete"
-                                        onclick="return confirm('Delete this post?')">Delete</button>
+                        <!-- Create Post Form (below posts) -->
+                        <div class="create-post-section">
+                            <form th:action="@{/boards/display/{id}/posts(id=${board.id})}"
+                                  method="post" class="create-post-form">
+                                <input type="text" name="title" class="post-input-title"
+                                       placeholder="Post title" maxlength="200" required/>
+                                <textarea name="content" class="post-input-content"
+                                          placeholder="What's on your mind?" maxlength="10000"
+                                          rows="4" required></textarea>
+                                <div class="create-post-actions">
+                                    <button type="submit" class="btn-submit">Post</button>
+                                </div>
                             </form>
-                            <a th:href="@{/boards/display/{boardId}/posts/{postId}/edit(boardId=${board.id}, postId=${post.id})}"
-                               class="action-btn action-edit">Edit</a>
-                            <a th:href="@{/boards/display/{boardId}/posts/{postId}(boardId=${board.id}, postId=${post.id})}"
-                               class="action-btn action-reply">Reply</a>
-                        </th:block>
-
-                        <!-- Owner or Moderator viewing someone else's post: delete, reply, report -->
-                        <th:block th:if="${post.authorId != currentUserId and (currentUserRole == 'OWNER' or currentUserRole == 'MODERATOR')}">
-                            <form th:action="@{/boards/display/{boardId}/posts/{postId}/delete(boardId=${board.id}, postId=${post.id})}"
-                                  method="post" class="action-form">
-                                <button type="submit" class="action-btn action-delete"
-                                        onclick="return confirm('Delete this post?')">Delete</button>
-                            </form>
-                            <a th:href="@{/boards/display/{boardId}/posts/{postId}(boardId=${board.id}, postId=${post.id})}"
-                               class="action-btn action-reply">Reply</a>
-                            <a href="#" class="action-btn action-report">Report</a>
-                        </th:block>
-
-                        <!-- Regular member viewing someone else's post: reply, report -->
-                        <th:block th:if="${post.authorId != currentUserId and currentUserRole == 'MEMBER'}">
-                            <a th:href="@{/boards/display/{boardId}/posts/{postId}(boardId=${board.id}, postId=${post.id})}"
-                               class="action-btn action-reply">Reply</a>
-                            <a href="#" class="action-btn action-report">Report</a>
-                        </th:block>
+                        </div>
 
                     </div>
-                </div>
+
+                    <!-- ============ MEDIA TAB ============ -->
+                    <div class="board-MEDIA-container" id="mediaContainer" style="display: none;">
+                        <div class="movie-card-display">
+                            <h1>movie</h1>
+                            <div class="movie-card" th:each="movie : ${movies}"></div>
+                        </div>
+                    </div>
+
+                </th:block>
+
+                <!-- ================================================================
+                     VIEW: SINGLE POST + COMMENTS (when currentView == 'post')
+                     ================================================================ -->
+                <th:block th:if="${currentView == 'post' and selectedPost != null}">
+
+                    <!-- Back button -->
+                    <a th:href="@{/boards/display/{id}(id=${board.id})}" class="back-link">Back to posts</a>
+
+                    <!-- Full Post -->
+                    <div class="post-view">
+                        <div class="post-view-header">
+                            <span class="post-author" th:text="'User #' + ${selectedPost.authorId}"></span>
+                            <span class="post-time"
+                                  th:text="${#temporals.format(selectedPost.createdAt, 'MMM d, yyyy h:mm a')}"></span>
+                        </div>
+
+                        <h1 class="post-view-title" th:text="${selectedPost.title}"></h1>
+                        <div class="post-view-content" th:text="${selectedPost.content}"></div>
+
+                        <div class="post-view-actions">
+                            <!-- OP: delete, edit -->
+                            <th:block th:if="${selectedPost.authorId.equals(currentUserId)}">
+                                <form th:action="@{/boards/display/{boardId}/posts/{postId}/delete(boardId=${board.id}, postId=${selectedPost.id})}"
+                                      method="post" class="action-form">
+                                    <button type="submit" class="action-btn action-delete"
+                                            onclick="return confirm('Delete this post?')">Delete</button>
+                                </form>
+                                <a href="#" class="action-btn action-edit">Edit</a>
+                            </th:block>
+
+                            <!-- Owner/Mod: delete, report -->
+                            <th:block th:if="${!selectedPost.authorId.equals(currentUserId) and (currentUserRole == 'OWNER' or currentUserRole == 'MODERATOR')}">
+                                <form th:action="@{/boards/display/{boardId}/posts/{postId}/delete(boardId=${board.id}, postId=${selectedPost.id})}"
+                                      method="post" class="action-form">
+                                    <button type="submit" class="action-btn action-delete"
+                                            onclick="return confirm('Delete this post?')">Delete</button>
+                                </form>
+                                <a href="#" class="action-btn action-report">Report</a>
+                            </th:block>
+
+                            <!-- Member: report -->
+                            <th:block th:if="${!selectedPost.authorId.equals(currentUserId) and currentUserRole == 'MEMBER'}">
+                                <a href="#" class="action-btn action-report">Report</a>
+                            </th:block>
+                        </div>
+                    </div>
+
+                    <!-- Comment Form -->
+                    <div class="comment-form-section">
+                        <form th:action="@{/boards/display/{boardId}/posts/{postId}/comments(boardId=${board.id}, postId=${selectedPost.id})}"
+                              method="post" class="create-post-form">
+                            <textarea name="content" class="post-input-content"
+                                      placeholder="Write a comment..." maxlength="5000"
+                                      rows="3" required></textarea>
+                            <div class="create-post-actions">
+                                <button type="submit" class="btn-submit">Comment</button>
+                            </div>
+                        </form>
+                    </div>
+
+
+                    <!--Comments List-->
+                    <div class="comments-section">
+                        <h2 class="comments-heading"
+                            th:text="${#lists.size(comments)} + ' Comment' + (${#lists.size(comments) != 1} ? 's' : '')"></h2>
+
+                        <div th:if="${#lists.isEmpty(comments)}">
+                            <p class="empty-message">No comments yet.</p>
+                        </div>
+
+                        <div th:each="comment : ${comments}" class="comment-card"
+                             th:style="'margin-left: ' + (${comment.depth} * 32) + 'px'">
+
+                            <div class="comment-header">
+                                <span class="post-author" th:text="'User #' + ${comment.authorId}"></span>
+                                <span class="post-time"
+                                      th:text="${#temporals.format(comment.createdAt, 'MMM d, yyyy h:mm a')}"></span>
+                            </div>
+
+                            <p class="comment-content" th:text="${comment.content}"></p>
+
+                            <div class="comment-actions" th:if="${!comment.deleted}">
+                                <!-- Comment OP: delete, edit, reply -->
+                                <th:block th:if="${comment.authorId.equals(currentUserId)}">
+                                    <form th:action="@{/boards/display/{boardId}/posts/{postId}/comments/{commentId}/delete(boardId=${board.id}, postId=${selectedPost.id}, commentId=${comment.id})}"
+                                          method="post" class="action-form">
+                                        <button type="submit" class="action-btn action-delete"
+                                                onclick="return confirm('Delete this comment?')">Delete</button>
+                                    </form>
+                                    <a href="#" class="action-btn action-edit">Edit</a>
+                                    <a href="#" class="action-btn action-reply"
+                                       th:attr="onclick='toggleReply(' + ${comment.id} + ')'">Reply</a>
+                                </th:block>
+
+                                <!-- Owner/Mod: delete, reply, report -->
+                                <th:block th:if="${!comment.authorId.equals(currentUserId) and (currentUserRole == 'OWNER' or currentUserRole == 'MODERATOR')}">
+                                    <form th:action="@{/boards/display/{boardId}/posts/{postId}/comments/{commentId}/delete(boardId=${board.id}, postId=${selectedPost.id}, commentId=${comment.id})}"
+                                          method="post" class="action-form">
+                                        <button type="submit" class="action-btn action-delete"
+                                                onclick="return confirm('Delete this comment?')">Delete</button>
+                                    </form>
+                                    <a href="#" class="action-btn action-reply"
+                                       th:attr="onclick='toggleReply(' + ${comment.id} + ')'">Reply</a>
+                                    <a href="#" class="action-btn action-report">Report</a>
+                                </th:block>
+
+                                <!-- Member: reply, report -->
+                                <th:block th:if="${!comment.authorId.equals(currentUserId) and currentUserRole == 'MEMBER'}">
+                                    <a href="#" class="action-btn action-reply"
+                                       th:attr="onclick='toggleReply(' + ${comment.id} + ')'">Reply</a>
+                                    <a href="#" class="action-btn action-report">Report</a>
+                                </th:block>
+                            </div>
+
+                            <!-- Inline reply form -->
+                            <div th:id="'reply-' + ${comment.id}" class="inline-reply-form" style="display: none;">
+                                <form th:action="@{/boards/display/{boardId}/posts/{postId}/comments/{commentId}/reply(boardId=${board.id}, postId=${selectedPost.id}, commentId=${comment.id})}"
+                                      method="post" class="create-post-form reply-form">
+                                    <textarea name="content" class="post-input-content"
+                                              placeholder="Write a reply..." maxlength="5000"
+                                              rows="2" required></textarea>
+                                    <div class="create-post-actions">
+                                        <button type="button" class="btn-cancel"
+                                                th:attr="onclick='toggleReply(' + ${comment.id} + ')'">Cancel</button>
+                                        <button type="submit" class="btn-submit">Reply</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+
+                </th:block>
+
+                <!-- ================================================================
+                    VIEW: MODERATION (Reports / Members / Ownership)
+                    ================================================================ -->
+                <th:block th:if="${currentView == 'moderation' and (currentUserRole == 'MODERATOR' or currentUserRole == 'OWNER')}">
+
+                    <a th:href="@{/boards/display/{id}(id=${board.id})}" class="back-link">&#8592; Back to board</a>
+                    <h2 class="section-title">Moderation</h2>
+
+                    <!-- Sub-tabs -->
+                    <div class="mod-sub-tabs">
+                        <a th:href="@{/boards/display/{id}(id=${board.id}, view='moderation', modTab='reports')}"
+                           class="mod-sub-tab" th:classappend="${modTab == 'reports'} ? ' mod-sub-active' : ''">
+                            Reports
+                            <span th:if="${reportCount > 0}" class="report-badge" th:text="${reportCount}"></span>
+                        </a>
+                        <a th:href="@{/boards/display/{id}(id=${board.id}, view='moderation', modTab='members')}"
+                           class="mod-sub-tab" th:classappend="${modTab == 'members'} ? ' mod-sub-active' : ''">
+                            Members
+                        </a>
+                        <a th:if="${currentUserRole == 'OWNER'}"
+                           th:href="@{/boards/display/{id}(id=${board.id}, view='moderation', modTab='ownership')}"
+                           class="mod-sub-tab mod-sub-owner" th:classappend="${modTab == 'ownership'} ? ' mod-sub-active' : ''">
+                            Ownership
+                        </a>
+                    </div>
+
+                    <!-- ──── Reports Tab ──── -->
+                    <th:block th:if="${modTab == 'reports'}">
+                        <div th:if="${#lists.isEmpty(reports)}"><p class="empty-message">No unresolved reports.</p></div>
+
+                        <div th:each="report : ${reports}" class="report-card">
+                            <div class="report-card-header">
+                                <span class="report-type" th:text="${report.targetType.name() + ' Report'}"></span>
+                                <span class="post-time" th:text="${#temporals.format(report.createdAt, 'MMM d, yyyy h:mm a')}"></span>
+                            </div>
+                            <div class="report-card-body">
+                                <p><strong>Reported by:</strong> User #<span th:text="${report.reportedByUserId}"></span></p>
+                                <p><strong>Content author:</strong> User #<span th:text="${report.contentAuthorId}"></span></p>
+                                <p><strong>Reason:</strong> <span th:text="${report.reason}"></span></p>
+                                <p th:if="${report.postId != null}"><strong>Post ID:</strong> <span th:text="${report.postId}"></span></p>
+                                <p th:if="${report.commentId != null}"><strong>Comment ID:</strong> <span th:text="${report.commentId}"></span></p>
+                            </div>
+                            <div class="report-card-actions">
+                                <form th:action="@{/boards/display/{boardId}/moderation/reports/{reportId}/dismiss(boardId=${board.id}, reportId=${report.id})}" method="post" class="action-form">
+                                    <button type="submit" class="action-btn action-dismiss">Dismiss</button>
+                                </form>
+                                <form th:action="@{/boards/display/{boardId}/moderation/reports/{reportId}/delete-content(boardId=${board.id}, reportId=${report.id})}" method="post" class="action-form">
+                                    <button type="submit" class="action-btn action-delete" onclick="return confirm('Delete this content?')">
+                                        Delete <span th:text="${report.targetType.name() == 'COMMENT' ? 'Comment' : 'Post'}"></span>
+                                    </button>
+                                </form>
+                                <form th:action="@{/boards/display/{boardId}/moderation/reports/{reportId}/ban(boardId=${board.id}, reportId=${report.id})}" method="post" class="action-form">
+                                    <button type="submit" class="action-btn action-ban" onclick="return confirm('Ban this user and delete content?')">Ban User</button>
+                                </form>
+                            </div>
+                        </div>
+                    </th:block>
+
+                    <!-- ──── Members Tab ──── -->
+                    <th:block th:if="${modTab == 'members'}">
+                        <form th:action="@{/boards/display/{id}(id=${board.id})}" method="get" class="member-search-form">
+                            <input type="hidden" name="view" value="moderation"/>
+                            <input type="hidden" name="modTab" value="members"/>
+                            <input type="text" name="search" class="post-input-title" placeholder="Search by user ID..." th:value="${search}"/>
+                            <button type="submit" class="btn-submit">Search</button>
+                        </form>
+
+                        <div th:if="${#lists.isEmpty(members)}"><p class="empty-message">No members found.</p></div>
+
+                        <div th:each="member : ${members}" class="member-card">
+                            <div class="member-info">
+                                <span class="member-name" th:text="'User #' + ${member.userId}"></span>
+                                <span class="member-role-badge"
+                                      th:text="${member.roleType.name()}"
+                                      th:classappend="${member.roleType.name() == 'OWNER'} ? ' role-owner' : (${member.roleType.name() == 'MODERATOR'} ? ' role-mod' : '')"></span>
+                            </div>
+                            <div class="member-actions">
+                                <th:block th:if="${currentUserRole == 'OWNER' and member.roleType.name() == 'MEMBER'}">
+                                    <form th:action="@{/boards/display/{boardId}/moderation/members/{userId}/promote(boardId=${board.id}, userId=${member.userId})}" method="post" class="action-form">
+                                        <button type="submit" class="action-btn action-promote">Promote</button>
+                                    </form>
+                                </th:block>
+                                <th:block th:if="${currentUserRole == 'OWNER' and member.roleType.name() == 'MODERATOR'}">
+                                    <form th:action="@{/boards/display/{boardId}/moderation/members/{userId}/demote(boardId=${board.id}, userId=${member.userId})}" method="post" class="action-form">
+                                        <button type="submit" class="action-btn action-demote">Demote</button>
+                                    </form>
+                                </th:block>
+                                <th:block th:if="${member.roleType.name() != 'OWNER' and !member.userId.equals(currentUserId)}">
+                                    <form th:action="@{/boards/display/{boardId}/moderation/members/{userId}/ban(boardId=${board.id}, userId=${member.userId})}" method="post" class="action-form">
+                                        <button type="submit" class="action-btn action-ban" onclick="return confirm('Ban this member?')">Ban</button>
+                                    </form>
+                                </th:block>
+                            </div>
+                        </div>
+                    </th:block>
+
+                    <!-- ──── Ownership Tab (Owner only) ──── -->
+                    <th:block th:if="${modTab == 'ownership' and currentUserRole == 'OWNER'}">
+                        <div class="ownership-section">
+                            <h3 class="ownership-heading">Transfer ownership</h3>
+                            <p class="ownership-desc">Transfer board ownership to another member. You will become a moderator.</p>
+                            <form th:action="@{/boards/display/{boardId}/moderation/ownership/transfer(boardId=${board.id})}" method="post" class="ownership-form">
+                                <select name="newOwnerId" class="post-input-title" required>
+                                    <option value="" disabled selected>Select a member</option>
+                                    <th:block th:each="member : ${members}">
+                                        <option th:if="${!member.userId.equals(currentUserId)}"
+                                                th:value="${member.userId}"
+                                                th:text="'User #' + ${member.userId} + ' (' + ${member.roleType.name()} + ')'"></option>
+                                    </th:block>
+                                </select>
+                                <button type="submit" class="btn-submit" onclick="return confirm('Transfer ownership? You will become a moderator.')">Transfer</button>
+                            </form>
+                        </div>
+
+                        <div class="ownership-section ownership-danger">
+                            <h3 class="ownership-heading danger-text">Delete board permanently</h3>
+                            <p class="ownership-desc">This will permanently delete the board, all posts, all comments, all roles, and all reports. This action cannot be undone.</p>
+                            <form th:action="@{/boards/display/{boardId}/moderation/ownership/delete(boardId=${board.id})}" method="post">
+                                <button type="submit" class="action-btn action-delete-board"
+                                        onclick="return confirm('PERMANENTLY delete this entire board and all its content? This cannot be undone.')">
+                                    Delete Board Permanently
+                                </button>
+                            </form>
+                        </div>
+                    </th:block>
+
+                </th:block>
+
+                <!-- ================================================================
+                     VIEW: BOARD SETTINGS (Owner only)
+                     ================================================================ -->
+                <th:block th:if="${currentView == 'settings' and currentUserRole == 'OWNER'}">
+
+                    <a th:href="@{/boards/display/{id}(id=${board.id})}" class="back-link">&#8592; Back to board</a>
+                    <h2 class="section-title">Board Settings</h2>
+
+                    <div class="settings-section">
+                        <form th:action="@{/boards/display/{boardId}/settings/edit(boardId=${board.id})}" method="post" class="settings-form">
+
+                            <div class="settings-field">
+                                <label class="settings-label">Board Name</label>
+                                <input type="text" name="boardName" class="post-input-title"
+                                       th:value="${board.board_name}" maxlength="100" required/>
+                            </div>
+
+                            <div class="settings-field">
+                                <label class="settings-label">Description</label>
+                                <textarea name="boardDescription" class="post-input-content"
+                                          rows="4" maxlength="500" th:text="${board.board_description}"></textarea>
+                            </div>
+
+                            <div class="settings-field">
+                                <label class="settings-label">Visibility</label>
+                                <select name="boardType" class="post-input-title">
+                                    <option value="public" th:selected="${board.board_type == 'public'}">Public</option>
+                                    <option value="private" th:selected="${board.board_type == 'private'}">Private</option>
+                                </select>
+                            </div>
+
+                            <div class="settings-actions">
+                                <button type="submit" class="btn-submit">Save Changes</button>
+                            </div>
+                        </form>
+                    </div>
+                </th:block>
+
             </div>
-
-
 
             <!-- Footer Section: in thoughts progress...-->
         </main>
 
         <script th:src="@{/layout/js/fragments.js}"></script>
         <script th:src="@{/layout/js/boardPages.js}"></script>
+        <script>
+            function toggleReply(commentId) {
+                let form = document.getElementById('reply-' + commentId);
+                document.querySelectorAll('.inline-reply-form').forEach(function(f) {
+                    if (f.id !== 'reply-' + commentId) f.style.display = 'none';
+                });
+                form.style.display = form.style.display === 'none' ? 'block' : 'none';
+            }
+        </script>
 
     </body>
 </html>

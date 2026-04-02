@@ -93,7 +93,10 @@ public class PermissionService {
     }
 
     public boolean canModerateBoard(Long userId, Long boardId) {
-        return hasPermission(userId, boardId, Permission.KICK_MEMBER);
+        return hasPermission(userId, boardId, Permission.BAN_MEMBER);
+    }
+    public void canBanMember(Long userId, Long boardId) {
+        checkPermission(userId, boardId, Permission.BAN_MEMBER);
     }
 
     // ─── Content action resolution ──────────────────────────────────
@@ -105,6 +108,7 @@ public class PermissionService {
     //  Mod/Owner viewing other → DELETE, REPLY, REPORT (no EDIT)
     //  Regular member viewing  → REPLY, REPORT         (no EDIT, no DELETE)
     //
+
 
     public Set<ContentAction> getContentActions(Long viewerId, Long authorId, Long boardId) {
 

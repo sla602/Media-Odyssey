@@ -1,5 +1,7 @@
 package com.mo.mediaodyssey.socialFeature.models.DTO;
 
+import java.time.Instant;
+
 public class CommentDTO {
 
     private Long id;
@@ -7,8 +9,8 @@ public class CommentDTO {
     private Long authorId;
     private Long parentId;
     private String content;
-    private String username;
     private boolean deleted;
+    private Instant createdAt;
     private int depth;
 
     public CommentDTO(Long id,
@@ -16,32 +18,24 @@ public class CommentDTO {
                       Long authorId,
                       Long parentId,
                       String content,
-                      String username,
-                      int depth,
-                      boolean deleted) {
+                      boolean deleted, Instant createdAt) {
         this.id = id;
         this.postId = postId;
         this.authorId = authorId;
         this.parentId = parentId;
         this.content = content;
-        this.username = username;
-        this.depth = depth;
         this.deleted = deleted;
+        this.createdAt = createdAt;
+        this.depth = 0;
     }
 
-    public Long getId() { return id; }
-    public Long getPostId() { return postId; }
-    public Long getAuthorId() { return authorId; }
-    public Long getParentId() { return parentId; }
-    public String getContent() { return content; }
-    public String getUsername() { return username; }
-    public int getDepth() { return depth; }
-
-    public boolean isDeleted() {
-        return deleted;
-    }
-
-    public void setDepth(int depth) {
-        this.depth = depth;
-    }
+    public Long getId()             { return id; }
+    public Long getPostId()         { return postId; }
+    public Long getAuthorId()       { return authorId; }
+    public Long getParentId()       { return parentId; }
+    public String getContent()      { return content; }
+    public boolean isDeleted()      { return deleted; }
+    public Instant getCreatedAt()   { return createdAt; }
+    public int getDepth()           { return depth; }
+    public void setDepth(int depth) { this.depth = depth; }
 }

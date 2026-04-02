@@ -1,11 +1,19 @@
 package com.mo.mediaodyssey.layout.controllers;
 
+import com.mo.mediaodyssey.layout.models.BoardRole;
 import com.mo.mediaodyssey.layout.repositories.BoardRoleRepository;
+import com.mo.mediaodyssey.socialFeature.enums.RoleType;
+import com.mo.mediaodyssey.socialFeature.models.DTO.CommentDTO;
 import com.mo.mediaodyssey.socialFeature.models.DTO.PostDTO;
+import com.mo.mediaodyssey.socialFeature.models.Post;
+import com.mo.mediaodyssey.socialFeature.repositories.ReportRepository;
+import com.mo.mediaodyssey.socialFeature.services.CommentService;
+import com.mo.mediaodyssey.socialFeature.services.ModerationService;
 import com.mo.mediaodyssey.socialFeature.services.PostService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -14,13 +22,13 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
-import com.mo.mediaodyssey.layout.DTO.MoviesTMDB.MovieResponse;
+import com.mo.mediaodyssey.auth.model.User;
+import com.mo.mediaodyssey.layout.DTO.MovieResponse;
 import com.mo.mediaodyssey.layout.models.BoardMedia;
 import com.mo.mediaodyssey.layout.models.Boards;
 import com.mo.mediaodyssey.layout.repositories.BoardMediaRepository;
 import com.mo.mediaodyssey.layout.services.BoardsService;
-import com.mo.mediaodyssey.layout.services.MediaServices.MovieService;
-import com.mo.mediaodyssey.shared.model.User;
+import com.mo.mediaodyssey.layout.services.MovieService;
 
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
@@ -34,20 +42,40 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 public class BoardsController {
     /* boards controller is a mapping controller for board related htmls */
 
-    private final BoardsService boardsService;
+    private final BoardsService boardsService; 
     private final BoardMediaRepository boardMediaRepository;
     private final MovieService movieService;
     private final PostService postService;
     private final BoardRoleRepository boardRoleRepository;
+    private final CommentService commentService;
+    private final ReportRepository reportRepository;
+    private final ModerationService moderationService;
 
-    public BoardsController (BoardsService boardsService, BoardMediaRepository boardMediaRepository, MovieService movieService, PostService postService, BoardRoleRepository boardRoleRepository) {
+    public BoardsController (BoardsService boardsService, BoardMediaRepository boardMediaRepository, MovieService movieService, PostService postService, BoardRoleRepository boardRoleRepository, CommentService commentService, ReportRepository reportRepository, ModerationService moderationService) {
         this.boardsService = boardsService; 
         this.boardMediaRepository = boardMediaRepository;
         this.movieService = movieService;
         this.postService = postService;
         this.boardRoleRepository = boardRoleRepository;
+        this.commentService = commentService;
+        this.reportRepository = reportRepository;
+        this.moderationService = moderationService;
     }
 
+
+    // ─── Helper ──────────────────────────────────────────────────────
+
+    private String getUserRole(Long userId, Long boardId) {
+        return boardRoleRepository.findByUserIdAndBoardId(userId, boardId)
+                .map(role -> role.getRoleType().name())
+                .orElse("NONE");
+    }
+
+    private RoleType getUserRoleType(Long userId, Long boardId) {
+        return boardRoleRepository.findByUserIdAndBoardId(userId, boardId)
+                .map(BoardRole::getRoleType)
+                .orElse(RoleType.NONE);
+    }
 
     /* Bring user to the page to create a board */
     @GetMapping("/create")
@@ -83,38 +111,60 @@ public class BoardsController {
     After clicking on those boards, users will be able to see the details of that boards. 
     Which would be showing the media, description, post, .... */
     @GetMapping("/display/{id}")
-    public String navToboardDisplay(@PathVariable("id") Long id, 
-                                    Model model, RedirectAttributes redirectAtrrAttributes,
-                                    Authentication authentication) {
+    public String navToboardDisplay(@PathVariable("id") Long id,
+                                                                @RequestParam(value = "view", defaultValue = "posts") String view,
+                                                                @RequestParam(value = "postId", required = false) Long postId,
+                                                                Model model,
+                                                                RedirectAttributes redirectAttributes,
+                                                                Authentication authentication) {
 
-        // Find whether the board exists or not. 
         Optional<Boards> boardOpt = boardsService.findBoardById(id);
 
-        // If board exists
-        if (boardOpt.isPresent()) {
-            Boards board = boardOpt.get(); //store board's data
-            List<PostDTO> posts = postService.getPostsByBoardId(id);
-
-            User user = (User) authentication.getPrincipal();
-            Long currentUserId = user.getId();
-
-            // Get the viewer's role in this board (NONE if not a member)
-            String currentUserRole = boardRoleRepository.findByUserIdAndBoardId(currentUserId, id)
-                    .map(role -> role.getRoleType().name())
-                    .orElse("NONE");
-
-            model.addAttribute("board", board);
-            model.addAttribute("posts", posts);
-            model.addAttribute("currentUserId", currentUserId);
-            model.addAttribute("currentUserRole", currentUserRole);
-
-
-
-            return "boardsLayout/themeBoard/boardDisplay";
-        } else {
-            redirectAtrrAttributes.addFlashAttribute("errorMessage", "Board not found or have been deleted.");
+        if (boardOpt.isEmpty()) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Board not found or has been deleted.");
             return "redirect:/";
         }
+
+
+        Boards board = boardOpt.get();
+        User user = (User) authentication.getPrincipal();
+
+        //check if banned user
+        String role = getUserRole(user.getId(), id);
+
+        if ("BANNED".equals(role)) {
+            redirectAttributes.addFlashAttribute("errorMessage", "You are banned from this board.");
+            return "redirect:/";
+        }
+        Long reportCount = reportRepository.countByBoardIdAndResolvedFalse(id);
+        model.addAttribute("reportCount", reportCount);
+        model.addAttribute("board", board);
+        model.addAttribute("currentUserId", user.getId());
+        model.addAttribute("currentUserRole", getUserRole(user.getId(), id));
+        model.addAttribute("currentView", view);
+        model.addAttribute("selectedPost", null);
+        model.addAttribute("comments", Collections.emptyList());
+        model.addAttribute("posts", Collections.emptyList());
+
+
+        // ===== POST VIEW =====
+        if ("post".equals(view) && postId != null) {
+            Post post = postService.getPostById(postId);
+
+            if (post != null) {
+                List<CommentDTO> comments = commentService.getCommentsWithDepth(postId);
+
+                model.addAttribute("selectedPost", post);
+                model.addAttribute("comments", comments);
+            }
+        }
+        // ===== POSTS LIST VIEW =====
+        else {
+            List<PostDTO> posts = postService.getPostsByBoardId(id);
+            model.addAttribute("posts", posts);
+        }
+
+        return "boardsLayout/themeBoard/boardDisplay";
     }
 
     /**
@@ -144,6 +194,7 @@ public class BoardsController {
         return "redirect:/boards/display/" + boardId;
     }
 
+    //delete post
     @PostMapping("/display/{boardId}/posts/{postId}/delete")
     public String deletePost(@PathVariable Long boardId,
                              @PathVariable Long postId,
@@ -154,6 +205,148 @@ public class BoardsController {
 
         return "redirect:/boards/display/" + boardId;
     }
+
+    //creating comment to comment (no parent)
+    @PostMapping("/display/{boardId}/posts/{postId}/comments")
+    public String createComment(@PathVariable Long boardId,
+                                @PathVariable Long postId,
+                                @RequestParam String content,
+                                Authentication authentication) {
+
+        User user = (User) authentication.getPrincipal();
+        commentService.createComment(user.getId(), postId, content);
+
+        return "redirect:/boards/display/" + boardId + "?view=post&postId=" + postId;
+    }
+
+    //replying to comment (to parent comment)
+    @PostMapping("/display/{boardId}/posts/{postId}/comments/{commentId}/reply")
+    public String replyToComment(@PathVariable Long boardId,
+                                 @PathVariable Long postId,
+                                 @PathVariable Long commentId,
+                                 @RequestParam String content,
+                                 Authentication authentication) {
+
+        User user = (User) authentication.getPrincipal();
+        commentService.replyToComment(user.getId(), commentId, content);
+
+        return "redirect:/boards/display/" + boardId + "?view=post&postId=" + postId;
+    }
+
+
+
+    //deleting comment
+    @PostMapping("/display/{boardId}/posts/{postId}/comments/{commentId}/delete")
+    public String deleteComment(@PathVariable Long boardId,
+                                @PathVariable Long postId,
+                                @PathVariable Long commentId) {
+
+        commentService.softDeleteComment(commentId);
+
+        return "redirect:/boards/display/" + boardId + "?view=post&postId=" + postId;
+    }
+
+
+    // ─── Reporting ───────────────────────────────────────────────────
+
+    @PostMapping("/display/{boardId}/posts/{postId}/report")
+    public String reportPost(@PathVariable Long boardId,
+                             @PathVariable Long postId,
+                             @RequestParam String reason,
+                             @RequestParam Long contentAuthorId,
+                             Authentication authentication) {
+        User user = (User) authentication.getPrincipal();
+        moderationService.reportPost(boardId, postId, user.getId(), contentAuthorId, reason);
+        return "redirect:/boards/display/" + boardId;
+    }
+
+    @PostMapping("/display/{boardId}/posts/{postId}/comments/{commentId}/report")
+    public String reportComment(@PathVariable Long boardId,
+                                @PathVariable Long postId,
+                                @PathVariable Long commentId,
+                                @RequestParam String reason,
+                                @RequestParam Long contentAuthorId,
+                                Authentication authentication) {
+        User user = (User) authentication.getPrincipal();
+        moderationService.reportComment(boardId, commentId, user.getId(), contentAuthorId, reason);
+        return "redirect:/boards/display/" + boardId + "?view=post&postId=" + postId;
+    }
+
+    // ─── Moderation Actions ──────────────────────────────────────────
+
+    @PostMapping("/display/{boardId}/moderation/reports/{reportId}/dismiss")
+    public String dismissReport(@PathVariable Long boardId, @PathVariable Long reportId) {
+        moderationService.dismissReport(reportId);
+        return "redirect:/boards/display/" + boardId + "?view=moderation&modTab=reports";
+    }
+
+    @PostMapping("/display/{boardId}/moderation/reports/{reportId}/delete-content")
+    public String deleteReportedContent(@PathVariable Long boardId, @PathVariable Long reportId) {
+        moderationService.deleteReportedContent(reportId);
+        return "redirect:/boards/display/" + boardId + "?view=moderation&modTab=reports";
+    }
+
+    @PostMapping("/display/{boardId}/moderation/reports/{reportId}/ban")
+    public String banFromReport(@PathVariable Long boardId, @PathVariable Long reportId) {
+        moderationService.banFromReport(reportId);
+        return "redirect:/boards/display/" + boardId + "?view=moderation&modTab=reports";
+    }
+
+    @PostMapping("/display/{boardId}/moderation/members/{userId}/ban")
+    public String banMember(@PathVariable Long boardId, @PathVariable Long userId) {
+        moderationService.banMember(userId, boardId);
+        return "redirect:/boards/display/" + boardId + "?view=moderation&modTab=members";
+    }
+
+    @PostMapping("/display/{boardId}/moderation/members/{userId}/promote")
+    public String promoteMember(@PathVariable Long boardId, @PathVariable Long userId) {
+        moderationService.promoteMember(userId, boardId);
+        return "redirect:/boards/display/" + boardId + "?view=moderation&modTab=members";
+    }
+
+    @PostMapping("/display/{boardId}/moderation/members/{userId}/demote")
+    public String demoteModerator(@PathVariable Long boardId, @PathVariable Long userId) {
+        moderationService.demoteModerator(userId, boardId);
+        return "redirect:/boards/display/" + boardId + "?view=moderation&modTab=members";
+    }
+
+    // ─── Ownership Actions (inside moderation) ───────────────────────
+
+    @PostMapping("/display/{boardId}/moderation/ownership/transfer")
+    public String transferOwnership(@PathVariable Long boardId,
+                                    @RequestParam Long newOwnerId,
+                                    Authentication authentication) {
+        User user = (User) authentication.getPrincipal();
+        moderationService.transferOwnership(user.getId(), newOwnerId, boardId);
+        return "redirect:/boards/display/" + boardId;
+    }
+
+    @PostMapping("/display/{boardId}/moderation/ownership/delete")
+    public String hardDeleteBoard(@PathVariable Long boardId,
+                                  Authentication authentication) {
+        User user = (User) authentication.getPrincipal();
+        RoleType role = getUserRoleType(user.getId(), boardId);
+        if (!role.isOwner()) {
+            throw new SecurityException("Only the owner can delete the board");
+        }
+        moderationService.hardDeleteBoard(boardId);
+        return "redirect:/";
+    }
+
+    // ─── Board Settings ──────────────────────────────────────────────
+
+    @PostMapping("/display/{boardId}/settings/edit")
+    public String editBoard(@PathVariable Long boardId,
+                            @RequestParam String boardName,
+                            @RequestParam String boardDescription,
+                            @RequestParam String boardType,
+                            Authentication authentication) {
+        User user = (User) authentication.getPrincipal();
+        boardsService.editBoard(user.getId(), boardId, boardName, boardDescription, boardType);
+        return "redirect:/boards/display/" + boardId + "?view=settings";
+    }
+
+
 
     /* Display all MOVIE MEDIAS that are put in the boards by users:
     * ** Logic: get the board_id from browser path -> find all BoardMedia Object 

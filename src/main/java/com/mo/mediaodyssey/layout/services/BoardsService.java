@@ -66,7 +66,7 @@ public class BoardsService {
         return board;
     }
 
-    public void editBoard(Long actingUserId, Long boardId, String newName, String newDescription) {
+    public void editBoard(Long actingUserId, Long boardId, String newName, String newDescription, String newBoardType) {
         permissionService.canEditBoard(actingUserId, boardId);
 
         Boards board = boardsRepo.findById(boardId)
@@ -74,6 +74,7 @@ public class BoardsService {
 
         board.setBoard_name(newName);
         board.setBoard_description(newDescription);
+        board.setBoard_type(newBoardType);
         boardsRepo.save(board);
     }
 
@@ -140,115 +141,119 @@ public class BoardsService {
         return roleRepo.countByBoardId(boardId);
     }
 
-    // ─── Comment operations (delegated, permission-checked) ─────────
 
-    public void createComment(Long userId, Long postId, String content) {
-        Post post = postRepo.findById(postId)
-                .orElseThrow(() -> new RuntimeException("Post not found with id: " + postId));
 
-        permissionService.canCreateComment(userId, post.getBoardId());
-        commentService.createComment(userId, postId, content);
-    }
 
-    public void replyToComment(Long userId, Long parentCommentId, String content) {
-        Long postId = commentService.getParentPostId(parentCommentId);
-        Post post = postRepo.findById(postId)
-                .orElseThrow(() -> new RuntimeException("Post not found for comment id: " + parentCommentId));
 
-        permissionService.canCreateComment(userId, post.getBoardId());
-        commentService.replyToComment(userId, parentCommentId, content);
-    }
-
-    public void editComment(Long userId, Long commentId, String newContent) {
-        Comment comment = commentRepo.findById(commentId)
-                .orElseThrow(() -> new RuntimeException("Comment not found with id: " + commentId));
-
-        if (comment.isDeleted()) {
-            throw new RuntimeException("Cannot edit a deleted comment");
-        }
-
-        if (!comment.getAuthorId().equals(userId)) {
-            throw new RuntimeException("You can only edit your own comments");
-        }
-
-        Post post = postRepo.findById(comment.getPostId())
-                .orElseThrow(() -> new RuntimeException("Post not found for comment id: " + commentId));
-
-        roleRepo.findByUserIdAndBoardId(userId, post.getBoardId())
-                .orElseThrow(() -> new RuntimeException("You are not a member of this board"));
-
-        commentService.updateCommentContent(commentId, newContent);
-    }
-
-    public void deleteComment(Long actingUserId, Long commentId) {
-        Comment comment = commentRepo.findById(commentId)
-                .orElseThrow(() -> new RuntimeException("Comment not found with id: " + commentId));
-
-        Post post = postRepo.findById(comment.getPostId())
-                .orElseThrow(() -> new RuntimeException("Post not found for comment id: " + commentId));
-
-        if (!comment.getAuthorId().equals(actingUserId)) {
-            permissionService.canDeleteComment(actingUserId, post.getBoardId());
-        }
-
-        roleRepo.findByUserIdAndBoardId(actingUserId, post.getBoardId())
-                .orElseThrow(() -> new RuntimeException("User is not a member of this board"));
-
-        commentService.softDeleteComment(commentId);
-    }
-
-    // ─── Role / Moderation ───────────────────────────────────────────
-
-    public void promoteMember(Long actingUserId, Long targetUserId, Long boardId) {
-        permissionService.canPromoteMember(actingUserId, boardId);
-
-        BoardRole targetRole = roleRepo.findByUserIdAndBoardId(targetUserId, boardId)
-                .orElseThrow(() -> new RuntimeException("Target user not in board"));
-
-        targetRole.setRoleType(RoleType.MODERATOR);
-        roleRepo.save(targetRole);
-    }
-
-    public void demoteModerator(Long actingUserId, Long targetUserId, Long boardId) {
-        permissionService.canDemoteModerator(actingUserId, boardId);
-
-        BoardRole targetRole = roleRepo.findByUserIdAndBoardId(targetUserId, boardId)
-                .orElseThrow(() -> new RuntimeException("Target user not in board"));
-
-        if (!targetRole.getRoleType().isModerator()) {
-            throw new RuntimeException("Target user is not a moderator");
-        }
-
-        targetRole.setRoleType(RoleType.MEMBER);
-        roleRepo.save(targetRole);
-    }
-
-    public void transferOwnership(Long actingUserId, Long targetUserId, Long boardId) {
-        permissionService.canTransferOwnership(actingUserId, boardId);
-
-        BoardRole currentOwner = roleRepo.findByUserIdAndBoardId(actingUserId, boardId)
-                .orElseThrow(() -> new RuntimeException("You are not owner"));
-
-        BoardRole newOwner = roleRepo.findByUserIdAndBoardId(targetUserId, boardId)
-                .orElseThrow(() -> new RuntimeException("Target user not in board"));
-
-        currentOwner.setRoleType(RoleType.MODERATOR);
-        newOwner.setRoleType(RoleType.OWNER);
-
-        roleRepo.save(currentOwner);
-        roleRepo.save(newOwner);
-    }
-
-    public void kickMember(Long actingUserId, Long targetUserId, Long boardId) {
-        permissionService.canKickMember(actingUserId, boardId);
-
-        BoardRole targetRole = roleRepo.findByUserIdAndBoardId(targetUserId, boardId)
-                .orElseThrow(() -> new RuntimeException("Target user not in board"));
-
-        if (targetRole.getRoleType().isOwner()) {
-            throw new RuntimeException("Cannot kick the owner");
-        }
-
-        roleRepo.deleteByUserIdAndBoardId(targetUserId, boardId);
-    }
+//    // ─── Comment operations (delegated, permission-checked) ─────────
+//
+//    public void createComment(Long userId, Long postId, String content) {
+//        Post post = postRepo.findById(postId)
+//                .orElseThrow(() -> new RuntimeException("Post not found with id: " + postId));
+//
+//        permissionService.canCreateComment(userId, post.getBoardId());
+//        commentService.createComment(userId, postId, content);
+//    }
+//
+//    public void replyToComment(Long userId, Long parentCommentId, String content) {
+//        Long postId = commentService.getParentPostId(parentCommentId);
+//        Post post = postRepo.findById(postId)
+//                .orElseThrow(() -> new RuntimeException("Post not found for comment id: " + parentCommentId));
+//
+//        permissionService.canCreateComment(userId, post.getBoardId());
+//        commentService.replyToComment(userId, parentCommentId, content);
+//    }
+//
+//    public void editComment(Long userId, Long commentId, String newContent) {
+//        Comment comment = commentRepo.findById(commentId)
+//                .orElseThrow(() -> new RuntimeException("Comment not found with id: " + commentId));
+//
+//        if (comment.isDeleted()) {
+//            throw new RuntimeException("Cannot edit a deleted comment");
+//        }
+//
+//        if (!comment.getAuthorId().equals(userId)) {
+//            throw new RuntimeException("You can only edit your own comments");
+//        }
+//
+//        Post post = postRepo.findById(comment.getPostId())
+//                .orElseThrow(() -> new RuntimeException("Post not found for comment id: " + commentId));
+//
+//        roleRepo.findByUserIdAndBoardId(userId, post.getBoardId())
+//                .orElseThrow(() -> new RuntimeException("You are not a member of this board"));
+//
+//        commentService.updateCommentContent(commentId, newContent);
+//    }
+//
+//    public void deleteComment(Long actingUserId, Long commentId) {
+//        Comment comment = commentRepo.findById(commentId)
+//                .orElseThrow(() -> new RuntimeException("Comment not found with id: " + commentId));
+//
+//        Post post = postRepo.findById(comment.getPostId())
+//                .orElseThrow(() -> new RuntimeException("Post not found for comment id: " + commentId));
+//
+//        if (!comment.getAuthorId().equals(actingUserId)) {
+//            permissionService.canDeleteComment(actingUserId, post.getBoardId());
+//        }
+//
+//        roleRepo.findByUserIdAndBoardId(actingUserId, post.getBoardId())
+//                .orElseThrow(() -> new RuntimeException("User is not a member of this board"));
+//
+//        commentService.softDeleteComment(commentId);
+//    }
+//
+//    // ─── Role / Moderation ───────────────────────────────────────────
+//
+//    public void promoteMember(Long actingUserId, Long targetUserId, Long boardId) {
+//        permissionService.canPromoteMember(actingUserId, boardId);
+//
+//        BoardRole targetRole = roleRepo.findByUserIdAndBoardId(targetUserId, boardId)
+//                .orElseThrow(() -> new RuntimeException("Target user not in board"));
+//
+//        targetRole.setRoleType(RoleType.MODERATOR);
+//        roleRepo.save(targetRole);
+//    }
+//
+//    public void demoteModerator(Long actingUserId, Long targetUserId, Long boardId) {
+//        permissionService.canDemoteModerator(actingUserId, boardId);
+//
+//        BoardRole targetRole = roleRepo.findByUserIdAndBoardId(targetUserId, boardId)
+//                .orElseThrow(() -> new RuntimeException("Target user not in board"));
+//
+//        if (!targetRole.getRoleType().isModerator()) {
+//            throw new RuntimeException("Target user is not a moderator");
+//        }
+//
+//        targetRole.setRoleType(RoleType.MEMBER);
+//        roleRepo.save(targetRole);
+//    }
+//
+//    public void transferOwnership(Long actingUserId, Long targetUserId, Long boardId) {
+//        permissionService.canTransferOwnership(actingUserId, boardId);
+//
+//        BoardRole currentOwner = roleRepo.findByUserIdAndBoardId(actingUserId, boardId)
+//                .orElseThrow(() -> new RuntimeException("You are not owner"));
+//
+//        BoardRole newOwner = roleRepo.findByUserIdAndBoardId(targetUserId, boardId)
+//                .orElseThrow(() -> new RuntimeException("Target user not in board"));
+//
+//        currentOwner.setRoleType(RoleType.MODERATOR);
+//        newOwner.setRoleType(RoleType.OWNER);
+//
+//        roleRepo.save(currentOwner);
+//        roleRepo.save(newOwner);
+//    }
+//
+//    public void kickMember(Long actingUserId, Long targetUserId, Long boardId) {
+//        permissionService.canKickMember(actingUserId, boardId);
+//
+//        BoardRole targetRole = roleRepo.findByUserIdAndBoardId(targetUserId, boardId)
+//                .orElseThrow(() -> new RuntimeException("Target user not in board"));
+//
+//        if (targetRole.getRoleType().isOwner()) {
+//            throw new RuntimeException("Cannot kick the owner");
+//        }
+//
+//        roleRepo.deleteByUserIdAndBoardId(targetUserId, boardId);
+//    }
 }

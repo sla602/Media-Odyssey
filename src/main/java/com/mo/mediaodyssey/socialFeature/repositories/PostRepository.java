@@ -3,6 +3,7 @@ package com.mo.mediaodyssey.socialFeature.repositories;
 import com.mo.mediaodyssey.socialFeature.models.DTO.PostDTO;
 import com.mo.mediaodyssey.socialFeature.models.Post;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -31,4 +32,11 @@ WHERE p.boardId = :boardId
 ORDER BY p.createdAt DESC
 """)
     List<PostDTO> findPostsWithUserByBoardId(@Param("boardId") Long boardId);
+
+    @Query("SELECT p.id FROM Post p WHERE p.boardId = :boardId")
+    List<Long> findPostIdsByBoardId(@Param("boardId") Long boardId);
+
+    @Modifying
+    @Query("DELETE FROM Post p WHERE p.boardId = :boardId")
+    void deleteByBoardId(@Param("boardId") Long boardId);
 }

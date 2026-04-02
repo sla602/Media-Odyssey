@@ -6,6 +6,8 @@ public enum RoleType {
 
     NONE(Set.of()), // No permissions
 
+    BANNED(Set.of()), // ABSOLUTELY NO PERMISSIONS
+
     MEMBER(Set.of(
             Permission.CREATE_POST,
             Permission.EDIT_POST,       // can edit own post
@@ -21,8 +23,9 @@ public enum RoleType {
             Permission.CREATE_COMMENT,
             Permission.EDIT_COMMENT,
             Permission.DELETE_COMMENT,
-            Permission.DELETE_POST,     // can delete any post
+            Permission.DELETE_POST,     // can delete Members post
             Permission.KICK_MEMBER,
+            Permission.BAN_MEMBER,
             Permission.REPORT
     )),
 
@@ -34,6 +37,7 @@ public enum RoleType {
             Permission.DELETE_COMMENT,
             Permission.DELETE_POST,
             Permission.KICK_MEMBER,
+            Permission.BAN_MEMBER,
             Permission.PROMOTE_MEMBER,
             Permission.DEMOTE_MODERATOR,
             Permission.TRANSFER_OWNERSHIP,
@@ -59,7 +63,7 @@ public enum RoleType {
     public boolean isModerator() { return this == MODERATOR; }
     public boolean isMember()    { return this == MEMBER; }
     public boolean isNone()      { return this == NONE; }
-
+    public boolean isBanned()    { return this == BANNED; }
     public boolean isStaff() {
         return this == MODERATOR || this == OWNER;
     }
