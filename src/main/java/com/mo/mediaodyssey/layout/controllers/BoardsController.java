@@ -6,6 +6,7 @@ import com.mo.mediaodyssey.socialFeature.enums.RoleType;
 import com.mo.mediaodyssey.socialFeature.models.DTO.CommentDTO;
 import com.mo.mediaodyssey.socialFeature.models.DTO.PostDTO;
 import com.mo.mediaodyssey.socialFeature.models.Post;
+import com.mo.mediaodyssey.socialFeature.models.Report;
 import com.mo.mediaodyssey.socialFeature.repositories.ReportRepository;
 import com.mo.mediaodyssey.socialFeature.services.CommentService;
 import com.mo.mediaodyssey.socialFeature.services.ModerationService;
@@ -112,8 +113,10 @@ public class BoardsController {
     Which would be showing the media, description, post, .... */
     @GetMapping("/display/{id}")
     public String navToboardDisplay(@PathVariable("id") Long id,
-                                                                @RequestParam(value = "view", defaultValue = "posts") String view,
-                                                                @RequestParam(value = "postId", required = false) Long postId,
+                                    @RequestParam(value = "view", defaultValue = "posts") String view,
+                                    @RequestParam(value = "postId", required = false) Long postId,
+                                    @RequestParam(value = "modTab", defaultValue = "reports") String modTab,
+                                    @RequestParam(value = "search", required = false) String search,
                                                                 Model model,
                                                                 RedirectAttributes redirectAttributes,
                                                                 Authentication authentication) {
@@ -136,35 +139,91 @@ public class BoardsController {
             redirectAttributes.addFlashAttribute("errorMessage", "You are banned from this board.");
             return "redirect:/";
         }
+
+
+        boolean isMember = !"NONE".equals(role);
         Long reportCount = reportRepository.countByBoardIdAndResolvedFalse(id);
-        model.addAttribute("reportCount", reportCount);
+
         model.addAttribute("board", board);
         model.addAttribute("currentUserId", user.getId());
-        model.addAttribute("currentUserRole", getUserRole(user.getId(), id));
+        model.addAttribute("currentUserRole", role);
+        model.addAttribute("isMember", isMember);
+        model.addAttribute("reportCount", reportCount);
         model.addAttribute("currentView", view);
+        model.addAttribute("modTab", modTab);
+
+        // Defaults
         model.addAttribute("selectedPost", null);
         model.addAttribute("comments", Collections.emptyList());
         model.addAttribute("posts", Collections.emptyList());
+        model.addAttribute("reports", Collections.emptyList());
+        model.addAttribute("members", Collections.emptyList());
+        switch (view) {
+            case "post":
+                if (postId != null) {
+                    Post post = postService.getPostById(postId);
+                    if (post != null) {
+                        List<CommentDTO> comments = commentService.getCommentsWithDepth(postId);
+                        model.addAttribute("selectedPost", post);
+                        model.addAttribute("comments", comments);
+                    }
+                }
+                break;
 
+            case "moderation":
+                switch (modTab) {
+                    case "members":
+                        List<BoardRole> members;
+                        if (search != null && !search.isBlank()) {
+                            members = moderationService.searchBoardMembers(id, search);
+                        } else {
+                            members = moderationService.getBoardMembers(id);
+                        }
+                        model.addAttribute("members", members);
+                        model.addAttribute("search", search);
+                        break;
+                    case "ownership":
+                        model.addAttribute("members", moderationService.getBoardMembers(id));
+                        break;
+                    default:
+                        List<Report> reports = moderationService.getUnresolvedReports(id);
+                        model.addAttribute("reports", reports);
+                        break;
+                }
+                break;
 
-        // ===== POST VIEW =====
-        if ("post".equals(view) && postId != null) {
-            Post post = postService.getPostById(postId);
+            case "settings":
+                break;
 
-            if (post != null) {
-                List<CommentDTO> comments = commentService.getCommentsWithDepth(postId);
-
-                model.addAttribute("selectedPost", post);
-                model.addAttribute("comments", comments);
-            }
-        }
-        // ===== POSTS LIST VIEW =====
-        else {
-            List<PostDTO> posts = postService.getPostsByBoardId(id);
-            model.addAttribute("posts", posts);
+            default:
+                List<PostDTO> posts = postService.getPostsByBoardId(id);
+                model.addAttribute("posts", posts);
+                break;
         }
 
         return "boardsLayout/themeBoard/boardDisplay";
+    }
+
+
+    // ─── Join / Leave ────────────────────────────────────────────────
+
+    @PostMapping("/display/{boardId}/join")
+    public String joinBoard(@PathVariable Long boardId, Authentication authentication) {
+        User user = (User) authentication.getPrincipal();
+        boardsService.joinBoard(user.getId(), boardId);
+        return "redirect:/boards/display/" + boardId;
+    }
+
+    @PostMapping("/display/{boardId}/leave")
+    public String leaveBoard(@PathVariable Long boardId, Authentication authentication,
+                             RedirectAttributes redirectAttributes) {
+        User user = (User) authentication.getPrincipal();
+        try {
+            boardsService.leaveBoard(user.getId(), boardId);
+        } catch (RuntimeException e) {
+            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+        }
+        return "redirect:/boards/display/" + boardId;
     }
 
     /**
@@ -194,6 +253,21 @@ public class BoardsController {
         return "redirect:/boards/display/" + boardId;
     }
 
+    //createPost
+    @PostMapping("/display/{boardId}/posts/{postId}/edit")
+    public String editPost(@PathVariable Long boardId,
+                           @PathVariable Long postId,
+                           @RequestParam String title,
+                           @RequestParam String content,
+                           Authentication authentication) {
+
+        User user = (User) authentication.getPrincipal();
+        postService.updatePost(postId, title, content);
+
+        // Redirect back to the post list (default view)
+        return "redirect:/boards/display/" + boardId;
+    }
+
     //delete post
     @PostMapping("/display/{boardId}/posts/{postId}/delete")
     public String deletePost(@PathVariable Long boardId,
@@ -219,6 +293,22 @@ public class BoardsController {
         return "redirect:/boards/display/" + boardId + "?view=post&postId=" + postId;
     }
 
+
+//edit comment
+    @PostMapping("/display/{boardId}/posts/{postId}/comments/{commentId}/edit")
+    public String editComment(@PathVariable Long boardId,
+                              @PathVariable Long postId,
+                              @PathVariable Long commentId,
+                              @RequestParam String content,
+                              Authentication authentication) {
+
+        User user = (User) authentication.getPrincipal();
+        commentService.updateCommentContent(commentId, content);
+
+        // Stay on the single post + comments view
+        return "redirect:/boards/display/" + boardId + "?view=post&postId=" + postId;
+    }
+
     //replying to comment (to parent comment)
     @PostMapping("/display/{boardId}/posts/{postId}/comments/{commentId}/reply")
     public String replyToComment(@PathVariable Long boardId,
@@ -232,6 +322,7 @@ public class BoardsController {
 
         return "redirect:/boards/display/" + boardId + "?view=post&postId=" + postId;
     }
+
 
 
 
