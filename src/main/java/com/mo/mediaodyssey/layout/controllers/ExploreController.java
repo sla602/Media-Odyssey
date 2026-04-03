@@ -23,9 +23,10 @@ public class ExploreController {
     public String exploreBoardsPage(@RequestParam(value = "search", required = false) String search,
                                     Model model) {
 
-        List<Boards> boards = boardsService.findAllBoards();
+        List<Boards> boards = boardsService.findAllBoards().stream()
+                .filter(b -> "public".equalsIgnoreCase(b.getBoard_type()))
+                .collect(Collectors.toList());
 
-        // Filter by search query if provided
         if (search != null && !search.isBlank()) {
             String query = search.toLowerCase();
             boards = boards.stream()
