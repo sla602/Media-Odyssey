@@ -66,7 +66,7 @@ public class AuthExceptionHandler {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .body(AuthApiResponse.error("AUTH_INVALID_VERIFICATION_TOKEN",
-                                                "Verification token is invalid. Please try again."));
+                                                "Verification token is invalid. If you have previously followed this link to verify, please continue to log in. Please try again."));
         }
 
         @ExceptionHandler({ MethodArgumentNotValidException.class, BindException.class,
