@@ -8,7 +8,7 @@
         <title>Music Display-Media Odyssey</title>
         <link rel="stylesheet" th:href="@{/layout/css/global.css}">
         <link rel="stylesheet" th:href="@{/layout/css/fragments.css}">
-        <link rel="stylesheet" th:href="@{/layout/css/mediaStyle/musicDisplay.css}">
+        <link rel="stylesheet" th:href="@{/layout/css/mediaDisplay.css}">
     </head>
     <body>
 
@@ -27,14 +27,14 @@
         ===========================================================================-->
 
         <!-- Poster + Info -->
-        <div class="music-header">
+        <div class="media-header">
             <!-- Poster -->
             <div class="poster-card">
                 <img th:src="" alt="Music Poster" id="poster-img" />
             </div>
 
             <!-- Music's Info: name, artist, release date. -->
-            <div class="music-info">
+            <div class="media-info">
                 <h1 class="music-title"></h1>
 
                 <div class="music-artist"></div>
@@ -44,7 +44,7 @@
         </div>
 
         <!-- Music's body: show (possibly) lyrics + interactive/action panel (ratings + add to boards)-->
-        <div class="music-body">
+        <div class="media-body">
 
             <!-- Music's lyrics -->
             <div class="music-lyrics"></div>

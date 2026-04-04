@@ -1,5 +1,6 @@
 package com.mo.mediaodyssey.layout.services;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.mo.mediaodyssey.layout.models.BoardMedia;
@@ -9,13 +10,12 @@ import com.mo.mediaodyssey.layout.repositories.BoardsRepository;
 
 @Service
 public class BoardMediaService {
-    private final BoardMediaRepository boardMediaRepository; 
-    private final BoardsRepository boardsRepository; 
 
-    public BoardMediaService (BoardMediaRepository boardMediaRepository, BoardsRepository boardsRepository) {
-        this.boardMediaRepository = boardMediaRepository; 
-        this.boardsRepository = boardsRepository;
-    }
+    @Autowired
+    private BoardMediaRepository boardMediaRepository; 
+
+    @Autowired
+    private BoardsRepository boardsRepository; 
 
     public void addMediaToBoard(Long boardId, Long mediaApiId) {
 

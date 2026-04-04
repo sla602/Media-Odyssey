@@ -101,7 +101,7 @@ document.addEventListener("DOMContentLoaded", function () {
       })
       .then(response => {
         if (response.ok) {
-          alert("Movie added to board!");
+          alert("Media added to board!");
         } else {
           alert("Already exists or error occurred.");
         }

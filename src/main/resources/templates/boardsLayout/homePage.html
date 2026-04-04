@@ -58,12 +58,6 @@
                     <button class="rec-tab" data-type="SONG">🎵 Songs</button>
                 </div>
 
-                <div th:if="${errorMessage}">
-                    <script th:inline="javascript">
-                        alert([[${errorMessage}]]);
-                    </script>
-                </div>
-
                 <!-- Status message (loading / no data yet) -->
                 <p id="recStatus" class="rec-status"></p>
 

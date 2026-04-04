@@ -7,6 +7,7 @@
         <title th:text="${game.title}"></title>
         <link rel="stylesheet" th:href="@{/layout/css/global.css}">
         <link rel="stylesheet" th:href="@{/layout/css/fragments.css}">
+        <link rel="stylesheet" th:href="@{/layout/css/mediaDisplay.css}">
 
     </head>
     <body>
@@ -24,21 +25,21 @@
         <!-- =====================================================================
                 main content of the page begins here 
         ===========================================================================-->
-        <main class="game-container">
+        <main class="media-container">
 
             <!-- Top Section: Poster + Info -->
-            <div class="game-header">
+            <div class="media-header">
                 <!-- Poster Card -->
                 <div class="poster-card">
-                    <img th:src="'https://image.tmdb.org/t/p/w500' + ${game.poster_path}" 
+                    <img th:src="${game.poster_path}" 
                         alt="Game Poster" id="poster-img" />
                 </div>
 
                 <!-- Game's Info -->
-                <div class="game-info">
-                    <h1 th:text="${game.title}" class="game-title"></h1>
+                <div class="media-info">
+                    <h1 th:text="${game.title}" class="media-title"></h1>
 
-                    <div class="game-genres">
+                    <div class="genres">
                         <span th:each="genre : ${game.genres}" th:text="${genre.name}" class="genre-tag"></span>
                     </div>
 
@@ -47,18 +48,18 @@
                         <!-- release date of the game -->
                         <div class="meta-item">
                             <h3 class="release-date-title">Released on:</h3>
-                            <span th:text="${game.release_dates}"></span>
+                            <span th:text="${game.release_date}"></span>
                         </div>
                     </div>
                 </div>
             </div>
 
             <!-- middle(body) shows game's overview and interactive actions (ratings, added to board)-->
-            <div class="game-middle">
+            <div class="media-middle">
                 <!--Game's Overview-->
-                <div class="game-overview">
+                <div class="media-overview">
                     <h3>Overview:</h3>
-                    <p th:text="${game.overview}"></p>
+                    <p th:text="${game.description}"></p>
                 </div>
 
                 <!-- Interact/ Actions Space -->
@@ -90,7 +91,7 @@
                             Note: They cannot add movies into other's theme boards. 
                             Future idea: Perhaps users can clone other users's theme boards? Or request the 
                             theme board owner to add this movie in their theme board. -->
-                        <input type="hidden" id="movieApiId" th:value="${movie.id}" />
+                        <input type="hidden" id="gameApiId" th:value="${game.id}" />
                         <div class="theme-dropdown">
                             <button class="dropdown-btn" id="dropdownBtn">
                                 <span>Add to board</span>
@@ -109,12 +110,12 @@
             </div>
 
             <!-- Game page's footer: -->
-             <div class="movie-footer">
-             </div>
+            <div class="media-footer">
+            </div>
         </main>
 
         <script th:src="@{/layout/js/fragments.js}"></script>
-        <script th:src="@{/layout/js/mediaJS/mediaDisplay.js}"></script>
+        <script th:src="@{/layout/js/mediaDisplay.js}"></script>
 
     </body>
 </html>

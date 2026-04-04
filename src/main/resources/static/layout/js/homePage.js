@@ -201,15 +201,7 @@ async function loadRecommendations(mediaType) {
 // Build a card for each recommendation
 function renderCards(items) {
     const cardsEl = document.getElementById("recCards");
-
-    /*
-        *** This <div> HTML will be modified so user can click on them and be brought to HTML that displays
-        **  details information of the meta they clicked on. 
-        ** Logic: Media display Controller will have the path /mediaView/mediaType/mediaId
-        *  This ensures the type of media being cliked on and its id. (nice =])
-        *
-        *** Only movie is being worked on right now.
-    */
+    
     items.sort(() => Math.random() - 0.5); // shuffle
     items.forEach(item => {
         const card = document.createElement("a");

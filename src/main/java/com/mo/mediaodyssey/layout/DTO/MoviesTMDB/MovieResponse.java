@@ -13,7 +13,7 @@ public class MovieResponse {
     @JsonProperty("release_date")
     private String release_dates;
     
-    private List<Genres> genres;
+    private List<TMDBGenres> genres;
     private String poster_path; 
 
     @JsonProperty("watch/providers")
@@ -21,7 +21,7 @@ public class MovieResponse {
 
     public MovieResponse () {}
 
-    public MovieResponse (String title, String overview, String release_dates, List<Genres> genres, String poster_path, WatchProviders watchProviders){
+    public MovieResponse (String title, String overview, String release_dates, List<TMDBGenres> genres, String poster_path, WatchProviders watchProviders){
         this.title = title; 
         this.overview = overview; 
         this.release_dates = release_dates; 
@@ -62,11 +62,11 @@ public class MovieResponse {
         this.release_dates = release_dates;
     }
 
-    public List<Genres> getGenres() {
+    public List<TMDBGenres> getGenres() {
         return genres;
     }
 
-    public void setGenres(List<Genres> genres) {
+    public void setGenres(List<TMDBGenres> genres) {
         this.genres = genres;
     }
 
