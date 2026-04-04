@@ -455,16 +455,18 @@
                                 </th:block>
                                 <!-- Ban / Unban buttons for members who are not the OWNER and not the current user -->
                                 <th:block th:if="${member.roleType.name() != 'OWNER' and !member.userId.equals(currentUserId)}">
-                                    <!-- Unban button (if currently BANNED) -->
+                                    <!-- Unban button (only if currently BANNED) -->
                                     <th:block th:if="${member.roleType.name() == 'BANNED'}">
                                         <form th:action="@{/boards/display/{boardId}/moderation/members/{userId}/unban(boardId=${board.id}, userId=${member.userId})}" method="post" class="action-form">
                                             <button type="submit" class="action-btn action-unban" onclick="return confirm('Unban this member?')">Unban</button>
                                         </form>
                                     </th:block>
-                                <th:block th:if="${member.roleType.name() != 'OWNER' and !member.userId.equals(currentUserId)}">
-                                    <form th:action="@{/boards/display/{boardId}/moderation/members/{userId}/ban(boardId=${board.id}, userId=${member.userId})}" method="post" class="action-form">
-                                        <button type="submit" class="action-btn action-ban" onclick="return confirm('Ban this member?')">Ban</button>
-                                    </form>
+                                    <!-- Ban button (only if currently a MEMBER) -->
+                                    <th:block th:if="${member.roleType.name() == 'MEMBER'}">
+                                        <form th:action="@{/boards/display/{boardId}/moderation/members/{userId}/ban(boardId=${board.id}, userId=${member.userId})}" method="post" class="action-form">
+                                            <button type="submit" class="action-btn action-ban" onclick="return confirm('Ban this member?')">Ban</button>
+                                        </form>
+                                    </th:block>
                                 </th:block>
                             </div>
                         </div>
