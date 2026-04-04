@@ -83,8 +83,7 @@ public class BoardsService {
      * This replaces findBoardsByUser() for the homepage display.
      */
     public List<Boards> getJoinedBoards(Long userId) {
-        List<BoardRole> roles = roleRepo.findByUserIdAndRoleTypeNot(userId, RoleType.BANNED);
-
+        List<BoardRole> roles = roleRepo.findActiveByUserId(userId);
         return roles.stream()
                 .map(role -> boardsRepo.findById(role.getBoardId()).orElse(null))
                 .filter(java.util.Objects::nonNull)
@@ -122,13 +121,15 @@ public class BoardsService {
 
         if (existing.isPresent()) {
             RoleType role = existing.get().getRoleType();
-            if (role.isOwner()) {
-                throw new IllegalStateException("You are already the owner of this board.");
-            } else if (role.isModerator()) {
-                throw new IllegalStateException("You are already a moderator in this board.");
-            } else {
-                throw new IllegalStateException("You are already a member of this board.");
+            if (role.isLeft()) {
+                existing.get().setRoleType(RoleType.MEMBER);
+                roleRepo.save(existing.get());
+                return;
             }
+            if (role.isOwner()) throw new IllegalStateException("You are already the owner.");
+            if (role.isModerator()) throw new IllegalStateException("You are already a moderator.");
+            if (role.isBanned()) throw new IllegalStateException("You are banned from this board.");
+            throw new IllegalStateException("You are already a member.");
         }
 
         BoardRole newRole = new BoardRole(userId, boardId, RoleType.MEMBER);
@@ -143,7 +144,10 @@ public class BoardsService {
             throw new RuntimeException("Owner cannot leave board. Transfer ownership first.");
         }
 
-        roleRepo.deleteByUserIdAndBoardId(userId, boardId);
+        System.out.println("LEAVING: userId=" + userId + " boardId=" + boardId + " oldRole=" + role.getRoleType());
+        role.setRoleType(RoleType.LEFT);
+        roleRepo.save(role);
+        System.out.println("LEFT: new role=" + role.getRoleType());
     }
 
     public boolean isUserInBoard(Long userId, Long boardId) {

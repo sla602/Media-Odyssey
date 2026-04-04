@@ -172,7 +172,18 @@
                                     </form>
                                     <a th:href="@{/boards/display/{id}(id=${board.id}, view='post', postId=${post.id})}"
                                        class="action-btn action-reply">Reply</a>
-                                    <a href="#" class="action-btn action-report">Report</a>
+                                    <form th:action="@{/boards/display/{boardId}/posts/{postId}/report(
+        boardId=${board.id},
+        postId=${post.id})}"
+                                          method="post" class="action-form">
+
+                                        <input type="hidden" name="contentAuthorId" th:value="${post.authorId}" />
+                                        <input type="hidden" name="reason" value="Inappropriate content" />
+
+                                        <button type="submit" class="action-btn action-report">
+                                            Report
+                                        </button>
+                                    </form>
                                 </th:block>
 
                                 <!-- Member: reply, report -->

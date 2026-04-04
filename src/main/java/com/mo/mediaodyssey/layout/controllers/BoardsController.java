@@ -144,8 +144,7 @@ public class BoardsController {
             return "redirect:/";
         }
 
-
-        boolean isMember = !"NONE".equals(role);
+        boolean isMember = !"NONE".equals(role) && !"LEFT".equals(role) && !"BANNED".equals(role);
         Long reportCount = reportRepository.countByBoardIdAndResolvedFalse(id);
 
         model.addAttribute("board", board);

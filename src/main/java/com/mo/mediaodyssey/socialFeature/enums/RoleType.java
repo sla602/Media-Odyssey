@@ -8,6 +8,8 @@ public enum RoleType {
 
     BANNED(Set.of()), // ABSOLUTELY NO PERMISSIONS
 
+    LEFT(Set.of()), //Member Left
+
     MEMBER(Set.of(
             Permission.CREATE_POST,
             Permission.EDIT_POST,       // can edit own post
@@ -64,6 +66,7 @@ public enum RoleType {
     public boolean isMember()    { return this == MEMBER; }
     public boolean isNone()      { return this == NONE; }
     public boolean isBanned()    { return this == BANNED; }
+    public boolean isLeft() { return this == LEFT; }
     public boolean isStaff() {
         return this == MODERATOR || this == OWNER;
     }
