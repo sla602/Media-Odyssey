@@ -1,8 +1,9 @@
 package com.mo.mediaodyssey.community.favorite;
 
-import com.mo.mediaodyssey.auth.repository.UserRepository;
 import com.mo.mediaodyssey.recommendation.UserInteraction;
 import com.mo.mediaodyssey.recommendation.UserInteractionRepository;
+import com.mo.mediaodyssey.shared.services.CurrentAccountService;
+
 import jakarta.servlet.http.HttpSession;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -34,25 +35,20 @@ public class CommunityController {
 
     private final MediaRankingService mediaRankingService;
     private final UserInteractionRepository userInteractionRepository;
-    private final UserRepository userRepository;
+    private final CurrentAccountService currentAccountService;
 
     public CommunityController(MediaRankingService mediaRankingService,
-            UserInteractionRepository userInteractionRepository,
-            UserRepository userRepository) {
+            UserInteractionRepository userInteractionRepository, CurrentAccountService currentAccountService) {
         this.mediaRankingService = mediaRankingService;
         this.userInteractionRepository = userInteractionRepository;
-        this.userRepository = userRepository;
+        this.currentAccountService = currentAccountService;
     }
 
     /**
      * Resolves the logged-in user's database ID from Spring Security.
      */
     private Long getUserId(Authentication auth) {
-        if (auth == null || !auth.isAuthenticated())
-            return null;
-        return userRepository.findByEmail(auth.getName())
-                .map(u -> u.getId())
-                .orElse(null);
+        return currentAccountService.getCurrentAccount(auth).getId();
     }
 
     /**

@@ -15,10 +15,10 @@ import com.mo.mediaodyssey.auth.dto.UserDto;
 import com.mo.mediaodyssey.auth.repository.UserRepository;
 
 @Service
-public class AuthService {
+public class MOLocalAuthService {
 
     @Autowired
-    private VerificationService verificationService;
+    private EmailVerificationService verificationService;
 
     @Autowired
     private AuthenticationManager authenticationManager;
@@ -42,6 +42,7 @@ public class AuthService {
         if (userExists) {
             throw new BadCredentialsException("User with email address " + dto.email() + " already exists.");
         }
+
         User user = new User(dto.email(), passwordEncoder.encode(dto.password()));
 
         userRepository.save(user);

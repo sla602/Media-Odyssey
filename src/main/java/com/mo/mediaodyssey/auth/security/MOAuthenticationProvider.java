@@ -13,6 +13,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
+import com.mo.mediaodyssey.shared.model.User;
 import com.mo.mediaodyssey.auth.services.MOUserDetailsService;
 
 @Component
@@ -33,6 +34,9 @@ public class MOAuthenticationProvider implements AuthenticationProvider {
         String password = authentication.getCredentials().toString();
 
         UserDetails user = userDetailsService.loadUserByUsername(email);
+        if (user instanceof User moUser && moUser.isOauthAccount()) {
+            throw new BadCredentialsException("This account uses OAuth sign-in.");
+        }
 
         if (!passwordEncoder.matches(password, user.getPassword())) {
             throw new BadCredentialsException("Invalid password");

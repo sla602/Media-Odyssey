@@ -31,9 +31,11 @@ public class DevUserService {
         }
 
         // Create the User
-        // new users will have a random generated avatars and their custom avatar will be null until they upload something
+        // new users will have a random generated avatars and their custom avatar will
+        // be null until they upload something
         User user = new User(dto.email(), dto.email(), passwordEncoder.encode(dto.password()), true, true,
-                role, AvatarService.avatarGenerate(Math.abs(UUID.randomUUID().getMostSignificantBits())), null, "default");
+                role, "LOCAL", null, null,
+                AvatarService.avatarGenerate(Math.abs(UUID.randomUUID().getMostSignificantBits())), null, "default");
 
         // Save the user
         userRepository.save(user);

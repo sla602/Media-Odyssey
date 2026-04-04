@@ -23,7 +23,7 @@ import com.mo.mediaodyssey.auth.exception.InvalidVerificationTokenException;
 import com.mo.mediaodyssey.auth.exception.UserAlreadyVerifiedException;
 
 @Service
-public class VerificationService {
+public class EmailVerificationService {
 
     // Inspiried by: https://www.baeldung.com/registration-verify-user-by-email
     // Debugging assisted by AI

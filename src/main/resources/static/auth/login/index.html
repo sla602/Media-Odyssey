@@ -46,6 +46,16 @@
                             <a href="/auth/resend" class="text-white text-decoration-none">Resend verification</a>
                         </div>
                     </div>
+
+                    <div class="text-center my-3 text-light">or</div>
+
+                    <div class="row g-2">
+                        <div class="col-12 d-grid gap-2">
+                            <a href="/auth/oauth2/authorization/google" class="btn btn-lg fw-semibold text-white" id="button">
+                                Continue with Google
+                            </a>
+                        </div>
+                    </div>
                 </form>
             </div>
         </section>
@@ -89,6 +99,7 @@
             const statusModalEl = document.getElementById("statusModal");
             const statusModalBody = document.getElementById("statusModalBody");
             const statusModal = new bootstrap.Modal(statusModalEl);
+            const searchParams = new URLSearchParams(window.location.search);
 
             let redirectAfterClose = null;
 
@@ -101,6 +112,10 @@
             statusModalEl.addEventListener("hidden.bs.modal", () => {
                 if (redirectAfterClose) window.location.href = redirectAfterClose;
             });
+
+            if (searchParams.get("oauthError") === "true") {
+                showStatusModal("OAuth sign-in failed. If you previously registered with email/password, please log in with email/password instead.");
+            }
 
             const loadingModal = new bootstrap.Modal(document.getElementById('loadingModal'));
 
@@ -133,7 +148,7 @@
                         setTimeout(() => window.location.replace("/"), 500);
                     } else if (resText.status === "AUTH_DISABLED") {
                         showStatusModal("You have not completed email verification for your account. Please check your email and follow the link.");
-                    } else if (resText.status === "AUTH_INVALID_CREDENTIALS" || "AUTH_USER_NOT_FOUND") {
+                    } else if (resText.status === "AUTH_INVALID_CREDENTIALS" || resText.status === "AUTH_USER_NOT_FOUND") {
                         showStatusModal("The email and/or password provided is incorrect. Please try again.");
                     } else if (resText.status === "AUTH_LOCKED") {
                         showStatusModal("Your account is locked. Please contact support.");

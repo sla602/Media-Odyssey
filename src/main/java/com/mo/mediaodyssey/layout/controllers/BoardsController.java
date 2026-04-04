@@ -18,6 +18,7 @@ import com.mo.mediaodyssey.layout.repositories.BoardMediaRepository;
 import com.mo.mediaodyssey.layout.services.BoardsService;
 import com.mo.mediaodyssey.layout.services.MediaServices.MovieService;
 import com.mo.mediaodyssey.shared.model.User;
+import com.mo.mediaodyssey.shared.services.CurrentAccountService;
 
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
@@ -32,12 +33,14 @@ public class BoardsController {
     private final BoardsService boardsService;
     private final BoardMediaRepository boardMediaRepository;
     private final MovieService movieService;
+    private final CurrentAccountService currentAccountService;
 
     public BoardsController(BoardsService boardsService, BoardMediaRepository boardMediaRepository,
-            MovieService movieService) {
+            MovieService movieService, CurrentAccountService currentAccountService) {
         this.boardsService = boardsService;
         this.boardMediaRepository = boardMediaRepository;
         this.movieService = movieService;
+        this.currentAccountService = currentAccountService;
     }
 
     /* Bring user to the page to create a board */
@@ -61,7 +64,7 @@ public class BoardsController {
     @PostMapping("/create")
     public String createBoard(@ModelAttribute("board") Boards board, Authentication authentication) {
 
-        User user = (User) authentication.getPrincipal();
+        User user = currentAccountService.getCurrentAccount(authentication);
 
         board.setUser(user);
         boardsService.createBoard(board);

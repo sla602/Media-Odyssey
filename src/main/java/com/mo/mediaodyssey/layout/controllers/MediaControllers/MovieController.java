@@ -11,6 +11,7 @@ import com.mo.mediaodyssey.layout.models.Boards;
 import com.mo.mediaodyssey.layout.services.BoardsService;
 import com.mo.mediaodyssey.layout.services.MediaServices.MovieService;
 import com.mo.mediaodyssey.shared.model.User;
+import com.mo.mediaodyssey.shared.services.CurrentAccountService;
 
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -23,10 +24,13 @@ public class MovieController {
 
     private final MovieService movieService;
     private final BoardsService boardsService;
+    private final CurrentAccountService currentAccountService;
 
-    public MovieController(MovieService movieService, BoardsService boardsService) {
+    public MovieController(MovieService movieService, BoardsService boardsService,
+            CurrentAccountService currentAccountService) {
         this.movieService = movieService;
         this.boardsService = boardsService;
+        this.currentAccountService = currentAccountService;
     }
 
     /*
@@ -48,7 +52,7 @@ public class MovieController {
             MovieResponse movie = movieService.getMovieById(id);
 
             // Identify the User in order to get all their boards
-            User user = (User) authentication.getPrincipal();
+            User user = currentAccountService.getCurrentAccount(authentication);
             // Use user to find all the boards that htis user created
             List<Boards> boards = boardsService.findBoardsByUser(user);
 

@@ -7,9 +7,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContext;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
+import org.springframework.security.web.authentication.session.SessionAuthenticationStrategy;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -19,8 +17,9 @@ import com.mo.mediaodyssey.auth.dto.ResendVerifyTokenDto;
 import com.mo.mediaodyssey.auth.dto.AuthApiResponse;
 import com.mo.mediaodyssey.auth.dto.UserDto;
 import com.mo.mediaodyssey.auth.dto.VerifyTokenDto;
-import com.mo.mediaodyssey.auth.services.AuthService;
-import com.mo.mediaodyssey.auth.services.VerificationService;
+import com.mo.mediaodyssey.auth.services.MOLocalAuthService;
+import com.mo.mediaodyssey.auth.services.EmailVerificationService;
+import com.mo.mediaodyssey.shared.services.CurrentAccountService;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -40,10 +39,16 @@ public class AuthController {
     // Debugging assisted by AI.
 
     @Autowired
-    private AuthService authService;
+    private MOLocalAuthService authService;
 
     @Autowired
-    private VerificationService verificationService;
+    private EmailVerificationService verificationService;
+
+    @Autowired
+    private SessionAuthenticationStrategy sessionAuthenticationStrategy;
+
+    @Autowired
+    private CurrentAccountService currentAccountService;
 
     /**
      * Handles account login requests.
@@ -64,12 +69,12 @@ public class AuthController {
         // Login the User
         Authentication authentication = authService.loginUser(dto);
 
-        // Persist the login
-        SecurityContext context = SecurityContextHolder.createEmptyContext();
-        context.setAuthentication(authentication);
-        SecurityContextHolder.setContext(context);
+        // Apply session concurrency + session fixation strategy for custom login flow.
+        sessionAuthenticationStrategy.onAuthentication(authentication, request, response);
 
-        new HttpSessionSecurityContextRepository().saveContext(context, request, response);
+        // Persist the login using the same principal refresh flow shared by both local
+        // and OAuth login.
+        currentAccountService.refreshPrincipal(authentication, request, response);
 
         // Return OK - successfully logged in
         return ResponseEntity
