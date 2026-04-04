@@ -111,19 +111,27 @@
                     <div class="board-POST-container" id="postsContainer">
 
                         <!-- Create Post Form (below posts) -->
-                        <div class="create-post-section">
-                            <form th:action="@{/boards/display/{id}/posts(id=${board.id})}"
-                                  method="post" class="create-post-form">
-                                <input type="text" name="title" class="post-input-title"
-                                       placeholder="Post title" maxlength="200" required/>
-                                <textarea name="content" class="post-input-content"
-                                          placeholder="What's on your mind?" maxlength="10000"
-                                          rows="4" required></textarea>
-                                <div class="create-post-actions">
-                                    <button type="submit" class="btn-submit">Post</button>
-                                </div>
-                            </form>
-                        </div>
+                        <th:block th:if="${isMember}">
+                            <div class="create-post-section">
+                                <form th:action="@{/boards/display/{id}/posts(id=${board.id})}"
+                                      method="post" class="create-post-form">
+                                    <input type="text" name="title" class="post-input-title"
+                                           placeholder="Post title" maxlength="200" required/>
+                                    <textarea name="content" class="post-input-content"
+                                              placeholder="What's on your mind?" maxlength="10000"
+                                              rows="4" required></textarea>
+                                    <div class="create-post-actions">
+                                        <button type="submit" class="btn-submit">Post</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </th:block>
+
+                        <th:block th:unless="${isMember}">
+                            <div class="join-warning">
+                                <p>You must join this board before you can create a post.</p>
+                            </div>
+                        </th:block>
 
                         <div th:if="${#lists.isEmpty(posts)}">
                             <p class="empty-message">No posts yet. Be the first to post!</p>
@@ -266,15 +274,21 @@
                     </div>
 
                     <!-- Comment Form -->
-                    <div class="comment-form-section">
-                        <form th:action="@{/boards/display/{boardId}/posts/{postId}/comments(boardId=${board.id}, postId=${selectedPost.id})}" method="post" class="create-post-form">
-                            <textarea name="content" class="post-input-content" placeholder="Write a comment..." maxlength="5000" rows="3" required></textarea>
-                            <div class="create-post-actions">
-                                <button type="submit" class="btn-submit">Comment</button>
-                            </div>
-                        </form>
-                    </div>
-
+                    <th:block th:if="${isMember}">
+                        <div class="comment-form-section">
+                            <form th:action="@{/boards/display/{boardId}/posts/{postId}/comments(boardId=${board.id}, postId=${selectedPost.id})}" method="post" class="create-post-form">
+                                <textarea name="content" class="post-input-content" placeholder="Write a comment..." maxlength="5000" rows="3" required></textarea>
+                                <div class="create-post-actions">
+                                    <button type="submit" class="btn-submit">Comment</button>
+                                </div>
+                            </form>
+                        </div>
+                    </th:block>
+                    <th:block th:unless="${isMember}">
+                        <div class="join-warning">
+                            <p>You must join this board before you can comment.</p>
+                        </div>
+                    </th:block>
                     <!-- Comments List -->
                     <div class="comments-section">
                         <h2 class="comments-heading" th:text="${#lists.size(comments)} + ' Comment' + (${#lists.size(comments) != 1} ? 's' : '')"></h2>
@@ -342,16 +356,18 @@
                             </div>
 
                             <!-- Inline reply form -->
-                            <div th:id="'reply-' + ${comment.id}" class="inline-reply-form" style="display: none;">
-                                <form th:action="@{/boards/display/{boardId}/posts/{postId}/comments/{commentId}/reply(boardId=${board.id}, postId=${selectedPost.id}, commentId=${comment.id})}" method="post" class="create-post-form reply-form">
-                                    <textarea name="content" class="post-input-content" placeholder="Write a reply..." maxlength="5000" rows="2" required></textarea>
-                                    <div class="create-post-actions">
-                                        <button type="button" class="btn-cancel"
-                                                th:attr="onclick='toggleReply(' + ${comment.id} + ')'">Cancel</button>
-                                        <button type="submit" class="btn-submit">Reply</button>
-                                    </div>
-                                </form>
-                            </div>
+                            <th:block th:if="${isMember}">
+                                <div th:id="'reply-' + ${comment.id}" class="inline-reply-form" style="display: none;">
+                                    <form th:action="@{/boards/display/{boardId}/posts/{postId}/comments/{commentId}/reply(boardId=${board.id}, postId=${selectedPost.id}, commentId=${comment.id})}" method="post" class="create-post-form reply-form">
+                                        <textarea name="content" class="post-input-content" placeholder="Write a reply..." maxlength="5000" rows="2" required></textarea>
+                                        <div class="create-post-actions">
+                                            <button type="button" class="btn-cancel"
+                                                    th:attr="onclick='toggleReply(' + ${comment.id} + ')'">Cancel</button>
+                                            <button type="submit" class="btn-submit">Reply</button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </th:block>
                         </div>
                     </div>
                 </th:block>

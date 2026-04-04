@@ -369,6 +369,30 @@ body {
 .btn-cancel:hover { background: rgba(255, 255, 255, 0.05); color: #ffffff; }
 
 /* ===============================================================
+   JOIN WARNING (non-member message)
+==================================================================*/
+
+.join-warning {
+    margin-top: 1.5rem;
+    margin-bottom: 1.5rem;
+    padding: 1rem 1.25rem;
+
+    background: rgba(248, 113, 113, 0.08); /* soft red tint */
+    border: 1px solid rgba(248, 113, 113, 0.25);
+    border-radius: 12px;
+
+    text-align: center;
+}
+
+.join-warning p {
+    color: #fca5a5; /* soft red text */
+    font-size: 0.95rem;
+    font-weight: 500;
+    font-family: 'Space Grotesk', sans-serif;
+
+    letter-spacing: 0.2px;
+}
+/* ===============================================================
         POST CARDS (board listing)
 ==================================================================*/
 
