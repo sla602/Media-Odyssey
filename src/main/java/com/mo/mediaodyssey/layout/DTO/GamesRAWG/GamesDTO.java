@@ -47,6 +47,4 @@ public class GamesDTO {
     public void setPublishers(String publishers) {
         this.publishers = publishers;
     }
-
-    
 }
