@@ -9,6 +9,7 @@ public class RecommendationResponse {
     private String genre;
     private String imageUrl;
     private double score;
+    private boolean userLiked;
 
     public RecommendationResponse(String mediaApiId, String title, String artist, String mediaType,
                                    String genre, String imageUrl, double score) {
@@ -19,6 +20,7 @@ public class RecommendationResponse {
         this.genre = genre;
         this.imageUrl = imageUrl;
         this.score = score;
+        this.userLiked = false;
     }
 
     public String getMediaApiId() { return mediaApiId; }
@@ -28,4 +30,6 @@ public class RecommendationResponse {
     public String getGenre() { return genre; }
     public String getImageUrl() { return imageUrl; }
     public double getScore() { return score; }
+    public boolean isUserLiked() { return userLiked; }
+    public void setUserLiked(boolean userLiked) { this.userLiked = userLiked; }
 }

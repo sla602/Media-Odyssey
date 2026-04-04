@@ -8,6 +8,7 @@ import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
+import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -37,11 +38,8 @@ public class MediaRankingService {
     @Value("${rawg.api.key}")
     private String rawgApiKey;
 
-    @Value("${spotify.client.id}")
-    private String spotifyClientId;
-
-    @Value("${spotify.client.secret}")
-    private String spotifyClientSecret;
+    @Value("${lastfm.api.key}")
+    private String lastfmApiKey;
 
     public MediaRankingService(UserInteractionRepository userInteractionRepository) {
         this.userInteractionRepository = userInteractionRepository;
@@ -132,9 +130,9 @@ public class MediaRankingService {
     private RankedMediaResponse fetchMetadata(String mediaApiId, String mediaType, long totalScore) {
         return switch (mediaType) {
             case "MOVIE" -> fetchTmdbMetadata(mediaApiId, totalScore);
-            case "GAME" -> fetchRawgMetadata(mediaApiId, totalScore);
-            case "SONG" -> fetchSpotifyMetadata(mediaApiId, totalScore);
-            default -> null;
+            case "GAME"  -> fetchRawgMetadata(mediaApiId, totalScore);
+            case "SONG"  -> fetchLastfmMetadata(mediaApiId, totalScore);
+            default      -> null;
         };
     }
 
@@ -192,72 +190,45 @@ public class MediaRankingService {
     }
 
     /**
-     * Fetches track metadata from Spotify.
-     * mediaApiId is expected to be a Spotify track id.
-     *
-     * TODO (later iteration):
-     * Cache successful song metadata locally so repeated ranking page loads
-     * do not need to call Spotify every time.
+     * Fetches track metadata from Last.fm.
+     * mediaApiId is a Last.fm track URL e.g. https://www.last.fm/music/Artist/_/Track
+     * Parses the URL to extract artist and track name, then calls track.getInfo.
      */
-    private RankedMediaResponse fetchSpotifyMetadata(String mediaApiId, long totalScore) {
+    private RankedMediaResponse fetchLastfmMetadata(String mediaApiId, long totalScore) {
         try {
-            String accessToken = getSpotifyAccessToken();
-            if (accessToken == null || accessToken.isBlank())
-                return null;
+            // Last.fm track URLs follow the pattern: https://www.last.fm/music/{artist}/_/{track}
+            String path = mediaApiId.replaceFirst("https://www\\.last\\.fm/music/", "");
+            String[] parts = path.split("/_/", 2);
+            if (parts.length < 2) return null;
 
-            String url = "https://api.spotify.com/v1/tracks/" + mediaApiId;
-            HttpHeaders headers = new HttpHeaders();
-            headers.setBearerAuth(accessToken);
+            String artist = URLDecoder.decode(parts[0].replace("+", " "), "UTF-8");
+            String track  = URLDecoder.decode(parts[1].replace("+", " "), "UTF-8");
 
-            ResponseEntity<String> response = restTemplate.exchange(
-                    url,
-                    HttpMethod.GET,
-                    new HttpEntity<>(headers),
-                    String.class);
+            String url = "https://ws.audioscrobbler.com/2.0/?method=track.getInfo"
+                    + "&artist=" + java.net.URLEncoder.encode(artist, "UTF-8")
+                    + "&track="  + java.net.URLEncoder.encode(track, "UTF-8")
+                    + "&api_key=" + lastfmApiKey
+                    + "&format=json";
 
-            JsonNode track = objectMapper.readTree(response.getBody());
+            String response = restTemplate.getForObject(url, String.class);
+            JsonNode trackNode = objectMapper.readTree(response).path("track");
 
-            String title = track.path("name").asText("Unknown");
-            String artist = track.path("artists").path(0).path("name").asText("");
-            String imageUrl = track.path("album").path("images").path(0).path("url").asText("");
+            String title    = trackNode.path("name").asText("Unknown");
+            String artistName = trackNode.path("artist").path("name").asText("");
+            // Last.fm image array: index 3 is extralarge, fall back to index 2 (large)
+            String imageUrl = trackNode.path("album").path("image").path(3).path("#text").asText("");
+            if (imageUrl.isEmpty()) imageUrl = trackNode.path("album").path("image").path(2).path("#text").asText("");
 
             return new RankedMediaResponse(
                     mediaApiId,
                     title,
-                    artist,
+                    artistName,
                     "SONG",
                     imageUrl,
                     totalScore,
                     toDisplayRating(totalScore));
         } catch (Exception e) {
-            System.err.println("Spotify metadata error for " + mediaApiId + ": " + e.getMessage());
-            return null;
-        }
-    }
-
-    /**
-     * Requests a Spotify access token using client credentials flow.
-     */
-    private String getSpotifyAccessToken() {
-        try {
-            HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
-            headers.setBasicAuth(spotifyClientId, spotifyClientSecret);
-
-            org.springframework.util.MultiValueMap<String, String> body = new org.springframework.util.LinkedMultiValueMap<>();
-            body.add("grant_type", "client_credentials");
-
-            HttpEntity<org.springframework.util.MultiValueMap<String, String>> request = new HttpEntity<>(body,
-                    headers);
-
-            ResponseEntity<String> response = restTemplate.postForEntity(
-                    "https://accounts.spotify.com/api/token",
-                    request,
-                    String.class);
-
-            return objectMapper.readTree(response.getBody()).path("access_token").asText();
-        } catch (Exception e) {
-            System.err.println("Spotify token error: " + e.getMessage());
+            System.err.println("Last.fm metadata error for " + mediaApiId + ": " + e.getMessage());
             return null;
         }
     }
@@ -273,7 +244,7 @@ public class MediaRankingService {
 
         return switch (upper) {
             case "MOVIE", "MOVIES" -> "MOVIE";
-            case "GAME", "GAMES" -> "GAME";
+            case "GAME", "GAMES"   -> "GAME";
             case "SONG", "SONGS", "MUSIC" -> "SONG";
             default -> upper;
         };

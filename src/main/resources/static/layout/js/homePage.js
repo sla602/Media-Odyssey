@@ -209,7 +209,7 @@ function renderCards(items) {
         *  This ensures the type of media being cliked on and its id. (nice =])
         *
         *** Only movie is being worked on right now.
-    */ 
+    */
     items.sort(() => Math.random() - 0.5); // shuffle
     items.forEach(item => {
         const card = document.createElement("a");
@@ -222,9 +222,17 @@ function renderCards(items) {
             ? `<img class="rec-img" src="${item.imageUrl}" alt="${item.title}" onerror="this.style.display='none'">`
             : `<div class="rec-img rec-img-placeholder">No Image</div>`;
 
-        // route the link according to the media
-        const mediaType = item.mediaType.toLowerCase(); 
-        card.href= `/mediaView/${mediaType}/${item.mediaApiId}`;
+        // Intercept click: record VIEW interaction then navigate
+        const mediaType = item.mediaType.toLowerCase();
+        const destination = `/mediaView/${mediaType}/${item.mediaApiId}`;
+        card.href = "javascript:void(0)";
+        card.addEventListener("click", async (e) => {
+            // Allow like button clicks to bubble without triggering navigation
+            if (e.target.closest(".rec-btn")) return;
+            e.preventDefault();
+            await recordInteraction(card, "VIEW");
+            window.location.href = destination;
+        });
 
         card.innerHTML = `
             ${img}
@@ -233,23 +241,28 @@ function renderCards(items) {
                 <p class="rec-meta">${item.genre} · ${item.mediaType === 'SONG' ? item.artist : 'score: ' + item.score.toFixed(1)}</p>
             </div>
             <div class="rec-actions">
-                <button class="rec-btn view-btn"  onclick="recordInteraction(this, 'VIEW')">👁 View</button>
-                <button class="rec-btn like-btn"  onclick="recordInteraction(this, 'LIKE')">♡ Like</button>
+                <button class="rec-btn like-btn" onclick="recordInteraction(this, 'LIKE')">♡ Like</button>
             </div>
         `;
+
+        // If user already liked this item, show it as liked immediately
+        if (item.userLiked) {
+            const likeBtn = card.querySelector(".like-btn");
+            likeBtn.textContent = "❤ Liked!";
+            likeBtn.classList.add("liked");
+            likeBtn.disabled = true;
+        }
 
         cardsEl.appendChild(card);
     });
 }
 
-// re add buttons when we have interactions working
-
-
-
-
 // POST a VIEW or LIKE interaction to the backend
-async function recordInteraction(btn, interactionType) {
-    const card       = btn.closest(".rec-card");
+async function recordInteraction(btnOrCard, interactionType) {
+    const card = btnOrCard.classList.contains("rec-card")
+        ? btnOrCard
+        : btnOrCard.closest(".rec-card");
+
     const mediaApiId = card.dataset.mediaApiId;
     const mediaType  = card.dataset.mediaType;
     const genre      = card.dataset.genre;
@@ -268,13 +281,9 @@ async function recordInteraction(btn, interactionType) {
 
         if (res.ok) {
             if (interactionType === "LIKE") {
-                btn.textContent = "❤ Liked!";
-                btn.classList.add("liked");
-                btn.disabled = true;
-            } else {
-                btn.textContent = "✓ Viewed";
-                btn.classList.add("viewed");
-                btn.disabled = true;
+                btnOrCard.textContent = "❤ Liked!";
+                btnOrCard.classList.add("liked");
+                btnOrCard.disabled = true;
             }
         } else {
             console.warn("Interaction failed:", res.status);

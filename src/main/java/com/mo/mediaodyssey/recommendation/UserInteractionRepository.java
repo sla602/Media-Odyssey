@@ -16,6 +16,13 @@ public interface UserInteractionRepository extends JpaRepository<UserInteraction
     // Get all interactions of a specific type for a user (VIEW, LIKE, RATE)
     List<UserInteraction> findByUserIdAndInteractionType(Long userId, String interactionType);
 
+    // Check if a specific interaction already exists for a user + media item
+    boolean existsByUserIdAndMediaApiIdAndInteractionType(Long userId, String mediaApiId, String interactionType);
+
+    // Get all mediaApiIds that a user has liked
+    @Query("SELECT ui.mediaApiId FROM UserInteraction ui WHERE ui.userId = :userId AND ui.interactionType = 'LIKE'")
+    List<String> findLikedMediaApiIdsByUserId(@Param("userId") Long userId);
+
     // ── Community Favourites Ranking Queries ──────────────────────────────────
 
     /**

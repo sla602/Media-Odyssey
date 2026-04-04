@@ -326,6 +326,7 @@ when the js runs. Testing are required to see how it works.*/
     overflow: hidden;
     border: 1px solid #444;
     transition: border-color 0.2s;
+    text-decoration: none;
 }
 
 .rec-card:hover {
