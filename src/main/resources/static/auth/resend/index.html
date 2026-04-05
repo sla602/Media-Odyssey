@@ -93,21 +93,46 @@
 
             const loadingModalEl = document.getElementById('loadingModal');
             const loadingModal = new bootstrap.Modal(loadingModalEl);
+            let loadingModalRequested = false;
+
+            loadingModalEl.addEventListener("hidden.bs.modal", () => {
+                loadingModalRequested = false;
+            });
+
+            function hideLoadingModalThen(next) {
+                let completed = false;
+
+                const complete = () => {
+                    if (completed) {
+                        return;
+                    }
+                    completed = true;
+                    loadingModalRequested = false;
+                    next();
+                };
+
+                loadingModalEl.addEventListener("hidden.bs.modal", complete, { once: true });
+
+                // Handles the race where show() was called and response returns
+                // before Bootstrap fully transitions the loading modal in.
+                requestAnimationFrame(() => {
+                    loadingModal.hide();
+                    setTimeout(complete, 450);
+                });
+            }
 
             function showStatusModalAfterLoading(message, redirectUrl = null) {
-                const openStatusModal = () => showStatusModal(message, redirectUrl);
-
-                if (loadingModalEl.classList.contains("show")) {
-                    loadingModalEl.addEventListener("hidden.bs.modal", openStatusModal, { once: true });
-                    loadingModal.hide();
+                if (!loadingModalRequested) {
+                    showStatusModal(message, redirectUrl);
                     return;
                 }
 
-                openStatusModal();
+                hideLoadingModalThen(() => showStatusModal(message, redirectUrl));
             }
 
             document.getElementById("signupForm").addEventListener("submit", async (e) => {
                 e.preventDefault();
+                loadingModalRequested = true;
                 loadingModal.show();
                 try {
 
