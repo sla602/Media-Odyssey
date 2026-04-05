@@ -32,5 +32,5 @@ public class BoardMediaService {
             boardMedia.setBoard(board);
 
         boardMediaRepository.save(boardMedia);
-    }
+    } 
 }

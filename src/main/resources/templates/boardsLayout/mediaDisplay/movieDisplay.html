@@ -110,14 +110,31 @@
             </div>
 
             <!-- Movie page's footer: show the streaming platforms that the movie is on -->
-             <div class="media-footer">
-                <div class="stream-platforms-section">
+            <!--
+            <div class="media-footer">
+                <div class="streaming-section">
                     <h3>Available on</h3>
 
-                    <!--the div below will show the platforms that the movie is on-->
-                    <div class="platforms" th:text="${movie.watch_providers}"></div>
+                    <div class="platforms">
+
+                        <div class="platform-icon"
+                            th:each="p : ${movie.watch_providers}">
+
+                            <img th:src="${p.logo_url}"
+                                th:alt="${p.provider_name}"
+                                th:title="${p.provider_name}" />
+
+                            <span th:if="${provider.logoUrl == null}"
+                            th:text="${provider.name}"></span>
+                        </div>
+
+                    </div>
+
+                    <p th:if="${#lists.isEmpty(movie.watch_providers)}">
+                        No streaming options available
+                    </p>
                 </div>
-             </div>
+            </div> -->
         </main>
 
         <script th:src="@{/layout/js/fragments.js}"></script>

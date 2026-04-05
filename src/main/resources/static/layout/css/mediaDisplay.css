@@ -373,17 +373,17 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  cursor: pointer;
   transition: all 0.3s ease;
   border: 2px solid transparent;
 }
 
+/* This element is commented about because streaming icon is not clickable.
 .platform-icon:hover {
   transform: scale(1.1);
   background: rgba(255, 255, 255, 0.15);
   border-color: rgba(255, 255, 255, 0.3);
 }
-
+*/
 .platform-icon img {
   width: 35px;
   height: 35px;
