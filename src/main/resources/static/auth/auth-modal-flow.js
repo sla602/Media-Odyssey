@@ -57,6 +57,20 @@ window.AuthModalFlow = (() => {
             hideAfterShown = true;
         }
 
+        function setFormSubmitting(formEl, isSubmitting) {
+            if (!formEl) {
+                return;
+            }
+
+            const submitControls = formEl.querySelectorAll('button[type="submit"], input[type="submit"]');
+            submitControls.forEach((control) => {
+                control.disabled = isSubmitting;
+                control.setAttribute("aria-disabled", String(isSubmitting));
+            });
+
+            formEl.setAttribute("aria-busy", String(isSubmitting));
+        }
+
         statusModalEl.addEventListener("hidden.bs.modal", () => {
             if (redirectAfterClose) {
                 const target = redirectAfterClose;
@@ -91,6 +105,7 @@ window.AuthModalFlow = (() => {
             showLoadingModal,
             showStatusModal,
             showStatusModalAfterLoading,
+            setFormSubmitting,
         };
     }
 

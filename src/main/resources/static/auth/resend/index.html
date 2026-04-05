@@ -10,16 +10,16 @@
     <link rel="stylesheet" href="/auth/auth-styles.css">
 </head>
 
-<body class="text-light min-vh-100 mt-5">
-    <header class="container">
-        <h1 class="display-4 fw-bold text-light mb-3" id="title">MEDIA ODYSSEY</h1>
-        <p class="lead fw-bold text-light mb-1" id="subtitle">Discover your next obsession!</p>
-        <p class="lead fw-bold text-light mb-4" id="subtitle">Your journey starts here!</p>
+<body class="auth-page text-light min-vh-100 d-flex flex-column justify-content-center">
+    <header class="container px-3 px-lg-4 mb-2">
+        <h1 class="mo-title display-4 fw-bold text-light text-center mb-3">MEDIA ODYSSEY</h1>
+        <p class="mo-subtitle lead fw-bold text-light text-center mb-1">Discover your next obsession!</p>
+        <p class="mo-subtitle lead fw-bold text-light text-center mb-4">Your journey starts here!</p>
     </header>
-    <main class="container d-flex align-items-center justify-content-center py-3">
+    <main class="container px-3 px-lg-4 d-flex align-items-center justify-content-center py-2">
         <section class="card auth-card border-0 shadow-lg w-100" style="max-width: 520px;">
             <div class="card-body p-4 p-md-5">
-                <h3 class="text-center text-light fw-bold" id="welcome-text">Start your journey now!</h3>
+                <h3 class="mo-copy text-center text-light fw-bold mb-3">Start your journey now!</h3>
                 <form id="resendForm" class="needs-validation" novalidate>
                     <div class="mb-3">
                         <input type="email" class="form-control form-control-lg bg-light text-dark border-secondary"
@@ -28,10 +28,10 @@
 
                     <div class="row g-2">
                         <div class="col-6 d-grid gap-2">
-                            <button type="submit" class="btn btn-lg fw-semibold text-white" id="button">Re-send</button>
+                            <button type="submit" class="btn mo-btn btn-lg fw-semibold text-white">Re-send</button>
                         </div>
                         <div class="col-6 d-grid gap-2">
-                            <a href="/auth/login" class="btn btn-lg fw-semibold text-white" id="button">Already have an
+                            <a href="/auth/login" class="btn mo-btn btn-lg fw-semibold text-white">Already have an
                                 account? Log In</a>
                         </div>
                     </div>
@@ -76,15 +76,25 @@
 
     <script>
         window.addEventListener("DOMContentLoaded", () => {
-            const { showLoadingModal, showStatusModalAfterLoading } = AuthModalFlow.create();
+            const { showLoadingModal, showStatusModalAfterLoading, setFormSubmitting } = AuthModalFlow.create();
+            const resendForm = document.getElementById("resendForm");
+
+            let isSubmitting = false;
 
             function showBackendErrorOrDefault(resBody) {
                 const backendMessage = typeof resBody?.message === "string" ? resBody.message : "";
                 showStatusModalAfterLoading(backendMessage || "An unexpected error occurred. Please try again later.");
             }
 
-            document.getElementById("resendForm").addEventListener("submit", async (e) => {
+            resendForm.addEventListener("submit", async (e) => {
                 e.preventDefault();
+
+                if (isSubmitting) {
+                    return;
+                }
+
+                isSubmitting = true;
+                setFormSubmitting(resendForm, true);
                 showLoadingModal();
                 try {
 
@@ -121,6 +131,9 @@
                     }
                 } catch (error) {
                     showStatusModalAfterLoading("An unexpected error occurred. Please try again later.");
+                } finally {
+                    isSubmitting = false;
+                    setFormSubmitting(resendForm, false);
                 }
             });
         });

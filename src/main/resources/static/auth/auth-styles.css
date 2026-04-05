@@ -1,83 +1,90 @@
 @import url('https://fonts.googleapis.com/css2?family=Cinzel+Decorative');
 @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk');
 
-body {
+.auth-page {
   background: linear-gradient(125.45deg, #131419 0%, #330099 73.23%);
+  min-height: 100dvh;
+  overflow-x: hidden;
 }
 
-#title {
-  font-family: "Cinzel Decorative";
-  font-style: normal;
-  text-align: center;
+.mo-title {
+  font-family: "Cinzel Decorative", serif;
+  letter-spacing: 0.03em;
 }
 
-#subtitle, #welcome-text, .auth-card, .card-body {
-  font-family: "Space Grotesk";
-  font-style: normal;
-  text-align: center;
+.mo-subtitle,
+.mo-copy,
+.auth-card {
+  font-family: "Space Grotesk", sans-serif;
 }
 
 .auth-card {
   background: rgba(137, 195, 239, 0.47) !important;
-  opacity: 0.85;
-  border-radius: 39px;
+  border-radius: 1.75rem;
   backdrop-filter: blur(4px);
 }
 
-.form-control {
-  /* background-color: #0b0f16 !important; */
-  /* color: #fff !important; */
-  border-color: #6c757d !important;
-}
-
-.form-control::placeholder {
-  color: grey !important;
-}
-
-.form-control:focus {
-  border-color: #8ec5ff !important;
-  box-shadow: 0 0 0 .2rem rgba(142, 197, 255, .25) !important;
-}
-
-.btn {
-  border-radius: 0.7rem;
-}
-.mo-brand {
-  font-family: 'Cinzel Decorative', serif;
-  letter-spacing: 0.06em;
-}
-
-.auth-card {
-  /* background: rgba(137, 195, 239, 0.47) !important; */
-  border-radius: 39px;
-  backdrop-filter: blur(4px);
-}
-
-body {
-  background: linear-gradient(125.45deg, #131419 0%, #330099 73.23%);
-}
-
-.card {
-  border-radius: 1rem;
-}
-
-.form-control:focus {
-  border-color: #6ea8fe;
-  box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
-}
-
-.btn {
-  border-radius: 0.65rem;
-}
-
-a.link-info:hover {
-  text-decoration: underline;
-}
-
-#button {
+.mo-btn {
   background-color: #29779b;
-  font-family: "Space Grotesk";
-  font-style: normal;
-  text-align: center;
   border-radius: 100px;
+  transition: background-color 0.15s ease, transform 0.06s ease, box-shadow 0.06s ease;
+}
+
+.mo-btn:hover,
+.mo-btn:focus {
+  background-color: #236786 !important;
+  color: #fff !important;
+}
+
+.mo-btn:active,
+.mo-btn.active,
+.show > .mo-btn.dropdown-toggle {
+  background-color: #1d5a74 !important;
+  color: #fff !important;
+  transform: translateY(1px);
+  box-shadow: inset 0 3px 7px rgba(0, 0, 0, 0.28) !important;
+}
+
+button[type="submit"]:disabled,
+input[type="submit"]:disabled {
+  cursor: not-allowed;
+  opacity: 0.72;
+}
+
+@media (max-height: 860px) {
+  .auth-page header .display-4 {
+    font-size: calc(1.45rem + 1.7vw);
+    margin-bottom: 0.75rem !important;
+  }
+
+  .auth-page header .lead {
+    margin-bottom: 0.35rem !important;
+  }
+
+  .auth-page main {
+    padding-top: 0.6rem !important;
+    padding-bottom: 0.6rem !important;
+  }
+
+  .auth-page .card-body {
+    padding-top: 1rem !important;
+    padding-bottom: 1rem !important;
+  }
+
+  .auth-page .my-3 {
+    margin-top: 0.5rem !important;
+    margin-bottom: 0.5rem !important;
+  }
+}
+
+@media (max-height: 720px) {
+  .auth-page .btn-lg {
+    font-size: 1rem;
+    padding-top: 0.45rem;
+    padding-bottom: 0.45rem;
+  }
+
+  .auth-page .d-grid.gap-4 {
+    gap: 0.75rem !important;
+  }
 }

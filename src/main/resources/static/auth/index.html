@@ -12,25 +12,22 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"
         integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous"
         defer></script>
-    <link rel="stylesheet" href="/auth/splash-styles.css">
+    <link rel="stylesheet" href="/auth/auth-styles.css">
 </head>
 
-<body class="text-light min-vh-100 mt-5">
-    <header class="container">
-        <h1 class="display-4 fw-bold text-light mb-3" id="title">MEDIA ODYSSEY</h1>
-        <p class="lead fw-bold text-light mb-1" id="subtitle">Discover your next obsession!</p>
-        <p class="lead fw-bold text-light mb-4" id="subtitle">Your journey starts here!</p>
+<body class="auth-page text-light min-vh-100 d-flex flex-column justify-content-center">
+    <header class="container px-3 px-lg-4 mb-2">
+        <h1 class="mo-title display-4 fw-bold text-light text-center mb-3">MEDIA ODYSSEY</h1>
+        <p class="mo-subtitle lead fw-bold text-light text-center mb-1">Discover your next obsession!</p>
+        <p class="mo-subtitle lead fw-bold text-light text-center mb-4">Your journey starts here!</p>
     </header>
-    <main class="container d-flex align-items-center justify-content-center py-5">
-        <!-- <section class="card bg-dark border-info shadow-lg w-100" style="max-width: 760px;"> -->
-            <div class="card-body text-center p-4 p-md-5">
-                <!-- <p class="text-info text-uppercase fw-semibold small mb-2">Welcome to</p> -->
-                <div class="d-grid gap-5 col-12 col-sm-8 col-md-6 mx-auto">
-                    <a href="/auth/signup" class="btn btn-lg mx-auto fw-semibold text-white w-75 h-150 p-3" id="button">Sign Up</a>
-                    <a href="/auth/login" class="btn btn-lg mx-auto fw-semibold text-white w-75 h-150 p-3" id="button">Log In</a>
-                </div>
+    <main class="container px-3 px-lg-4 d-flex align-items-center justify-content-center py-2">
+        <div class="card-body text-center p-4 p-md-5">
+            <div class="d-grid gap-4 col-12 col-sm-8 col-md-6 mx-auto">
+                <a href="/auth/signup" class="btn mo-btn btn-lg mx-auto fw-semibold text-white w-75 p-3">Sign Up</a>
+                <a href="/auth/login" class="btn mo-btn btn-lg mx-auto fw-semibold text-white w-75 p-3">Log In</a>
             </div>
-        <!-- </section> -->
+        </div>
     </main>
 </body>
 

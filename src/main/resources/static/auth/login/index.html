@@ -10,16 +10,16 @@
     <link rel="stylesheet" href="/auth/auth-styles.css">
 </head>
 
-<body class="text-light min-vh-100 mt-5">
-    <header class="container">
-        <h1 class="display-4 fw-bold text-light mb-3" id="title">MEDIA ODYSSEY</h1>
-        <p class="lead fw-bold text-light mb-1" id="subtitle">Discover your next obsession!</p>
-        <p class="lead fw-bold text-light mb-4" id="subtitle">Your journey starts here!</p>
+<body class="auth-page text-light min-vh-100 d-flex flex-column justify-content-center">
+    <header class="container px-3 px-lg-4 mb-2">
+        <h1 class="mo-title display-4 fw-bold text-light text-center mb-3">MEDIA ODYSSEY</h1>
+        <p class="mo-subtitle lead fw-bold text-light text-center mb-1">Discover your next obsession!</p>
+        <p class="mo-subtitle lead fw-bold text-light text-center mb-4">Your journey starts here!</p>
     </header>
-    <main class="container d-flex align-items-center justify-content-center py-3">
+    <main class="container px-3 px-lg-4 d-flex align-items-center justify-content-center py-2">
         <section class="card auth-card border-0 shadow-lg w-100" style="max-width: 520px;">
             <div class="card-body p-4 p-md-5">
-                <h3 class="text-center text-light fw-bold" id="welcome-text">Welcome back, adventurer!</h3>
+                <h3 class="mo-copy text-center text-light fw-bold mb-3">Welcome back, adventurer!</h3>
                 <form id="loginForm" class="needs-validation" novalidate>
                     <div class="mb-3">
                         <input type="email" class="form-control form-control-lg bg-light text-dark border-secondary"
@@ -34,16 +34,16 @@
 
                     <div class="row g-2">
                         <div class="col-12 col-md-6 d-grid gap-2">
-                            <button type="submit" class="btn btn-lg fw-semibold text-white" id="button">Log In
+                            <button type="submit" class="btn mo-btn btn-lg fw-semibold text-white">Log In
                             </button>
                         </div>
                         <div class="col-12 col-md-6 d-grid gap-2">
-                            <a href="/auth/signup" class="btn btn-lg fw-semibold text-white" id="button">Create
+                            <a href="/auth/signup" class="btn mo-btn btn-lg fw-semibold text-white">Create
                                 account</a>
                         </div>
-                        <div class="col-12 col-md-6 d-grid gap-2"></div>
-                        <div class="col-12 col-md-6 d-grid gap-2">
-                            <a href="/auth/resend" class="text-white text-decoration-none">Resend verification</a>
+                        <div class="col-12 col-md-6"></div>
+                        <div class="col-12 col-md-6 text-center">
+                            <a href="/auth/resend" class="text-white text-decoration-none d-inline-block">Resend verification</a>
                         </div>
                     </div>
 
@@ -51,8 +51,7 @@
 
                     <div class="row g-2">
                         <div class="col-12 d-grid gap-2">
-                            <a href="/auth/oauth2/authorization/google" class="btn btn-lg fw-semibold text-white"
-                                id="button">
+                            <a href="/auth/oauth2/authorization/google" class="btn mo-btn btn-lg fw-semibold text-white">
                                 Continue with Google
                             </a>
                         </div>
@@ -98,8 +97,11 @@
 
     <script>
         window.addEventListener("DOMContentLoaded", () => {
-            const { showLoadingModal, showStatusModalAfterLoading } = AuthModalFlow.create();
+            const { showLoadingModal, showStatusModalAfterLoading, setFormSubmitting } = AuthModalFlow.create();
             const searchParams = new URLSearchParams(window.location.search);
+            const loginForm = document.getElementById("loginForm");
+
+            let isSubmitting = false;
 
             if (searchParams.get("oauthError") === "true") {
                 showStatusModalAfterLoading("OAuth sign-in failed. If you previously registered with email/password, please log in with email/password instead.");
@@ -110,8 +112,15 @@
                 showStatusModalAfterLoading(backendMessage || "An unexpected error occurred. Please try again later.");
             }
 
-            document.getElementById("loginForm").addEventListener("submit", async (e) => {
+            loginForm.addEventListener("submit", async (e) => {
                 e.preventDefault();
+
+                if (isSubmitting) {
+                    return;
+                }
+
+                isSubmitting = true;
+                setFormSubmitting(loginForm, true);
                 showLoadingModal();
                 try {
 
@@ -151,6 +160,9 @@
                     }
                 } catch (error) {
                     showStatusModalAfterLoading("An unexpected error occurred. Please try again later.");
+                } finally {
+                    isSubmitting = false;
+                    setFormSubmitting(loginForm, false);
                 }
             });
         });
