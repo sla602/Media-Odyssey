@@ -28,15 +28,18 @@ public class ProfileService {
     private final PostRepository postRepo;
     private final CommentRepository commentRepo;
     private final BoardsRepository boardsRepo;
+    private final BoardsService boardsService;
+
 
     public ProfileService(ProfileRepository profileRepo,
                           PostRepository postRepo,
                           CommentRepository commentRepo,
-                          BoardsRepository boardsRepo) {
+                          BoardsRepository boardsRepo, BoardsService boardsService) {
         this.profileRepo = profileRepo;
         this.postRepo = postRepo;
         this.commentRepo = commentRepo;
         this.boardsRepo = boardsRepo;
+        this.boardsService = boardsService;
     }
 
     // ─── Profile fetch/create ────────────────────────────────────────
@@ -48,6 +51,7 @@ public class ProfileService {
         return profileRepo.findByUserId(userId)
                 .orElseGet(() -> profileRepo.save(new Profile(userId)));
     }
+
 
     /**
      * Update and persist the editable profile fields for the given user.
@@ -66,7 +70,7 @@ public class ProfileService {
      * Build the recent-activity list for a user: their most recent posts and
      * comments (non-deleted), newest first, capped at RECENT_ACTIVITY_LIMIT.
      */
-    public List<Map<String, Object>> buildRecentActivity(Long userId) {
+    public List<Map<String, Object>> buildRecentActivity(Long userId, Long viewerUserId) {
         List<Post> posts = postRepo.findByAuthorId(userId);
         List<Comment> comments = commentRepo.findRecentByAuthorId(userId);
 
@@ -89,6 +93,7 @@ public class ProfileService {
         }
         for (Post p : postsByIdForComments.values()) {
             boardIds.add(p.getBoardId());
+
         }
 
         Map<Long, String> boardNames = loadBoardNames(boardIds);
@@ -106,6 +111,7 @@ public class ProfileService {
             item.put("contentPreview", preview(p.getContent(), PREVIEW_MAX_LENGTH));
             item.put("postId", p.getId());
             item.put("createdAt", p.getCreatedAt());
+            item.put("banned", boardsService.isUserBanned(viewerUserId, p.getBoardId()));
             items.add(item);
         }
 
@@ -121,6 +127,7 @@ public class ProfileService {
             item.put("contentPreview", preview(c.getContent(), PREVIEW_MAX_LENGTH));
             item.put("postId", c.getPostId());
             item.put("createdAt", c.getCreatedAt());
+            item.put("banned", boardsService.isUserBanned(viewerUserId, parent.getBoardId()));
             items.add(item);
         }
 

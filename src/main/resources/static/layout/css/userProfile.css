@@ -938,6 +938,124 @@
     color: #a0a0b0;
 }
 
+/* Banned activity item — visually dimmed */
+.activity-item-banned {
+    cursor: not-allowed;
+    opacity: 0.75;
+}
+
+.activity-item-banned:hover {
+    transform: none;
+    border-color: rgba(239, 68, 68, 0.45);
+    background: linear-gradient(145deg,
+    rgba(60, 20, 30, 0.4) 0%,
+    rgba(45, 20, 35, 0.3) 100%);
+    box-shadow: 0 6px 20px -8px rgba(239, 68, 68, 0.35);
+}
+
+.activity-banned-tag {
+    margin-left: auto;
+    padding: 0.15rem 0.55rem;
+    border-radius: 999px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: #fca5a5;
+    background: rgba(239, 68, 68, 0.15);
+    border: 1px solid rgba(239, 68, 68, 0.4);
+    letter-spacing: 0.04em;
+}
+
+/* =============================================
+   BANNED POPUP
+   ============================================= */
+
+.banned-popup-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(5, 5, 15, 0.75);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    animation: fadeIn 0.2s ease;
+}
+
+.banned-popup-overlay.hidden {
+    display: none;
+}
+
+.banned-popup {
+    max-width: 420px;
+    width: calc(100% - 2rem);
+    padding: 2rem 1.75rem 1.5rem;
+    border-radius: 18px;
+    text-align: center;
+
+    background: linear-gradient(145deg,
+    rgba(35, 20, 45, 0.98) 0%,
+    rgba(25, 15, 40, 0.98) 100%);
+    border: 1px solid rgba(239, 68, 68, 0.35);
+    box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.7),
+    0 0 40px -10px rgba(239, 68, 68, 0.3);
+
+    animation: popupRise 0.25s ease;
+}
+
+.banned-popup-icon {
+    font-size: 2.75rem;
+    margin-bottom: 0.5rem;
+}
+
+.banned-popup-title {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 1.35rem;
+    font-weight: 700;
+    color: #ffffff;
+    margin: 0 0 0.75rem 0;
+}
+
+.banned-popup-text {
+    font-size: 0.92rem;
+    color: #c4b5cf;
+    line-height: 1.55;
+    margin: 0 0 1.5rem 0;
+}
+
+.banned-popup-text strong {
+    color: #fca5a5;
+    font-weight: 600;
+}
+
+.banned-popup-btn {
+    padding: 0.7rem 2.25rem;
+    border-radius: 10px;
+    border: 1px solid rgba(139, 92, 246, 0.5);
+    background: rgba(139, 92, 246, 0.2);
+    color: #ffffff;
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 0.92rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.18s ease;
+}
+
+.banned-popup-btn:hover {
+    background: rgba(139, 92, 246, 0.35);
+    border-color: rgba(139, 92, 246, 0.75);
+    transform: translateY(-1px);
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes popupRise {
+    from { opacity: 0; transform: translateY(20px) scale(0.96); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
 /*
 *** Responsive break points for tablet, iphone, etc
 */

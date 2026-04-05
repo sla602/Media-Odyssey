@@ -245,7 +245,9 @@
                             th:each="item : ${recentActivity}"
                             th:classappend="${item.type == 'POST'} ? ' activity-item-post' : ' activity-item-comment'">
 
-                            <a class="activity-item-link"
+                            <!--not banned-->
+                            <a th:if="${!item.banned}"
+                               class="activity-item-link"
                                th:href="@{'/boards/display/' + ${item.boardId}(view='post', postId=${item.postId})}">
 
                             <!-- Type badge -->
@@ -283,6 +285,44 @@
                                 </div>
                             </div>
                             </a>
+                            <!-- BANNED: clickable div that shows the popup -->
+                            <div th:if="${item.banned}"
+                                 class="activity-item-link activity-item-banned"
+                                 th:data-board-name="${item.boardName}"
+                                 onclick="showBannedPopup(this.dataset.boardName)">
+
+                            <span class="activity-type-badge"
+                              th:text="${item.type == 'POST'} ? 'Post' : 'Comment'">Post</span>
+
+                                <div class="activity-body">
+                                    <div class="activity-headline"
+                                         th:if="${item.type == 'POST'}"
+                                         th:text="${item.title != null and !#strings.isEmpty(item.title)
+                           ? item.title : '(untitled post)'}">Post title</div>
+
+                                    <div class="activity-headline activity-headline-comment"
+                                         th:if="${item.type == 'COMMENT'}">
+                                        <span class="activity-headline-prefix">on</span>
+                                        <span th:text="${item.title != null and !#strings.isEmpty(item.title)
+                    ? item.title : '(untitled post)'}">post title</span>
+                                    </div>
+
+                                    <p class="activity-preview"
+                                       th:if="${item.contentPreview != null and !#strings.isEmpty(item.contentPreview)}"
+                                       th:text="${item.contentPreview}">preview text…</p>
+
+                                    <div class="activity-meta">
+                                        <span class="activity-meta-label">in</span>
+                                        <span class="activity-board-link"
+                                              th:text="${item.boardName}">Board name</span>
+                                        <span class="activity-meta-dot" aria-hidden="true">•</span>
+                                        <span class="activity-time"
+                                              th:if="${item.createdAt != null}"
+                                              th:text="${#temporals.format(item.createdAt, 'MMM d, yyyy')}">Jan 1, 2025</span>
+                                        <span class="activity-banned-tag">Banned</span>
+                                    </div>
+                                </div>
+                            </div>
                         </li>
                     </ul>
                 </section>

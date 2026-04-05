@@ -46,13 +46,14 @@ public class ProfileController {
         model.addAttribute("profile", profile);
         model.addAttribute("isOwnProfile", true);
         model.addAttribute("avatarUrl", AvatarService.avatarGenerate(user.getId()));
-        model.addAttribute("recentActivity", profileService.buildRecentActivity(user.getId()));
+        model.addAttribute("recentActivity", profileService.buildRecentActivity(user.getId(), user.getId()));
 
         return "boardsLayout/userSide/userProfile";
     }
 
     /**
      * Show another user's profile (read-only, has Add Friend button).
+     * userId is profileUserId
      */
     @GetMapping("/profile/{userId}")
     public String viewProfile(@PathVariable Long userId,
@@ -70,7 +71,7 @@ public class ProfileController {
         model.addAttribute("isOwnProfile", isOwn);
         model.addAttribute("friendStatus", status.name());
         model.addAttribute("avatarUrl", AvatarService.avatarGenerate(userId));
-        model.addAttribute("recentActivity", profileService.buildRecentActivity(userId));
+        model.addAttribute("recentActivity", profileService.buildRecentActivity(userId, viewer.getId()));
 
         return "boardsLayout/userSide/userProfile";
     }
