@@ -47,17 +47,17 @@
                     <!-- release date of the music -->
                     <div class="meta-item">
                         <h3 class="release-date-title">Released on:</h3>
-                        <span th:text="${music.release_date}"></span>
+                        <span th:text="${music.release_date ?:'Unkown'}"></span>
                     </div>
 
                     <div class="meta-item">
                         <h3 class="music-artist">Artist:</h3>
-                        <span th:text="${music.artist}"></span>
+                        <span th:text="${music.artist}?: 'Unkown'"></span>
                     </div>
 
                     <div class="meta-item">
                         <h3 class="music-album">Album:</h3>
-                        <span th:text="${music.album}"></span>
+                        <span th:text="${music.album?: 'Unkown'}"></span>
                     </div>
                 </div>
             </div>
@@ -68,7 +68,7 @@
             <!--Movie's Overview-->
             <div class="media-overview">
                 <h3>Overview:</h3>
-                <p th:text="${music.overview}"></p>
+                <p th:text="${music.overview ?: 'No description about this track.'}"></p>
             </div>
 
             <!-- interactive/Action panel (ratings + add to boards)-->
@@ -96,6 +96,9 @@
                 </div>
             </div>
         </div>
+
+        <!-- Media's footer: -->
+        <div class="media-footer"></div>
         </main>
 
         <script th:src="@{/layout/js/fragments.js}"></script>

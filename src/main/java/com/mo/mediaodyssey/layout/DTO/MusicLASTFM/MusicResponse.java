@@ -94,17 +94,17 @@ public class MusicResponse {
     }
     
     public static class TopTags {
-        private List<FMtags> tags;
+        private List<Tag> tags;
 
-        public List<FMtags> getTags() {
+        public List<Tag> getTag() {
             return tags;
         }
-        public void setTags(List<FMtags> tags) {
+        public void setTag(List<Tag> tags) {
             this.tags = tags;
         } 
     }
 
-    public static class FMtags {
+    public static class Tag {
         private String name;
 
         public String getName() {

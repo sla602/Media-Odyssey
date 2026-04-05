@@ -48,7 +48,7 @@
                         <!-- release date of the movie -->
                         <div class="meta-item">
                             <h3 class="release-date-title">Released on:</h3>
-                            <span th:text="${movie.release_dates}"></span>
+                            <span th:text="${movie.release_dates?: 'Unknown'}"></span>
                         </div>
 
                         <!-- Display the length of the movie -->
@@ -65,7 +65,7 @@
                 <!--Movie's Overview-->
                 <div class="media-overview">
                     <h3>Overview:</h3>
-                    <p th:text="${movie.overview}"></p>
+                    <p th:text="${movie.overview?: 'No description available for this movie.'}"></p>
                 </div>
 
                 <!-- Interact/ Actions Space -->
