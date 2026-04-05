@@ -55,14 +55,10 @@
 
             <div th:each="friend : ${friends}" class="member-card friend-card">
                 <div class="member-info">
-                    <!-- DiceBear-generated avatar based on user id -->
-                    <img class="friend-avatar"
-                         th:src="@{'https://api.dicebear.com/9.x/glass/svg?seed=' + ${friend.id} + '&radius=50'}"
-                         alt="avatar">
                     <div class="friend-text">
                         <a th:href="@{'/profile/' + ${friend.id}}"
                            class="member-name friend-name-link"
-                           th:text="${friend.email}">friend name</a>
+                           th:text="${usernames[friend.id]}">friend name</a>
                     </div>
                 </div>
                 <div class="member-actions">
@@ -93,13 +89,10 @@
 
             <div th:each="req : ${incomingRequests}" class="member-card friend-card">
                 <div class="member-info">
-                    <img class="friend-avatar"
-                         th:src="@{'https://api.dicebear.com/9.x/glass/svg?seed=' + ${req.otherUserId} + '&radius=50'}"
-                         alt="avatar">
                     <div class="friend-text">
                         <a th:href="@{'/profile/' + ${req.otherUserId}}"
                            class="member-name friend-name-link"
-                           th:text="${req.otherUserEmail}">requester</a>
+                           th:text="${usernames[req.otherUserId]}">requester</a>
                         <span class="friend-sub">wants to be friends</span>
                     </div>
                 </div>
@@ -132,13 +125,10 @@
 
             <div th:each="sug : ${suggestedFriends}" class="member-card friend-card">
                 <div class="member-info">
-                    <img class="friend-avatar"
-                         th:src="@{'https://api.dicebear.com/9.x/glass/svg?seed=' + ${sug.id} + '&radius=50'}"
-                         alt="avatar">
                     <div class="friend-text">
                         <a th:href="@{'/profile/' + ${sug.id}}"
                            class="member-name friend-name-link"
-                           th:text="${sug.email}">suggested user</a>
+                           th:text="${usernames[sug.id]}">suggested user</a>
                         <span class="friend-sub">shares a board with you</span>
                     </div>
                 </div>
@@ -167,13 +157,10 @@
 
             <div th:each="pend : ${pendingRequests}" class="member-card friend-card">
                 <div class="member-info">
-                    <img class="friend-avatar"
-                         th:src="@{'https://api.dicebear.com/9.x/glass/svg?seed=' + ${pend.otherUserId} + '&radius=50'}"
-                         alt="avatar">
                     <div class="friend-text">
                         <a th:href="@{'/profile/' + ${pend.otherUserId}}"
                            class="member-name friend-name-link"
-                           th:text="${pend.otherUserEmail}">recipient</a>
+                           th:text="${usernames[pend.otherUserId]}">recipient</a>
                         <span class="friend-sub">request sent</span>
                     </div>
                 </div>
