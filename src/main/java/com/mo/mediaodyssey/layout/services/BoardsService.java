@@ -1,6 +1,6 @@
 package com.mo.mediaodyssey.layout.services;
 
-import com.mo.mediaodyssey.auth.model.User;
+import com.mo.mediaodyssey.shared.model.User;
 import com.mo.mediaodyssey.layout.models.Boards;
 import com.mo.mediaodyssey.layout.DTO.BoardDTO;
 import com.mo.mediaodyssey.layout.repositories.BoardsRepository;

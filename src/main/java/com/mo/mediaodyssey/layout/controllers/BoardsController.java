@@ -23,13 +23,13 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
-import com.mo.mediaodyssey.auth.model.User;
-import com.mo.mediaodyssey.layout.DTO.MovieResponse;
+import com.mo.mediaodyssey.shared.model.User;
+import com.mo.mediaodyssey.layout.DTO.MoviesTMDB.MovieResponse;
 import com.mo.mediaodyssey.layout.models.BoardMedia;
 import com.mo.mediaodyssey.layout.models.Boards;
 import com.mo.mediaodyssey.layout.repositories.BoardMediaRepository;
 import com.mo.mediaodyssey.layout.services.BoardsService;
-import com.mo.mediaodyssey.layout.services.MovieService;
+import com.mo.mediaodyssey.layout.services.MediaServices.MovieService;
 
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
