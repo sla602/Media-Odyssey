@@ -62,7 +62,8 @@ public class MusicService {
         //added double checking just in case details info of the song does not exist in last fm
         if (response.getTrack().getWiki() != null ) {
             music.setRelease_date(response.getTrack().getWiki().getRelease_date()); // get the release date of the song
-            music.setOverview(response.getTrack().getWiki().getSummary()); //get summary about the song
+            // Get summary of the song (also trim unnecessary details from JSON obj with cleanSummary())
+            music.setOverview(cleanSummary(response.getTrack().getWiki().getSummary())); 
         }
 
         // set the poster URL (size extra large)
@@ -72,4 +73,15 @@ public class MusicService {
         return music;
     }
     
+    // Private functions: 
+    // Trim unecessary elements in return JSON object 
+    private String cleanSummary (String summary){
+        if (summary != null) return "";
+
+        int linkIndex = summary.indexOf("<a");
+        if (linkIndex != -1) {
+            summary = summary.substring(0, linkIndex);
+        }
+        return summary.replaceAll("<[^>]*>", "").trim();
+    }
 }
