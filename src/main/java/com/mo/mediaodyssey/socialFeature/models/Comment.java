@@ -70,6 +70,11 @@ public class Comment {
         return content;
     }
 
+
+    public Instant getCreatedAt() {
+        return createdAt;
+    }
+
     public void setDeleted(boolean deleted) {
         this.deleted = deleted;
     }

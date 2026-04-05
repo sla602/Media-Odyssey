@@ -714,6 +714,201 @@
     line-height: 1.4;
 }
 
+/* =============================================
+   RECENT ACTIVITY SECTION
+   Shows a user's most recent posts and comments,
+   each linked back to the board it belongs to.
+   ============================================= */
+
+.recent-activity-section {
+    /* uses .profile-section base layout */
+}
+
+.activity-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.85rem;
+}
+
+.activity-item {
+    display: flex;
+    gap: 1rem;
+    align-items: flex-start;
+
+    padding: 1rem 1.1rem;
+    border-radius: 14px;
+
+    background: linear-gradient(145deg,
+    rgba(30, 30, 63, 0.45) 0%,
+    rgba(45, 45, 90, 0.32) 100%);
+    border: 1px solid rgba(139, 92, 246, 0.18);
+
+    transition: transform 0.2s ease, border-color 0.2s ease, background 0.2s ease;
+}
+
+.activity-item:hover {
+    transform: translateY(-2px);
+    border-color: rgba(139, 92, 246, 0.4);
+    background: linear-gradient(145deg,
+    rgba(40, 40, 80, 0.55) 0%,
+    rgba(55, 55, 110, 0.4) 100%);
+}
+
+/* Left-edge accent bar — different color per type */
+.activity-item-post {
+    border-left: 3px solid rgba(139, 92, 246, 0.75);
+}
+
+.activity-item-comment {
+    border-left: 3px solid rgba(96, 165, 250, 0.75);
+}
+
+/* Small pill showing POST or COMMENT */
+.activity-type-badge {
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+
+    padding: 0.3rem 0.65rem;
+    border-radius: 999px;
+
+    background: rgba(139, 92, 246, 0.18);
+    color: #c4b5fd;
+    border: 1px solid rgba(139, 92, 246, 0.35);
+    min-width: 68px;
+}
+
+.activity-item-comment .activity-type-badge {
+    background: rgba(96, 165, 250, 0.15);
+    color: #93c5fd;
+    border-color: rgba(96, 165, 250, 0.35);
+}
+
+.activity-body {
+    flex: 1;
+    min-width: 0; /* allow text truncation inside flex */
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+}
+
+.activity-headline {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 0.98rem;
+    font-weight: 600;
+    color: #ffffff;
+    line-height: 1.35;
+
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+}
+
+.activity-headline-comment {
+    color: #e2e8f0;
+    font-weight: 500;
+}
+
+.activity-headline-prefix {
+    color: #94a3b8;
+    font-weight: 400;
+    font-style: italic;
+    margin-right: 0.3rem;
+}
+
+.activity-preview {
+    margin: 0;
+    font-size: 0.86rem;
+    color: #a5b4c8;
+    line-height: 1.5;
+
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+}
+
+.activity-meta {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+
+    margin-top: 0.25rem;
+    font-size: 0.78rem;
+    color: #8b93a7;
+}
+
+.activity-meta-label {
+    font-style: italic;
+}
+
+.activity-meta-dot {
+    color: #5b6478;
+}
+
+.activity-board-link {
+    font-weight: 600;
+    color: #c4b5fd;
+    text-decoration: none;
+    padding: 0.12rem 0.5rem;
+    border-radius: 6px;
+    background: rgba(139, 92, 246, 0.1);
+    border: 1px solid rgba(139, 92, 246, 0.25);
+    transition: all 0.18s ease;
+}
+
+.activity-board-link:hover {
+    color: #ffffff;
+    background: rgba(139, 92, 246, 0.25);
+    border-color: rgba(139, 92, 246, 0.5);
+}
+
+.activity-time {
+    color: #8b93a7;
+}
+
+/* Empty state */
+.activity-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.6rem;
+
+    padding: 2rem 1rem;
+    border-radius: 14px;
+
+    background: linear-gradient(145deg,
+    rgba(30, 30, 63, 0.35) 0%,
+    rgba(45, 45, 90, 0.25) 100%);
+    border: 1px dashed rgba(139, 92, 246, 0.3);
+}
+
+.activity-empty-glyph {
+    font-size: 1.6rem;
+    opacity: 0.8;
+}
+
+.activity-empty-text {
+    margin: 0;
+    font-size: 0.9rem;
+    color: #a0a0b0;
+}
+
 /*
 *** Responsive break points for tablet, iphone, etc
 */
@@ -801,5 +996,42 @@
 
     .profile-boards-grid {
         grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 800px) {
+    .activity-item {
+        padding: 0.85rem 0.95rem;
+        gap: 0.85rem;
+    }
+
+    .activity-type-badge {
+        font-size: 0.65rem;
+        min-width: 60px;
+        padding: 0.25rem 0.55rem;
+    }
+
+    .activity-headline {
+        font-size: 0.92rem;
+    }
+}
+
+@media (max-width: 600px) {
+    .activity-item {
+        flex-direction: column;
+        gap: 0.6rem;
+        padding: 0.8rem 0.9rem;
+    }
+
+    .activity-type-badge {
+        align-self: flex-start;
+    }
+
+    .activity-preview {
+        font-size: 0.82rem;
+    }
+
+    .activity-meta {
+        font-size: 0.74rem;
     }
 }

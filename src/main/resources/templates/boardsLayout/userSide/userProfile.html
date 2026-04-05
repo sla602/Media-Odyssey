@@ -217,6 +217,72 @@
 
             <!-- Intended for display boards but is waiting to see how the boards logic change from Prab-->
             <div class="profile-middle">
+                <!-- =========================================================
+                      RECENT ACTIVITY: user's recent posts & comments.
+                      Each card shows the type, a preview, and the board it
+                      belongs to. Clicking the board name navigates there.
+                ========================================================= -->
+                <section class="profile-section recent-activity-section">
+                    <div class="profile-section-head">
+                        <h2 class="profile-section-title">Recent Activity</h2>
+                        <span class="profile-section-sub"
+                              th:text="${isOwnProfile == null or isOwnProfile}
+                                       ? 'Your latest posts and comments'
+                                       : 'Latest posts and comments'"></span>
+                    </div>
+
+                    <!-- Empty state -->
+                    <div class="activity-empty"
+                         th:if="${recentActivity == null or #lists.isEmpty(recentActivity)}">
+                        <span class="activity-empty-glyph">✨</span>
+                        <p class="activity-empty-text">No activity yet.</p>
+                    </div>
+
+                    <!-- Activity list -->
+                    <ul class="activity-list"
+                        th:if="${recentActivity != null and !#lists.isEmpty(recentActivity)}">
+                        <li class="activity-item"
+                            th:each="item : ${recentActivity}"
+                            th:classappend="${item.type == 'POST'} ? ' activity-item-post' : ' activity-item-comment'">
+
+                            <!-- Type badge -->
+                            <span class="activity-type-badge"
+                                  th:text="${item.type == 'POST'} ? 'Post' : 'Comment'">Post</span>
+
+                            <div class="activity-body">
+                                <!-- Post: show title. Comment: show "on <post title>" -->
+                                <div class="activity-headline"
+                                     th:if="${item.type == 'POST'}"
+                                     th:text="${item.title != null and !#strings.isEmpty(item.title)
+                                               ? item.title : '(untitled post)'}">Post title</div>
+
+                                <div class="activity-headline activity-headline-comment"
+                                     th:if="${item.type == 'COMMENT'}">
+                                    <span class="activity-headline-prefix">on</span>
+                                    <span th:text="${item.title != null and !#strings.isEmpty(item.title)
+                                                    ? item.title : '(untitled post)'}">post title</span>
+                                </div>
+
+                                <!-- Content preview -->
+                                <p class="activity-preview"
+                                   th:if="${item.contentPreview != null and !#strings.isEmpty(item.contentPreview)}"
+                                   th:text="${item.contentPreview}">preview text…</p>
+
+                                <!-- Meta row: clickable board + timestamp -->
+                                <div class="activity-meta">
+                                    <span class="activity-meta-label">in</span>
+                                    <a class="activity-board-link"
+                                       th:href="@{'/boards/display/' + ${item.boardId}}"
+                                       th:text="${item.boardName}">Board name</a>
+                                    <span class="activity-meta-dot" aria-hidden="true">•</span>
+                                    <span class="activity-time"
+                                          th:if="${item.createdAt != null}"
+                                          th:text="${#temporals.format(item.createdAt, 'MMM d, yyyy')}">Jan 1, 2025</span>
+                                </div>
+                            </div>
+                        </li>
+                    </ul>
+                </section>
                 <div class="boards-display-box">
                     <div class="boards-created boardItem"></div>
 

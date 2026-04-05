@@ -16,6 +16,11 @@ public interface CommentRepository extends JpaRepository<Comment,Long> {
             "FROM Comment c WHERE c.postId = :postId ORDER BY c.createdAt ASC")
     List<CommentDTO> findCommentsWithUser(@Param("postId") Long postId);
 
+    // Recent activity: all non-deleted comments written by a user, newest first.
+    @Query("SELECT c FROM Comment c WHERE c.authorId = :authorId AND c.deleted = false " +
+            "ORDER BY c.createdAt DESC")
+    List<Comment> findRecentByAuthorId(@Param("authorId") Long authorId);
+
     @Modifying
     @Query("DELETE FROM Comment c WHERE c.postId IN :postIds")
     void deleteByPostIdIn(@Param("postIds") List<Long> postIds);

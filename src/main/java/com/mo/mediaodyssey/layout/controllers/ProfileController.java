@@ -3,6 +3,7 @@ package com.mo.mediaodyssey.layout.controllers;
 import com.mo.mediaodyssey.layout.models.Profile;
 import com.mo.mediaodyssey.layout.repositories.ProfileRepository;
 import com.mo.mediaodyssey.layout.services.AvatarService;
+import com.mo.mediaodyssey.layout.services.ProfileService;
 import com.mo.mediaodyssey.shared.model.User;
 import com.mo.mediaodyssey.socialFeature.models.DTO.FriendRequestDTO;
 import com.mo.mediaodyssey.socialFeature.services.FriendshipService;
@@ -22,21 +23,14 @@ import java.util.List;
 @Controller
 public class ProfileController {
 
-    private final ProfileRepository profileRepo;
     private final FriendshipService friendshipService;
+    private final ProfileService profileService;
 
-    public ProfileController(ProfileRepository profileRepo,
-                             FriendshipService friendshipService) {
-        this.profileRepo = profileRepo;
+    public ProfileController(FriendshipService friendshipService, ProfileService profileService) {
         this.friendshipService = friendshipService;
+        this.profileService = profileService;
     }
 
-    // ─── Helpers ─────────────────────────────────────────────────────
-
-    private Profile getOrCreateProfile(Long userId) {
-        return profileRepo.findByUserId(userId)
-                .orElseGet(() -> profileRepo.save(new Profile(userId)));
-    }
 
     // ─── Own profile page ────────────────────────────────────────────
 
@@ -46,12 +40,14 @@ public class ProfileController {
     @GetMapping("/profile")
     public String viewOwnProfile(Authentication authentication, Model model) {
         User user = (User) authentication.getPrincipal();
-        Profile profile = getOrCreateProfile(user.getId());
+        Profile profile = profileService.getOrCreateProfile(user.getId());
 
         model.addAttribute("user", user);
         model.addAttribute("profile", profile);
         model.addAttribute("isOwnProfile", true);
         model.addAttribute("avatarUrl", AvatarService.avatarGenerate(user.getId()));
+        model.addAttribute("recentActivity", profileService.buildRecentActivity(user.getId()));
+        model.addAttribute("recentActivity", profileService.buildRecentActivity(user.getId()));
 
         return "boardsLayout/userSide/userProfile";
     }
@@ -64,7 +60,7 @@ public class ProfileController {
                               Authentication authentication,
                               Model model) {
         User viewer = (User) authentication.getPrincipal();
-        Profile profile = getOrCreateProfile(userId);
+        Profile profile = profileService.getOrCreateProfile(userId);
 
         boolean isOwn = viewer.getId().equals(userId);
         FriendStatus status = friendshipService.getStatusBetween(viewer.getId(), userId);
@@ -89,12 +85,7 @@ public class ProfileController {
                               Authentication authentication,
                               RedirectAttributes redirectAttributes) {
         User user = (User) authentication.getPrincipal();
-        Profile profile = getOrCreateProfile(user.getId());
-
-        profile.setUsername(username);
-        profile.setDescription(description);
-        profile.setPronouns(pronouns);
-        profileRepo.save(profile);
+        profileService.updateProfile(user.getId(), username, description, pronouns);
 
         redirectAttributes.addFlashAttribute("successMessage", "Profile saved.");
         return "redirect:/profile";
