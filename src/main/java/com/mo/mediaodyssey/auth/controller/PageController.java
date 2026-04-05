@@ -64,6 +64,11 @@ public class PageController {
         return "redirect:/api/auth/logout";
     }
 
+    /**
+     * Resend email verification token page for authentication.
+     * 
+     * @return Static page at src/main/resources/static/auth/resend/index.html
+     */
     @GetMapping("/auth/resend")
     public String resendPage() {
         return "forward:/auth/resend/index.html";

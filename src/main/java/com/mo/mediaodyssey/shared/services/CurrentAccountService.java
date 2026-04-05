@@ -1,5 +1,6 @@
 package com.mo.mediaodyssey.shared.services;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.authentication.AuthenticationCredentialsNotFoundException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -19,11 +20,8 @@ import jakarta.servlet.http.HttpServletResponse;
 @Service
 public class CurrentAccountService {
 
-    private final UserRepository userRepository;
-
-    public CurrentAccountService(UserRepository userRepository) {
-        this.userRepository = userRepository;
-    }
+    @Autowired
+    private UserRepository userRepository;
 
     public User getCurrentAccount() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
