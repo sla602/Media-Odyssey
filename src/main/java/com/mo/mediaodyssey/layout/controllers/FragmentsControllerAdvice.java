@@ -1,6 +1,7 @@
 package com.mo.mediaodyssey.layout.controllers;
 
 import org.springframework.security.core.Authentication;
+import org.springframework.security.authentication.AuthenticationCredentialsNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ModelAttribute;
@@ -25,6 +26,14 @@ public class FragmentsControllerAdvice {
 
     @ModelAttribute("user")
     public User getCurrentUser(Authentication authentication) {
-        return currentAccountService.getCurrentAccount(authentication);
+        try {
+            return currentAccountService.getCurrentAccount(authentication);
+        } catch (AuthenticationCredentialsNotFoundException ex) {
+            // Catch no, anonymous, or invalid authentication. This global controller is
+            // used on pages where there is no authentication required. Without catching the
+            // exception, these pages fail to load.
+            // TODO: is this intended behavior?
+            return null;
+        }
     }
 }

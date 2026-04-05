@@ -17,7 +17,7 @@
         <p class="lead fw-bold text-light mb-4" id="subtitle">Your journey starts here!</p>
     </header>
     <main class="container d-flex align-items-center justify-content-center py-3">
-        <section class="card auth-card border-0 shadow-lg w-50">
+        <section class="card auth-card border-0 shadow-lg w-100" style="max-width: 520px;">
             <div class="card-body p-4 p-md-5">
                 <h3 class="text-center text-light fw-bold" id="welcome-text">Welcome back, adventurer!</h3>
                 <form id="loginForm" class="needs-validation" novalidate>
@@ -33,16 +33,16 @@
                     </div>
 
                     <div class="row g-2">
-                        <div class="col-6 d-grid gap-2">
+                        <div class="col-12 col-md-6 d-grid gap-2">
                             <button type="submit" class="btn btn-lg fw-semibold text-white" id="button">Log In
                             </button>
                         </div>
-                        <div class="col-6 d-grid gap-2">
+                        <div class="col-12 col-md-6 d-grid gap-2">
                             <a href="/auth/signup" class="btn btn-lg fw-semibold text-white" id="button">Create
                                 account</a>
                         </div>
-                        <div class="col-6 d-grid gap-2"></div>
-                        <div class="col-6 d-grid gap-2">
+                        <div class="col-12 col-md-6 d-grid gap-2"></div>
+                        <div class="col-12 col-md-6 d-grid gap-2">
                             <a href="/auth/resend" class="text-white text-decoration-none">Resend verification</a>
                         </div>
                     </div>
@@ -113,11 +113,24 @@
                 if (redirectAfterClose) window.location.href = redirectAfterClose;
             });
 
-            if (searchParams.get("oauthError") === "true") {
-                showStatusModal("OAuth sign-in failed. If you previously registered with email/password, please log in with email/password instead.");
+            const loadingModalEl = document.getElementById('loadingModal');
+            const loadingModal = new bootstrap.Modal(loadingModalEl);
+
+            function showStatusModalAfterLoading(message, redirectUrl = null) {
+                const openStatusModal = () => showStatusModal(message, redirectUrl);
+
+                if (loadingModalEl.classList.contains("show")) {
+                    loadingModalEl.addEventListener("hidden.bs.modal", openStatusModal, { once: true });
+                    loadingModal.hide();
+                    return;
+                }
+
+                openStatusModal();
             }
 
-            const loadingModal = new bootstrap.Modal(document.getElementById('loadingModal'));
+            if (searchParams.get("oauthError") === "true") {
+                showStatusModalAfterLoading("OAuth sign-in failed. If you previously registered with email/password, please log in with email/password instead.");
+            }
 
             document.getElementById("loginForm").addEventListener("submit", async (e) => {
                 e.preventDefault();
@@ -144,23 +157,23 @@
                     // If successful, responds with "OK". Otherwise, attempts default behavior of redirecting (failed).
                     if (resText.status === "AUTH_LOGIN_SUCCESS") {
                         // If successful login, tell the User. Also automatically redirect shortly. User can choose to skip the delay by closing pop up.
-                        showStatusModal("Login successful.", "/");
+                        showStatusModalAfterLoading("Login successful.", "/");
                         setTimeout(() => window.location.replace("/"), 500);
                     } else if (resText.status === "AUTH_DISABLED") {
-                        showStatusModal("You have not completed email verification for your account. Please check your email and follow the link.");
+                        showStatusModalAfterLoading("You have not completed email verification for your account. Please check your email and follow the link.");
                     } else if (resText.status === "AUTH_INVALID_CREDENTIALS" || resText.status === "AUTH_USER_NOT_FOUND") {
-                        showStatusModal("The email and/or password provided is incorrect. Please try again.");
+                        showStatusModalAfterLoading("The email and/or password provided is incorrect. Please try again.");
                     } else if (resText.status === "AUTH_LOCKED") {
-                        showStatusModal("Your account is locked. Please contact support.");
+                        showStatusModalAfterLoading("Your account is locked. Please contact support.");
                     } else if (resText.status === "AUTH_USER_NOT_FOUND") {
-                        showStatusModal("The email and/or password provided is incorrect. Please try again or create an account.");
+                        showStatusModalAfterLoading("The email and/or password provided is incorrect. Please try again or create an account.");
                     } else if (resText.status === "AUTH_BAD_REQUEST") {
-                        showStatusModal("There was a problem with the input submitted. Please try again.");
+                        showStatusModalAfterLoading("There was a problem with the input submitted. Please try again.");
                     } else {
-                        showStatusModal("An unexpected error occurred. Please try again later.");
+                        showStatusModalAfterLoading("An unexpected error occurred. Please try again later.");
                     }
                 } catch (error) {
-                    showStatusModal("An unexpected error occurred. Please try again later.");
+                    showStatusModalAfterLoading("An unexpected error occurred. Please try again later.");
                 } finally {
                     loadingModal.hide();
                 }

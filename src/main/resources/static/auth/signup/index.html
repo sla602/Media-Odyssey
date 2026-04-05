@@ -106,7 +106,20 @@
                 if (redirectAfterClose) window.location.href = redirectAfterClose;
             });
 
-            const loadingModal = new bootstrap.Modal(document.getElementById('loadingModal'));
+            const loadingModalEl = document.getElementById('loadingModal');
+            const loadingModal = new bootstrap.Modal(loadingModalEl);
+
+            function showStatusModalAfterLoading(message, redirectUrl = null) {
+                const openStatusModal = () => showStatusModal(message, redirectUrl);
+
+                if (loadingModalEl.classList.contains("show")) {
+                    loadingModalEl.addEventListener("hidden.bs.modal", openStatusModal, { once: true });
+                    loadingModal.hide();
+                    return;
+                }
+
+                openStatusModal();
+            }
 
             document.getElementById("signupForm").addEventListener("submit", async (e) => {
                 e.preventDefault();
@@ -118,7 +131,7 @@
                     const confirmPassword = document.getElementById("confirmPassword").value;
 
                     if (password !== confirmPassword) {
-                        showStatusModal("Passwords do not match.");
+                        showStatusModalAfterLoading("Passwords do not match.");
                         return;
                     }
 
@@ -139,18 +152,18 @@
                     // If successful, responds with "OK". Otherwise, attempts default behavior of redirecting (failed).
                     if (resText.status === "AUTH_REGISTER_SUCCESS") {
                         // If successful signup, tell the User. Do not automatically redirect. User needs to be informed to check their email. User can choose to be redirected by closing pop up.
-                        showStatusModal("Account created successfully. Please check your email to verify your account.", "/auth/login");
+                        showStatusModalAfterLoading("Account created successfully. Please check your email to verify your account.", "/auth/login");
                     } else if (resText.status === "AUTH_INVALID_CREDENTIALS") {
-                        showStatusModal("The email is already registered. Please log in.");
+                        showStatusModalAfterLoading("The email is already registered. Please log in.");
                     } else if (resText.status === "AUTH_LOCKED") {
-                        showStatusModal("Your account is locked. Please contact support.");
+                        showStatusModalAfterLoading("Your account is locked. Please contact support.");
                     } else if (resText.status === "AUTH_BAD_REQUEST") {
-                        showStatusModal("There was a problem with the input submitted. Please try again.");
+                        showStatusModalAfterLoading("There was a problem with the input submitted. Please try again.");
                     } else {
-                        showStatusModal("An unexpected error occurred. Please try again later.");
+                        showStatusModalAfterLoading("An unexpected error occurred. Please try again later.");
                     }
                 } catch (error) {
-                    showStatusModal("An unexpected error occurred. Please try again later.");
+                    showStatusModalAfterLoading("An unexpected error occurred. Please try again later.");
                 } finally {
                     loadingModal.hide();
                 }
