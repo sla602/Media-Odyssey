@@ -368,6 +368,16 @@ body {
 
 .btn-cancel:hover { background: rgba(255, 255, 255, 0.05); color: #ffffff; }
 
+.author-link {
+    text-decoration: none;
+    color: inherit;
+    transition: color 0.2s ease;
+}
+.author-link:hover {
+    color: #c4b5fd;
+    text-decoration: underline;
+}
+
 /* ===============================================================
    JOIN WARNING (non-member message)
 ==================================================================*/

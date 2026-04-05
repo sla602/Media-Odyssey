@@ -141,7 +141,7 @@
                             <a th:href="@{/boards/display/{id}(id=${board.id}, view='post', postId=${post.id})}"
                                class="post-card-link">
                                 <div class="post-card-header">
-                                    <span class="post-author" th:text="'User #' + ${post.authorId}"></span>
+                                    <span class="post-author" th:text="${userDisplayNames[post.authorId]}"></span>
                                     <span class="post-time"
                                           th:text="${#temporals.format(post.createdAt, 'MMM d, yyyy h:mm a')}"></span>
                                 </div>
@@ -227,7 +227,9 @@
                     <!-- Post display (hidden when editing) -->
                     <div class="post-view" th:id="'post-display-' + ${selectedPost.id}">
                         <div class="post-view-header">
-                            <span class="post-author" th:text="'User #' + ${selectedPost.authorId}"></span>
+                            <a th:href="@{'/profile/' + ${selectedPost.authorId}}"
+                               class="post-author author-link"
+                               th:text="${userDisplayNames[selectedPost.authorId]}"></a>
                             <span class="post-time" th:text="${#temporals.format(selectedPost.createdAt, 'MMM d, yyyy h:mm a')}"></span>
                         </div>
                         <h1 class="post-view-title" th:text="${selectedPost.title}"></h1>
@@ -310,7 +312,9 @@
                             <!-- Comment display (hidden when editing) -->
                             <div th:id="'comment-display-' + ${comment.id}">
                                 <div class="comment-header">
-                                    <span class="post-author" th:text="'User #' + ${comment.authorId}"></span>
+                                    <a th:href="@{'/profile/' + ${comment.authorId}}"
+                                       class="post-author author-link"
+                                       th:text="${userDisplayNames[comment.authorId]}"></a>
                                     <span class="post-time" th:text="${#temporals.format(comment.createdAt, 'MMM d, yyyy h:mm a')}"></span>
                                 </div>
                                 <p class="comment-content" th:text="${comment.content}"></p>
@@ -432,9 +436,15 @@
                                         <span th:text="${commentContents[report.id]}"></span>
                                     </p>
                                 </div>
-                                <p><strong>Reported by:</strong> User #<span th:text="${report.reportedByUserId}"></span></p>
+                                <p><strong>Reported by:</strong>
+                                    <a th:href="@{'/profile/' + ${report.reportedByUserId}}"
+                                       class="author-link"
+                                       th:text="${userDisplayNames[report.reportedByUserId]}"></a></p>
                                 <p><strong>Content author:</strong> User #<span th:text="${report.contentAuthorId}"></span></p>
-                                <p><strong>Reason:</strong> <span th:text="${report.reason}"></span></p>
+                                <p><strong>Content author:</strong>
+                                    <a th:href="@{'/profile/' + ${report.contentAuthorId}}"
+                                       class="author-link"
+                                       th:text="${userDisplayNames[report.contentAuthorId]}"></a></p>
                                 <p th:if="${report.postId != null}"><strong>Post ID:</strong> <span th:text="${report.postId}"></span></p>
                                 <p th:if="${report.commentId != null}"><strong>Comment ID:</strong> <span th:text="${report.commentId}"></span></p>
                             </div>
@@ -465,7 +475,9 @@
                         <div th:if="${#lists.isEmpty(members)}"><p class="empty-message">No members found.</p></div>
                         <div th:each="member : ${members}" class="member-card">
                             <div class="member-info">
-                                <span class="member-name" th:text="'User #' + ${member.userId}"></span>
+                                <a th:href="@{'/profile/' + ${member.userId}}"
+                                   class="member-name author-link"
+                                   th:text="${userDisplayNames[member.userId]}"></a>
                                 <span class="member-role-badge" th:text="${member.roleType.name()}"
                                       th:classappend="${member.roleType.name() == 'OWNER'} ? ' role-owner' : (${member.roleType.name() == 'MODERATOR'} ? ' role-mod' : '')"></span>
                             </div>
@@ -510,7 +522,7 @@
                                     <th:block th:each="member : ${members}">
                                         <option th:if="${!member.userId.equals(currentUserId)}"
                                                 th:value="${member.userId}"
-                                                th:text="'User #' + ${member.userId} + ' (' + ${member.roleType.name()} + ')'"></option>
+                                                th:text="${userDisplayNames[member.userId]} + ' (' + ${member.roleType.name()} + ')'"></option>
                                     </th:block>
                                 </select>
                                 <button type="submit" class="btn-submit" onclick="return confirm('Transfer ownership? You will become a moderator.')">Transfer</button>

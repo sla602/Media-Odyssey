@@ -2,6 +2,7 @@ package com.mo.mediaodyssey.layout.controllers;
 
 import com.mo.mediaodyssey.layout.models.BoardRole;
 import com.mo.mediaodyssey.layout.repositories.BoardRoleRepository;
+import com.mo.mediaodyssey.layout.repositories.ProfileRepository;
 import com.mo.mediaodyssey.socialFeature.enums.RoleType;
 import com.mo.mediaodyssey.socialFeature.models.Comment;
 import com.mo.mediaodyssey.socialFeature.models.DTO.CommentDTO;
@@ -53,8 +54,10 @@ public class BoardsController {
     private final ModerationService moderationService;
     private final PostRepository postRepository;
     private final CommentRepository commentRepository;
+    private final ProfileRepository profileRepository;
 
-    public BoardsController (BoardsService boardsService, BoardMediaRepository boardMediaRepository, MovieService movieService, PostService postService, BoardRoleRepository boardRoleRepository, CommentService commentService, ReportRepository reportRepository, ModerationService moderationService, PostRepository postRepository, CommentRepository commentRepository) {
+    public BoardsController (BoardsService boardsService, BoardMediaRepository boardMediaRepository, MovieService movieService, PostService postService, BoardRoleRepository boardRoleRepository, CommentService commentService, ReportRepository reportRepository, ModerationService moderationService, PostRepository postRepository, CommentRepository commentRepository,
+                             ProfileRepository profileRepository) {
         this.boardsService = boardsService; 
         this.boardMediaRepository = boardMediaRepository;
         this.movieService = movieService;
@@ -65,6 +68,7 @@ public class BoardsController {
         this.moderationService = moderationService;
         this.postRepository = postRepository;
         this.commentRepository = commentRepository;
+        this.profileRepository = profileRepository;
     }
 
 
@@ -81,6 +85,38 @@ public class BoardsController {
                 .map(BoardRole::getRoleType)
                 .orElse(RoleType.NONE);
     }
+
+
+    /**
+     * Build a map of userId -> display name for the given set of IDs.
+     * Uses the profile's username if set; otherwise falls back to "User #{id}".
+     * Safe to call with nulls in the collection — they're filtered out.
+     */
+    private Map<Long, String> buildUserDisplayNames(Collection<Long> userIds) {
+        Map<Long, String> result = new HashMap<>();
+        if (userIds == null || userIds.isEmpty()) return result;
+
+        Set<Long> distinctIds = new HashSet<>();
+        for (Long id : userIds) {
+            if (id != null) distinctIds.add(id);
+        }
+        if (distinctIds.isEmpty()) return result;
+
+        // Seed every ID with the fallback first, then overwrite with username if present.
+        for (Long id : distinctIds) {
+            result.put(id, "User #" + id);
+        }
+        for (Long id : distinctIds) {
+            profileRepository.findByUserId(id).ifPresent(profile -> {
+                String name = profile.getUsername();
+                if (name != null && !name.isBlank()) {
+                    result.put(id, name);
+                }
+            });
+        }
+        return result;
+    }
+
 
 
 
@@ -163,6 +199,10 @@ public class BoardsController {
         model.addAttribute("posts", Collections.emptyList());
         model.addAttribute("reports", Collections.emptyList());
         model.addAttribute("members", Collections.emptyList());
+
+
+        Set<Long> userIdsToResolve = new HashSet<>();
+
         switch (view) {
             case "post":
                 if (postId != null) {
@@ -171,6 +211,11 @@ public class BoardsController {
                         List<CommentDTO> comments = commentService.getCommentsWithDepth(postId);
                         model.addAttribute("selectedPost", post);
                         model.addAttribute("comments", comments);
+                        userIdsToResolve.add(post.getAuthorId());
+
+                        for (CommentDTO comment : comments) {
+                            userIdsToResolve.add(comment.getAuthorId());
+                        }
                     }
                 }
                 break;
@@ -186,9 +231,18 @@ public class BoardsController {
                         }
                         model.addAttribute("members", members);
                         model.addAttribute("search", search);
+                        for (BoardRole member : members) {
+                            userIdsToResolve.add(member.getUserId());
+                        }
                         break;
                     case "ownership":
-                        model.addAttribute("members", moderationService.getBoardMembers(id));
+
+                        List<BoardRole> ownershipMembers = moderationService.getBoardMembers(id);
+                        model.addAttribute("members", ownershipMembers);
+
+                        for (BoardRole member : ownershipMembers) {
+                            userIdsToResolve.add(member.getUserId());
+                        }
                         break;
                     default:
                         List<Report> reports = moderationService.getUnresolvedReports(id);
@@ -197,7 +251,8 @@ public class BoardsController {
                         Map<Long, String> commentContents = new HashMap<>();
 
                         for (Report report : reports) {
-
+                            userIdsToResolve.add(report.getReportedByUserId());
+                            userIdsToResolve.add(report.getContentAuthorId());
                             // Fetch post data
                             if (report.getPostId() != null) {
                                 postService.getPostById(report.getPostId()); // you already have this service
@@ -212,6 +267,7 @@ public class BoardsController {
                             if (report.getCommentId() != null) {
                                 commentRepository.findById(report.getCommentId()).ifPresent(comment -> {
                                     commentContents.put(report.getId(), comment.getContent());
+                                    userIdsToResolve.add(comment.getAuthorId());
                                 });
                             }
                         }
@@ -230,12 +286,18 @@ public class BoardsController {
             default:
                 List<PostDTO> posts = postService.getPostsByBoardId(id);
                 model.addAttribute("posts", posts);
+
+                for (PostDTO post : posts) {
+                    userIdsToResolve.add(post.getAuthorId());
+                }
                 break;
         }
 
+
+        model.addAttribute("userDisplayNames", buildUserDisplayNames(userIdsToResolve));
+
         return "boardsLayout/themeBoard/boardDisplay";
     }
-
 
 
 

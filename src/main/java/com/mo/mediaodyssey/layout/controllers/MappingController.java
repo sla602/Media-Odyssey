@@ -39,7 +39,7 @@ public class MappingController {
 
     @GetMapping("/userProfile")
     public String navToUserProfile() {
-        return "boardsLayout/userSide/userProfile";
+        return "redirect:/profile";
     }
     
 }
