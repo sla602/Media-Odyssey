@@ -92,7 +92,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
       fetch(`/api/boards/${boardId}/media`, {
         method: "POST",
-        headers: {
+        headers: { 
           "Content-Type": "application/json"
         }, 
         body: JSON.stringify({

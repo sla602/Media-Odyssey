@@ -42,6 +42,6 @@ public class boardMediaController {
         boardMediaService.addMediaToBoard(board_id, mediaApiId);
 
         return ResponseEntity.ok().build();
-    }
+    } 
     
 }
