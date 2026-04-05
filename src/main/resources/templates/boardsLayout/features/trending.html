@@ -84,6 +84,9 @@
       /* === Live Search Input === */
       /* Styled to match the global search bar in fragments.css */
       #localSearch {
+        position: sticky;
+        top: 0;
+        z-index: 10;
         width: 100%;
         max-width: 400px;
         padding: 0.625rem 1rem;
@@ -185,7 +188,7 @@
       /* Mirrors rec-img from homePage.css: full width, fixed height, object-fit cover */
       .media-thumbnail {
         width: 100%;
-        height: 200px;
+        height: 130px;
         object-fit: contain;
         display: block;
       }
@@ -193,7 +196,7 @@
       /* Placeholder shown when imageUrl is missing */
       .media-thumbnail-placeholder {
         width: 100%;
-        height: 200px;
+        height: 130px;
         display: flex;
         align-items: center;
         justify-content: center;
@@ -465,7 +468,7 @@
             </div>
 
             <div class="card-stats">
-              <span>🔥 Fast-Rising Score: <span th:text="${m.weeklyLikes}">0</span> likes this week</span>
+              <span>🔥 Fast-Rising Score: <span class="score-number" th:text="${m.weeklyLikes}">0</span> likes this week</span>
             </div>
           </div>
         </div>
