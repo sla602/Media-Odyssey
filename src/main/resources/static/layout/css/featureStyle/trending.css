@@ -1,0 +1,246 @@
+/* =========================================================
+   COMMUNITY / TRENDING PAGE
+   ========================================================= */
+
+/* Section spacing */
+.trending-section,
+.ranking-section {
+  margin-top: 2.5rem;
+}
+
+/* Section titles */
+.trending-section h2,
+.ranking-section h2 {
+  font-size: 1.4rem;
+  font-weight: 600;
+  margin-bottom: 1.2rem;
+  color: #e0e0ff;
+  letter-spacing: 0.5px;
+}
+
+/* =========================================================
+   GRID LAYOUT
+   ========================================================= */
+
+#trendingGrid,
+#top10Grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 1.25rem;
+}
+
+/* =========================================================
+   MEDIA CARD (shared)
+   ========================================================= */
+
+.media-card {
+  position: relative;
+  background: linear-gradient(145deg, #1a1a2e, #23234a);
+  border-radius: 16px;
+  padding: 12px;
+  overflow: hidden;
+
+  border: 1px solid rgba(99, 102, 241, 0.15);
+
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+/* Glow + lift */
+.media-card:hover {
+  transform: translateY(-6px) scale(1.02);
+  box-shadow:
+    0 10px 30px rgba(0, 0, 0, 0.5),
+    0 0 20px rgba(99, 102, 241, 0.25);
+
+  border-color: rgba(129, 140, 248, 0.4);
+}
+
+/* subtle top glow bar */
+.media-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 3px;
+  width: 100%;
+  background: linear-gradient(90deg, #6366f1, #8b5cf6, #ec4899);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.media-card:hover::before {
+  opacity: 1;
+}
+
+/* =========================================================
+   IMAGE
+   ========================================================= */
+
+.media-thumbnail {
+  width: 100%;
+  height: 230px;
+  object-fit: cover;
+  border-radius: 12px;
+  margin-bottom: 10px;
+}
+
+/* =========================================================
+   TITLE + META
+   ========================================================= */
+
+.card-title {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.card-title strong {
+  font-size: 0.95rem;
+  color: #ffffff;
+  line-height: 1.3;
+
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.artist-name {
+  font-size: 0.8rem;
+  color: #a0a0ff;
+}
+
+.card-title em {
+  font-size: 0.75rem;
+  color: #888;
+}
+
+/* =========================================================
+   STATS (Trending)
+   ========================================================= */
+
+.card-stats {
+  margin-top: 8px;
+  font-size: 0.8rem;
+  color: #bbb;
+
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+/* =========================================================
+   TRENDING CARD SPECIAL
+   ========================================================= */
+
+.trending-card {
+  border: 1px solid rgba(236, 72, 153, 0.2);
+}
+
+.trending-card:hover {
+  box-shadow:
+    0 10px 30px rgba(0, 0, 0, 0.5),
+    0 0 25px rgba(236, 72, 153, 0.3);
+}
+
+/* =========================================================
+   RANKING (TOP 10)
+   ========================================================= */
+
+/* Rank badge */
+.rank-number {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+
+  width: 32px;
+  height: 32px;
+
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  color: #fff;
+
+  font-weight: bold;
+  font-size: 0.9rem;
+
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  box-shadow: 0 4px 10px rgba(0,0,0,0.4);
+}
+
+/* Top 3 special styling */
+.media-card:nth-child(1) .rank-number {
+  background: linear-gradient(135deg, #ffd700, #ffb300);
+  color: #000;
+}
+
+.media-card:nth-child(2) .rank-number {
+  background: linear-gradient(135deg, #c0c0c0, #9e9e9e);
+  color: #000;
+}
+
+.media-card:nth-child(3) .rank-number {
+  background: linear-gradient(135deg, #cd7f32, #a97142);
+}
+
+/* =========================================================
+   SEARCH BAR
+   ========================================================= */
+
+#localSearch {
+  margin: 1rem 0;
+  width: 100%;
+  max-width: 400px;
+
+  padding: 10px 14px;
+  border-radius: 20px;
+
+  border: 1px solid rgba(255,255,255,0.15);
+  background: rgba(255,255,255,0.05);
+  color: #fff;
+
+  outline: none;
+  transition: all 0.3s ease;
+}
+
+#localSearch:focus {
+  border-color: #818cf8;
+  box-shadow: 0 0 10px rgba(129,140,248,0.4);
+}
+
+/* =========================================================
+   TABS
+   ========================================================= */
+
+.tab-container {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+}
+
+.tab-btn {
+  padding: 8px 16px;
+  border-radius: 20px;
+  border: 1px solid #2d2d5a;
+
+  background: #1a1a2e;
+  color: #aaa;
+
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.tab-btn:hover {
+  color: #fff;
+  background: #252545;
+}
+
+.tab-btn.active {
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  color: white;
+  border: none;
+}
