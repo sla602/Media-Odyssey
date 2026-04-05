@@ -2,7 +2,6 @@ package com.mo.mediaodyssey.layout.services;
 
 import com.mo.mediaodyssey.shared.model.User;
 import com.mo.mediaodyssey.layout.models.Boards;
-import com.mo.mediaodyssey.layout.DTO.BoardDTO;
 import com.mo.mediaodyssey.layout.repositories.BoardsRepository;
 import com.mo.mediaodyssey.socialFeature.enums.RoleType;
 import com.mo.mediaodyssey.layout.models.BoardRole;

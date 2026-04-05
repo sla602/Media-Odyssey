@@ -2,7 +2,6 @@ package com.mo.mediaodyssey.layout.controllers;
 
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 
 
 @Controller
@@ -20,10 +19,10 @@ public class MappingController {
         return "boardsLayout/features/social";
     }
     
-    /* Temporary, social feature is in dashboard so there will be a dashboard element in sidebar.*/
-    @GetMapping("/dashboardTab")
-    public String navToDashboard() {
-        return "socialSpaces/dashboard";
+    /* Navigates the user to explore other boards.*/
+    @GetMapping("/exploreBoard")
+    public String navToExplore() {
+        return "boardsLayout/themeBoard/exploreBoards";
     }
     
     /* Bring user to the page specifically for trending feature */

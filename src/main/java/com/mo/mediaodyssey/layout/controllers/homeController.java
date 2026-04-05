@@ -7,7 +7,6 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 
-import com.mo.mediaodyssey.auth.repository.UserRepository;
 import com.mo.mediaodyssey.layout.models.Boards;
 import com.mo.mediaodyssey.layout.services.BoardsService;
 import com.mo.mediaodyssey.shared.model.User;
@@ -18,11 +17,9 @@ public class homeController {
     /* After users logged in, they will be direct to homePage.html */
 
     private final BoardsService boardsService;
-    private final UserRepository userRepository;
 
-    public homeController(BoardsService boardsService, UserRepository userRepository) {
+    public homeController(BoardsService boardsService) {
         this.boardsService = boardsService;
-        this.userRepository = userRepository; 
     }
 
     /*
