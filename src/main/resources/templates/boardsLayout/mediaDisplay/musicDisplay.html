@@ -4,8 +4,7 @@
         <meta charset="UTF-8"> 
         <meta http-equiv="X-UA-Compatible" content="IE=edge"> 
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <!--<title th:text="${movie.title}"></title>-->
-        <title>Music Display-Media Odyssey</title>
+        <title th:text="${music.title}"></title>
         <link rel="stylesheet" th:href="@{/layout/css/global.css}">
         <link rel="stylesheet" th:href="@{/layout/css/fragments.css}">
         <link rel="stylesheet" th:href="@{/layout/css/mediaDisplay.css}">
@@ -26,6 +25,8 @@
                 main content of the page begins here 
         ===========================================================================-->
 
+        <main class="media-container">
+
         <!-- Poster + Info -->
         <div class="media-header">
             <!-- Poster -->
@@ -35,10 +36,10 @@
 
             <!-- Music's Info: name, artist, release date. -->
             <div class="media-info">
-                <h1 class="music-title" th:text="${music.title}"></h1>
+                <h1 class="media-title" th:text="${music.title}"></h1>
 
                 <div class="genres">
-                        <span th:each="genre : ${music.genres}" th:text="${genre.name}" class="genre-tag"></span>
+                    <span th:each="genre : ${music.genres}" th:text="${genre}" class="genre-tag"></span>
                 </div>
 
                 <!-- Meta info (released date and the movie's length)-->
@@ -55,15 +56,15 @@
                     </div>
 
                     <div class="meta-item">
-                        <h3 class="music-album">Artist:</h3>
+                        <h3 class="music-album">Album:</h3>
                         <span th:text="${music.album}"></span>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Music's body: show (possibly) lyrics + interactive/action panel (ratings + add to boards)-->
-        <div class="media-body">
+        <!-- Music's middle: show (possibly) lyrics + interactive/action panel (ratings + add to boards)-->
+        <div class="media-middle">
             <!--Movie's Overview-->
             <div class="media-overview">
                 <h3>Overview:</h3>
@@ -95,6 +96,7 @@
                 </div>
             </div>
         </div>
+        </main>
 
         <script th:src="@{/layout/js/fragments.js}"></script>
         <script th:src="@{/layout/js/mediaDisplay.js}"></script>

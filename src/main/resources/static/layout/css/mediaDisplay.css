@@ -41,7 +41,7 @@ body {
   margin-top: 15px;
   border-radius: 15px;
   overflow: hidden;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 10px 40px rgba(118, 75, 162, 0.4);
 }
 
 .poster-card img {
@@ -49,6 +49,7 @@ body {
   height: 100%;
   object-fit: cover;
   display: block;
+  border-radius: 12px;
 }
 
 /* Media Info (Right of Poster) */
@@ -66,6 +67,7 @@ body {
   color: #fff;
   margin-bottom: 15px;
   line-height: 1.2;
+  letter-spacing: 0.5px;
 }
 
 /* Genre Tags */
@@ -134,14 +136,14 @@ body {
   max-width: 620px;
 }
 
-.movie-overview  h3 {
+.media-overview  h3 {
   font-size: 1.1rem;
   color: #fff;
   margin-bottom: 12px;
   font-weight: 600;
 }
 
-.movie-overview  p {
+.media-overview  p {
   color: #c0c0c0;
   line-height: 1.7;
   font-size: 0.95rem;
@@ -411,7 +413,7 @@ body {
 
 /* Responsive */
 @media (max-width: 768px) {
-  .movie-header {
+  .media-header {
     flex-direction: column;
     align-items: center;
     text-align: center;
@@ -425,7 +427,7 @@ body {
     justify-content: center;
   }
 
-  .movie-middle {
+  .media-middle {
     flex-direction: column;
   }
 
