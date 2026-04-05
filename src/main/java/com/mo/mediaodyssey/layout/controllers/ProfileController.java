@@ -47,7 +47,6 @@ public class ProfileController {
         model.addAttribute("isOwnProfile", true);
         model.addAttribute("avatarUrl", AvatarService.avatarGenerate(user.getId()));
         model.addAttribute("recentActivity", profileService.buildRecentActivity(user.getId()));
-        model.addAttribute("recentActivity", profileService.buildRecentActivity(user.getId()));
 
         return "boardsLayout/userSide/userProfile";
     }
@@ -71,6 +70,7 @@ public class ProfileController {
         model.addAttribute("isOwnProfile", isOwn);
         model.addAttribute("friendStatus", status.name());
         model.addAttribute("avatarUrl", AvatarService.avatarGenerate(userId));
+        model.addAttribute("recentActivity", profileService.buildRecentActivity(userId));
 
         return "boardsLayout/userSide/userProfile";
     }
