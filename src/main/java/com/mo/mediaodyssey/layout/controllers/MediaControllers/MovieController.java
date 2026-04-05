@@ -44,7 +44,7 @@ public class MovieController {
 
         try {
             // Get the movie (1 object)
-            MovieResponse movie = movieService.getMovieById(id);
+            MovieResponse movie = movieService.getMovieWithProviders(id);
 
             // Identify the User in order to get all their boards
             User user = (User) authentication.getPrincipal();
