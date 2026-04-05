@@ -1,11 +1,9 @@
-package com.mo.mediaodyssey.layout.controllers;
+package com.mo.mediaodyssey.socialFeature.controllers;
 
 import com.mo.mediaodyssey.layout.models.Profile;
-import com.mo.mediaodyssey.layout.repositories.ProfileRepository;
 import com.mo.mediaodyssey.layout.services.AvatarService;
 import com.mo.mediaodyssey.layout.services.ProfileService;
 import com.mo.mediaodyssey.shared.model.User;
-import com.mo.mediaodyssey.socialFeature.models.DTO.FriendRequestDTO;
 import com.mo.mediaodyssey.socialFeature.services.FriendshipService;
 import com.mo.mediaodyssey.socialFeature.services.FriendshipService.FriendStatus;
 import org.springframework.security.core.Authentication;
@@ -13,8 +11,6 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
-
-import java.util.List;
 
 /**
  * Handles the user profile page (username/description/pronouns, save button,
