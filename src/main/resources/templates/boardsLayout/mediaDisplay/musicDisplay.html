@@ -30,24 +30,45 @@
         <div class="media-header">
             <!-- Poster -->
             <div class="poster-card">
-                <img th:src="" alt="Music Poster" id="poster-img" />
+                <img th:src="${music.poster_path}" alt="Music Poster" id="poster-img" />
             </div>
 
             <!-- Music's Info: name, artist, release date. -->
             <div class="media-info">
-                <h1 class="music-title"></h1>
+                <h1 class="music-title" th:text="${music.title}"></h1>
 
-                <div class="music-artist"></div>
+                <div class="genres">
+                        <span th:each="genre : ${music.genres}" th:text="${genre.name}" class="genre-tag"></span>
+                </div>
 
-                <div class="music-release-date"></div>
+                <!-- Meta info (released date and the movie's length)-->
+                <div class="meta-info">
+                    <!-- release date of the music -->
+                    <div class="meta-item">
+                        <h3 class="release-date-title">Released on:</h3>
+                        <span th:text="${music.release_date}"></span>
+                    </div>
+
+                    <div class="meta-item">
+                        <h3 class="music-artist">Artist:</h3>
+                        <span th:text="${music.artist}"></span>
+                    </div>
+
+                    <div class="meta-item">
+                        <h3 class="music-album">Artist:</h3>
+                        <span th:text="${music.album}"></span>
+                    </div>
+                </div>
             </div>
         </div>
 
         <!-- Music's body: show (possibly) lyrics + interactive/action panel (ratings + add to boards)-->
         <div class="media-body">
-
-            <!-- Music's lyrics -->
-            <div class="music-lyrics"></div>
+            <!--Movie's Overview-->
+            <div class="media-overview">
+                <h3>Overview:</h3>
+                <p th:text="${music.overview}"></p>
+            </div>
 
             <!-- interactive/Action panel (ratings + add to boards)-->
             <div class="actions-panel">
@@ -56,11 +77,22 @@
                 <div></div>
 
                 <!-- Add to board system (a theme boards drop down) 
-                **   More detailed version can be found on movieDisplay.html-->
+                **   More detailed version can be found on movieDisplay.html
+                <input type="hidden" id="musicApiId" th:value="${music.artist}" />-->
                 <div class="theme-dropdown">
-                    <button type="button" class="dropdown-items"></button>
-                </div>
+                    <button class="dropdown-btn" id="dropdownBtn">
+                        <span>Add to board</span>
+                    </button>
 
+                    <!-- Show user's created board(s) -->
+                    <div class="dropdown-menu" id="dropdownMenu">
+                        <button type="button" class="dropdown-item"
+                                th:each="board : ${boards}"
+                                th:text="${board.board_name}"
+                                th:data-board-id="${board.id}">
+                        </button>                            
+                    </div>
+                </div>
             </div>
         </div>
 

@@ -216,7 +216,13 @@ function renderCards(items) {
 
         // Intercept click: record VIEW interaction then navigate
         const mediaType = item.mediaType.toLowerCase();
-        const destination = `/mediaView/${mediaType}/${item.mediaApiId}`;
+        // Adjust the destination URL so backend can fetch the artist and track name correctly for last FM
+        let destination; 
+        if (item.mediaType === 'SONG') {
+          destination = `/mediaView/song/${encodeURIComponent(item.artist)}/${encodeURIComponent(item.title)}`; 
+        } else { 
+          destination = `/mediaView/${mediaType}/${item.mediaApiId}`;
+        } 
         card.href = "javascript:void(0)";
         card.addEventListener("click", async (e) => {
             // Allow like button clicks to bubble without triggering navigation
