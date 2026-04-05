@@ -82,6 +82,8 @@ public class BoardsController {
                 .orElse(RoleType.NONE);
     }
 
+
+
     /* Bring user to the page to create a board */
     @GetMapping("/create")
     public String createBoardPage(Model model) {
@@ -233,6 +235,8 @@ public class BoardsController {
 
         return "boardsLayout/themeBoard/boardDisplay";
     }
+
+
 
 
     // ─── Join / Leave ────────────────────────────────────────────────
