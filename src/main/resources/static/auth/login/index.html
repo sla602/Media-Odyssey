@@ -10,7 +10,7 @@
     <link rel="stylesheet" href="/auth/auth-styles.css">
 </head>
 
-<body class="text-light min-vh-100 mt-5 overflow-hidden">
+<body class="text-light min-vh-100 mt-5">
     <header class="container">
         <h1 class="display-4 fw-bold text-light mb-3" id="title">MEDIA ODYSSEY</h1>
         <p class="lead fw-bold text-light mb-1" id="subtitle">Discover your next obsession!</p>
@@ -51,7 +51,8 @@
 
                     <div class="row g-2">
                         <div class="col-12 d-grid gap-2">
-                            <a href="/auth/oauth2/authorization/google" class="btn btn-lg fw-semibold text-white" id="button">
+                            <a href="/auth/oauth2/authorization/google" class="btn btn-lg fw-semibold text-white"
+                                id="button">
                                 Continue with Google
                             </a>
                         </div>
@@ -93,73 +94,25 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"
         integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI"
         crossorigin="anonymous"></script>
+    <script src="/auth/auth-modal-flow.js"></script>
 
     <script>
         window.addEventListener("DOMContentLoaded", () => {
-            const statusModalEl = document.getElementById("statusModal");
-            const statusModalBody = document.getElementById("statusModalBody");
-            const statusModal = new bootstrap.Modal(statusModalEl);
+            const { showLoadingModal, showStatusModalAfterLoading } = AuthModalFlow.create();
             const searchParams = new URLSearchParams(window.location.search);
-
-            let redirectAfterClose = null;
-
-            function showStatusModal(message, redirectUrl = null) {
-                statusModalBody.textContent = message;
-                redirectAfterClose = redirectUrl;
-                statusModal.show();
-            }
-
-            statusModalEl.addEventListener("hidden.bs.modal", () => {
-                if (redirectAfterClose) window.location.href = redirectAfterClose;
-            });
-
-            const loadingModalEl = document.getElementById('loadingModal');
-            const loadingModal = new bootstrap.Modal(loadingModalEl);
-            let loadingModalRequested = false;
-
-            loadingModalEl.addEventListener("hidden.bs.modal", () => {
-                loadingModalRequested = false;
-            });
-
-            function hideLoadingModalThen(next) {
-                let completed = false;
-
-                const complete = () => {
-                    if (completed) {
-                        return;
-                    }
-                    completed = true;
-                    loadingModalRequested = false;
-                    next();
-                };
-
-                loadingModalEl.addEventListener("hidden.bs.modal", complete, { once: true });
-
-                // Handles the race where show() was called and response returns
-                // before Bootstrap fully transitions the loading modal in.
-                requestAnimationFrame(() => {
-                    loadingModal.hide();
-                    setTimeout(complete, 450);
-                });
-            }
-
-            function showStatusModalAfterLoading(message, redirectUrl = null) {
-                if (!loadingModalRequested) {
-                    showStatusModal(message, redirectUrl);
-                    return;
-                }
-
-                hideLoadingModalThen(() => showStatusModal(message, redirectUrl));
-            }
 
             if (searchParams.get("oauthError") === "true") {
                 showStatusModalAfterLoading("OAuth sign-in failed. If you previously registered with email/password, please log in with email/password instead.");
             }
 
+            function showBackendErrorOrDefault(resBody) {
+                const backendMessage = typeof resBody?.message === "string" ? resBody.message : "";
+                showStatusModalAfterLoading(backendMessage || "An unexpected error occurred. Please try again later.");
+            }
+
             document.getElementById("loginForm").addEventListener("submit", async (e) => {
                 e.preventDefault();
-                loadingModalRequested = true;
-                loadingModal.show();
+                showLoadingModal();
                 try {
 
                     const email = document.getElementById("email").value.trim();
@@ -178,29 +131,26 @@
                     });
 
                     const resText = await res.json();
+                    const status = resText?.status;
 
                     // If successful, responds with "OK". Otherwise, attempts default behavior of redirecting (failed).
-                    if (resText.status === "AUTH_LOGIN_SUCCESS") {
+                    if (status === "AUTH_LOGIN_SUCCESS") {
                         // If successful login, tell the User. Also automatically redirect shortly. User can choose to skip the delay by closing pop up.
                         showStatusModalAfterLoading("Login successful.", "/");
                         setTimeout(() => window.location.replace("/"), 500);
-                    } else if (resText.status === "AUTH_DISABLED") {
+                    } else if (status === "AUTH_DISABLED") {
                         showStatusModalAfterLoading("You have not completed email verification for your account. Please check your email and follow the link.");
-                    } else if (resText.status === "AUTH_INVALID_CREDENTIALS" || resText.status === "AUTH_USER_NOT_FOUND") {
+                    } else if (status === "AUTH_INVALID_CREDENTIALS" || status === "AUTH_USER_NOT_FOUND") {
                         showStatusModalAfterLoading("The email and/or password provided is incorrect. Please try again.");
-                    } else if (resText.status === "AUTH_LOCKED") {
+                    } else if (status === "AUTH_LOCKED") {
                         showStatusModalAfterLoading("Your account is locked. Please contact support.");
-                    } else if (resText.status === "AUTH_USER_NOT_FOUND") {
-                        showStatusModalAfterLoading("The email and/or password provided is incorrect. Please try again or create an account.");
-                    } else if (resText.status === "AUTH_BAD_REQUEST") {
+                    } else if (status === "AUTH_BAD_REQUEST") {
                         showStatusModalAfterLoading("There was a problem with the input submitted. Please try again.");
                     } else {
-                        showStatusModalAfterLoading("An unexpected error occurred. Please try again later.");
+                        showBackendErrorOrDefault(resText);
                     }
                 } catch (error) {
                     showStatusModalAfterLoading("An unexpected error occurred. Please try again later.");
-                } finally {
-                    loadingModal.hide();
                 }
             });
         });
