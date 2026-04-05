@@ -14,14 +14,13 @@ public class MovieResponse {
     private String release_dates;
     
     private List<TMDBGenres> genres;
-    private String poster_path; 
-
-    @JsonProperty("watch/providers")
-    private WatchProviders watch_providers;
+    private String poster_path;
+    private List<WatchProviders> watch_providers;
 
     public MovieResponse () {}
 
-    public MovieResponse (String title, String overview, String release_dates, List<TMDBGenres> genres, String poster_path, WatchProviders watchProviders){
+    public MovieResponse (Long id, String title, String overview, String release_dates, List<TMDBGenres> genres, String poster_path, List<WatchProviders> watchProviders){
+        this.id = id;
         this.title = title; 
         this.overview = overview; 
         this.release_dates = release_dates; 
@@ -78,11 +77,12 @@ public class MovieResponse {
         this.poster_path = poster_path;
     }
 
-    public WatchProviders getWatch_providers() {
+    public List<WatchProviders> getWatch_providers() {
         return watch_providers;
     }
 
-    public void setWatch_providers(WatchProviders watch_providers) {
+    public void setWatch_providers(List<WatchProviders> watch_providers) {
         this.watch_providers = watch_providers;
-    } 
+    }
+    
 }

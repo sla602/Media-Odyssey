@@ -1,22 +1,28 @@
 package com.mo.mediaodyssey.layout.DTO.MoviesTMDB;
 
-import java.util.Map;
-
 public class WatchProviders {
-    private Map<String, CountryProvider> results;
+    private String name; 
+    private String logoUrl; 
 
-    public WatchProviders (){}
-
-    public WatchProviders(Map<String, CountryProvider> results){
-        this.results = results; 
+    public WatchProviders() {}
+    public WatchProviders(String name, String logoUrl) {
+        this.name = name;
+        this.logoUrl = logoUrl;
+    }
+    public String getName() {
+        return name;
     }
 
-    public Map<String, CountryProvider> getResults() {
-        return results;
+    public void setName(String name) {
+        this.name = name;
     }
 
-    public void setResults(Map<String, CountryProvider> results) {
-        this.results = results;
+    public String getLogoUrl() {
+        return logoUrl;
+    }
+
+    public void setLogoUrl(String logoUrl) {
+        this.logoUrl = logoUrl;
     }
     
 }
