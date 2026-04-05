@@ -281,30 +281,19 @@ public class RecommendationService {
         return results;
     }
 
-    // fallback: globally popular tracks for new users with no history — random page for variety
+    // fallback: picks 3 random genres from SONG_GENRES and fetches 10 tracks each
+    // so each track has a real genre recorded instead of a hardcoded "Pop"
     private List<RecommendationResponse> fetchLastfmPopular() {
         List<RecommendationResponse> results = new ArrayList<>();
-        int page = random.nextInt(5) + 1;
-        try {
-            String lastfmUrl = "https://ws.audioscrobbler.com/2.0/?method=chart.getTopTracks"
-                    + "&limit=30"
-                    + "&page=" + page
-                    + "&api_key=" + lastfmApiKey
-                    + "&format=json";
-            String lastfmResponse = restTemplate.getForObject(lastfmUrl, String.class);
-            JsonNode tracks = objectMapper.readTree(lastfmResponse).path("tracks").path("track");
-            for (JsonNode track : tracks) {
-                String mediaApiId = track.path("url").asText();
-                if (mediaApiId.isEmpty()) continue;
-                if (bannedMediaRepository.existsByMediaApiId(mediaApiId)) continue;
-                String title  = track.path("name").asText();
-                String artist = track.path("artist").path("name").asText();
-                double score  = track.path("playcount").asDouble();
-                results.add(new RecommendationResponse(mediaApiId, title, artist, "SONG", "Pop", "", score));
-            }
-        } catch (Exception e) {
-            System.err.println("Last.fm popular fallback error: " + e.getMessage());
+
+        List<String> shuffled = new ArrayList<>(SONG_GENRES);
+        Collections.shuffle(shuffled);
+        List<String> picked = shuffled.subList(0, 3);
+
+        for (String genre : picked) {
+            results.addAll(fetchLastfmRecommendations(genre, 10));
         }
+
         return results;
     }
 
