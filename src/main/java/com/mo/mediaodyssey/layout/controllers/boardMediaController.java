@@ -35,7 +35,7 @@ public class boardMediaController {
                                             @RequestBody Map<String, Object> body) {
         try {
             Long mediaApiId = null;
-            String mediaType = null;
+            String mediaType = (String) body.get("type");
 
             // For movies/games
             if (body.containsKey("mediaApiId")) {
