@@ -469,11 +469,20 @@ public class BoardsController {
 
             dto.setTitle(m.getTrack());
             dto.setArtist(m.getArtist());
-            dto.setPoster_path(m.getMedia_poster_path());
+
+            // convert from Last.fm API response
+            Music musicInfo = musicService.convertToMusic(m.getArtist(), m.getTrack()); 
+            String poster = null;
+
+            if (musicInfo != null && musicInfo.getPoster_path() != null) {
+            poster = musicInfo.getPoster_path();
+            }
+
+            dto.setPoster_path(poster != null ? poster : "Could not get image of this song :(");
+            System.out.println("Music DTO poster: " + dto.getPoster_path());
 
             result.add(dto);
         }
-
         return result;
     }
 }
