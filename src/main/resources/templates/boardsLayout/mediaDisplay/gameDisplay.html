@@ -4,15 +4,15 @@
         <meta charset="UTF-8"> 
         <meta http-equiv="X-UA-Compatible" content="IE=edge"> 
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title th:text="${movie.title}"></title>
+        <title th:text="${game.title}"></title>
         <link rel="stylesheet" th:href="@{/layout/css/global.css}">
         <link rel="stylesheet" th:href="@{/layout/css/fragments.css}">
         <link rel="stylesheet" th:href="@{/layout/css/mediaDisplay.css}">
 
     </head>
     <body>
-        <!--This html will show when user click on any movies. A webpage that shows the details of
-        the movie being cliked on.
+        <!--This html will show when user click on any games. A webpage that shows the details of
+        the game being cliked on.
         Downside: not showing the actors/ directors/ streaming platforms yet.-->
         
        <!--header (display logo[sidebar toggle], homeReturn icon, search bar, user's name and avatar)-->
@@ -31,35 +31,35 @@
             <div class="media-header">
                 <!-- Poster Card -->
                 <div class="poster-card">
-                    <img th:src="'https://image.tmdb.org/t/p/w500' + ${movie.poster_path}" 
-                        alt="Movie Poster" id="poster-img" />
+                    <img th:src="${game.poster_path}" 
+                        alt="Game Poster" id="poster-img" />
                 </div>
 
-                <!-- Movie's Info -->
+                <!-- Game's Info -->
                 <div class="media-info">
-                    <h1 th:text="${movie.title}" class="media-title"></h1>
+                    <h1 th:text="${game.title}" class="media-title"></h1>
 
                     <div class="genres">
-                        <span th:each="genre : ${movie.genres}" th:text="${genre.name}" class="genre-tag"></span>
+                        <span th:each="genre : ${game.genres}" th:text="${genre.name}" class="genre-tag"></span>
                     </div>
 
-                    <!-- Meta info (released date and the movie's length)-->
+                    <!-- Meta info (released date) -->
                     <div class="meta-info">
-                        <!-- release date of the movie -->
+                        <!-- release date of the game -->
                         <div class="meta-item">
                             <h3 class="release-date-title">Released on:</h3>
-                            <span th:text="${movie.release_dates?: 'Unknown'}"></span>
+                            <span th:text="${game.release_date?: 'Unkown'}"></span>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- middle(body) shows movie's overview and interactive actions (ratings, added to board)-->
+            <!-- middle(body) shows game's overview and interactive actions (ratings, added to board)-->
             <div class="media-middle">
-                <!--Movie's Overview-->
+                <!--Game's Overview-->
                 <div class="media-overview">
                     <h3>Overview:</h3>
-                    <p th:text="${movie.overview?: 'No description available for this movie.'}"></p>
+                    <p th:text="${game.description?: 'No description available for this game.'}"></p>
                 </div>
 
                 <!-- Interact/ Actions Space -->
@@ -86,16 +86,16 @@
                         </div> -->
 
                         <!-- Theme boards drop down 
-                            Description: this drop down box will allow users to add movies into their 
+                            Description: this drop down box will allow users to add games into their 
                             own created theme boards.
                             Note: They cannot add movies into other's theme boards. 
                             Future idea: Perhaps users can clone other users's theme boards? Or request the 
                             theme board owner to add this movie in their theme board. 
-                            <input type="hidden" id="movieApiId" th:value="${movie.id}" />-->
-                    
+                            <input type="hidden" id="gameApiId" th:value="${game.id}" />-->
+                        
                         <div class="theme-dropdown">
                             <button class="dropdown-btn" id="dropdownBtn"
-                                    th:data-type="movie" th:data-id="${movie.id}">
+                                th:data-type="game" th:data-id="${game.id}">
                                 <span>Add to board</span>
                             </button>
 
@@ -111,32 +111,9 @@
                 </div>
             </div>
 
-            <!-- Movie page's footer: show the streaming platforms that the movie is on -->
-            <!--
+            <!-- Game page's footer: -->
             <div class="media-footer">
-                <div class="streaming-section">
-                    <h3>Available on</h3>
-
-                    <div class="platforms">
-
-                        <div class="platform-icon"
-                            th:each="p : ${movie.watch_providers}">
-
-                            <img th:src="${p.logo_url}"
-                                th:alt="${p.provider_name}"
-                                th:title="${p.provider_name}" />
-
-                            <span th:if="${provider.logoUrl == null}"
-                            th:text="${provider.name}"></span>
-                        </div>
-
-                    </div>
-
-                    <p th:if="${#lists.isEmpty(movie.watch_providers)}">
-                        No streaming options available
-                    </p>
-                </div>
-            </div> -->
+            </div>
         </main>
 
         <script th:src="@{/layout/js/fragments.js}"></script>

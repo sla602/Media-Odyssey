@@ -4,11 +4,10 @@
         <meta charset="UTF-8"> 
         <meta http-equiv="X-UA-Compatible" content="IE=edge"> 
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <!--<title th:text="${movie.title}"></title>-->
-        <title>Music Display-Media Odyssey</title>
+        <title th:text="${music.title}"></title>
         <link rel="stylesheet" th:href="@{/layout/css/global.css}">
         <link rel="stylesheet" th:href="@{/layout/css/fragments.css}">
-        <link rel="stylesheet" th:href="@{/layout/css/mediaStyle/musicDisplay.css}">
+        <link rel="stylesheet" th:href="@{/layout/css/mediaDisplay.css}">
     </head>
     <body>
 
@@ -26,28 +25,51 @@
                 main content of the page begins here 
         ===========================================================================-->
 
+        <main class="media-container">
+
         <!-- Poster + Info -->
-        <div class="music-header">
+        <div class="media-header">
             <!-- Poster -->
             <div class="poster-card">
-                <img th:src="" alt="Music Poster" id="poster-img" />
+                <img th:src="${music.poster_path}" alt="Music Poster" id="poster-img" />
             </div>
 
             <!-- Music's Info: name, artist, release date. -->
-            <div class="music-info">
-                <h1 class="music-title"></h1>
+            <div class="media-info">
+                <h1 class="media-title" th:text="${music.title}"></h1>
 
-                <div class="music-artist"></div>
+                <div class="genres">
+                    <span th:each="genre : ${music.genres}" th:text="${genre}" class="genre-tag"></span>
+                </div>
 
-                <div class="music-release-date"></div>
+                <!-- Meta info (released date and the movie's length)-->
+                <div class="meta-info">
+                    <!-- release date of the music -->
+                    <div class="meta-item">
+                        <h3 class="release-date-title">Released on:</h3>
+                        <span th:text="${music.release_date ?:'Unkown'}"></span>
+                    </div>
+
+                    <div class="meta-item">
+                        <h3 class="music-artist">Artist:</h3>
+                        <span th:text="${music.artist}?: 'Unkown'"></span>
+                    </div>
+
+                    <div class="meta-item">
+                        <h3 class="music-album">Album:</h3>
+                        <span th:text="${music.album?: 'Unkown'}"></span>
+                    </div>
+                </div>
             </div>
         </div>
 
-        <!-- Music's body: show (possibly) lyrics + interactive/action panel (ratings + add to boards)-->
-        <div class="music-body">
-
-            <!-- Music's lyrics -->
-            <div class="music-lyrics"></div>
+        <!-- Music's middle: show (possibly) lyrics + interactive/action panel (ratings + add to boards)-->
+        <div class="media-middle">
+            <!--Movie's Overview-->
+            <div class="media-overview">
+                <h3>Overview:</h3>
+                <p th:text="${music.overview ?: 'No description about this track.'}"></p>
+            </div>
 
             <!-- interactive/Action panel (ratings + add to boards)-->
             <div class="actions-panel">
@@ -56,13 +78,29 @@
                 <div></div>
 
                 <!-- Add to board system (a theme boards drop down) 
-                **   More detailed version can be found on movieDisplay.html-->
+                **   More detailed version can be found on movieDisplay.html
+                <input type="hidden" id="musicApiId" th:value="${music.artist}" />-->
                 <div class="theme-dropdown">
-                    <button type="button" class="dropdown-items"></button>
-                </div>
+                    <button class="dropdown-btn" id="dropdownBtn"
+                            th:data-type="music" th:data-artist="${music.artist}" th:data-track="${music.title}">
+                        <span>Add to board</span>
+                    </button>
 
+                    <!-- Show user's created board(s) -->
+                    <div class="dropdown-menu" id="dropdownMenu">
+                        <button type="button" class="dropdown-item"
+                                th:each="board : ${boards}"
+                                th:text="${board.board_name}"
+                                th:data-board-id="${board.id}">
+                        </button>                            
+                    </div>
+                </div>
             </div>
         </div>
+
+        <!-- Media's footer: -->
+        <div class="media-footer"></div>
+        </main>
 
         <script th:src="@{/layout/js/fragments.js}"></script>
         <script th:src="@{/layout/js/mediaDisplay.js}"></script>

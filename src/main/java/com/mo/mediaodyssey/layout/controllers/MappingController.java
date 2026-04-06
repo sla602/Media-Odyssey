@@ -10,17 +10,10 @@ public class MappingController {
     /* This Controller is to navigates elements like create board icon, 
     elements in side bar, and elements view in singular board layout */
 
-    /* SIDE BAR ELEMENTS */
-
-    /* Bring user to the page specifically for social feature.
-    Social feature needs to be discussed more specifically tho.*/
-    @GetMapping("/socialTab")
-    public String navToSocialTab() {
-        return "boardsLayout/features/social";
-    }
+    /*=================================d SIDE BAR ELEMENTS ====================================*/
     
     /* Navigates the user to explore other boards.*/
-    @GetMapping("/exploreBoard")
+    @GetMapping("/exploreBoards")
     public String navToExplore() {
         return "boardsLayout/themeBoard/exploreBoards";
     }
@@ -37,15 +30,15 @@ public class MappingController {
         return "redirect:/community";
     }
 
-    @GetMapping("/userProfile")
-    public String navToUserProfile() {
-        return "redirect:/profile";
-    }
-
     /* Bring user to the Liked Media page */
     @GetMapping("/likedMediaTab")
     public String navToLikedMediaTab() {
         return "boardsLayout/features/likedMedia";
+    }
+
+    @GetMapping("/userProfile")
+    public String navToUserProfile() {
+        return "redirect:/profile";
     }
     
 }

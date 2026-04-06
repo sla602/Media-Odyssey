@@ -12,6 +12,8 @@ import com.mo.mediaodyssey.socialFeature.repositories.CommentRepository;
 import com.mo.mediaodyssey.socialFeature.repositories.PostRepository;
 import com.mo.mediaodyssey.socialFeature.repositories.ReportRepository;
 import com.mo.mediaodyssey.socialFeature.services.*;
+import com.mo.mediaodyssey.layout.services.MediaServices.MusicService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 
 import java.util.*;
@@ -21,16 +23,17 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
 import com.mo.mediaodyssey.shared.model.User;
+import com.mo.mediaodyssey.layout.DTO.BoardMediaDTO;
+import com.mo.mediaodyssey.layout.DTO.GamesRAWG.GameResponse;
 import com.mo.mediaodyssey.layout.DTO.MoviesTMDB.MovieResponse;
 import com.mo.mediaodyssey.layout.models.BoardMedia;
 import com.mo.mediaodyssey.layout.models.Boards;
+import com.mo.mediaodyssey.layout.models.MediaModels.Music;
 import com.mo.mediaodyssey.layout.repositories.BoardMediaRepository;
 import com.mo.mediaodyssey.layout.services.BoardsService;
+import com.mo.mediaodyssey.layout.services.MediaServices.GameService;
 import com.mo.mediaodyssey.layout.services.MediaServices.MovieService;
 
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.ResponseBody;
-import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 
@@ -53,6 +56,11 @@ public class BoardsController {
     private final ProfileRepository profileRepository;
     private final ProfileService profileService;
     private final BoardInviteService boardInviteService;
+
+    @Autowired
+    private GameService gameService; 
+    @Autowired
+    private MusicService musicService;
 
     public BoardsController (BoardsService boardsService, BoardMediaRepository boardMediaRepository, MovieService movieService, PostService postService, BoardRoleRepository boardRoleRepository, CommentService commentService, ReportRepository reportRepository, ModerationService moderationService, PostRepository postRepository, CommentRepository commentRepository,
                              ProfileRepository profileRepository, ProfileService profileService, BoardInviteService boardInviteService) {
@@ -109,9 +117,6 @@ public class BoardsController {
         }
         return result;
     }
-
-
-
 
     /* Bring user to the page to create a board */
     @GetMapping("/create")
@@ -335,7 +340,6 @@ public class BoardsController {
     }
 
 
-
     // ─── Join / Leave ────────────────────────────────────────────────
 
     @PostMapping("/display/{boardId}/join")
@@ -392,15 +396,93 @@ public class BoardsController {
     * ** Error Message: This function is actived when user clicked on a board that is already existed.
     * ** If backend cannot find a board by Id when user is able to click on it. Something is wrong with application.
     */
-   @GetMapping("/display/{boardId}/movies")
-   @ResponseBody
-   public List<MovieResponse> getBoardMovies (@PathVariable Long boardId) {
-        
-        List<BoardMedia> boardMediaList = boardMediaRepository.findByBoardId(boardId);
-        List<Long> mediaApiIds = boardMediaList.stream().map(BoardMedia::getMediaApiId).toList();
+    @GetMapping("/display/{boardId}/movies")
+    @ResponseBody
+    public List<BoardMediaDTO> getBoardMovies(@PathVariable Long boardId) {
 
-        return movieService.getMoviesByIds(mediaApiIds);
-   }
-   
-    
+        List<BoardMedia> list = boardMediaRepository.findByBoardId(boardId);
+        List<BoardMediaDTO> result = new ArrayList<>();
+
+        for (BoardMedia m : list) {
+            if (!"movie".equals(m.getMediaType())) continue;
+
+            MovieResponse movie = movieService.getMovieById(m.getMediaApiId());
+            if (movie == null) continue;
+
+            BoardMediaDTO dto = new BoardMediaDTO();
+            dto.setId(m.getId()); 
+            dto.setMediaApiId(m.getMediaApiId());
+            dto.setMediaType("movie");
+
+            dto.setTitle(movie.getTitle());
+            dto.setPoster_path(movie.getPoster_path());
+
+            result.add(dto);
+        }
+
+        return result;
+    }
+
+    //For games 
+    @GetMapping("/display/{boardId}/games")
+    @ResponseBody
+    public List<BoardMediaDTO> getBoardGames(@PathVariable Long boardId) {
+
+        List<BoardMedia> list = boardMediaRepository.findByBoardId(boardId);
+        List<BoardMediaDTO> result = new ArrayList<>();
+
+        for (BoardMedia m : list) {
+            if (!"game".equals(m.getMediaType())) continue;
+
+            GameResponse game = gameService.getGameById(m.getMediaApiId());
+            if (game == null) continue; // ✅ safety
+
+            BoardMediaDTO dto = new BoardMediaDTO();
+            dto.setId(m.getId());
+            dto.setMediaApiId(m.getMediaApiId());
+            dto.setMediaType("game");
+
+            dto.setTitle(game.getTitle());
+
+            dto.setPoster_path(game.getPoster_path());
+
+            result.add(dto);
+        }
+
+        return result;
+    }
+
+    // For Music
+    @GetMapping("/display/{boardId}/music")
+    @ResponseBody
+    public List<BoardMediaDTO> getBoardMusic(@PathVariable Long boardId) {
+
+        List<BoardMedia> list = boardMediaRepository.findByBoardId(boardId);
+        List<BoardMediaDTO> result = new ArrayList<>();
+
+        for (BoardMedia m : list) {
+            if (!"music".equals(m.getMediaType())) continue;
+
+            BoardMediaDTO dto = new BoardMediaDTO();
+            dto.setId(m.getId()); 
+            dto.setMediaType("music");
+
+            dto.setTitle(m.getTrack());
+            dto.setArtist(m.getArtist());
+
+            // convert from Last.fm API response
+            Music musicInfo = musicService.convertToMusic(m.getArtist(), m.getTrack()); 
+            String poster = null;
+
+            if (musicInfo != null && musicInfo.getPoster_path() != null) {
+            poster = musicInfo.getPoster_path();
+            }
+
+            dto.setPoster_path(poster != null ? poster : "Could not get image of this song :(");
+            System.out.println("Music DTO poster: " + dto.getPoster_path());
+
+            result.add(dto);
+        }
+        return result;
+    }
 }

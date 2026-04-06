@@ -1,5 +1,8 @@
 package com.mo.mediaodyssey.layout.services;
 
+import java.util.*;
+
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.mo.mediaodyssey.layout.models.BoardMedia;
@@ -9,28 +12,95 @@ import com.mo.mediaodyssey.layout.repositories.BoardsRepository;
 
 @Service
 public class BoardMediaService {
-    private final BoardMediaRepository boardMediaRepository; 
-    private final BoardsRepository boardsRepository; 
 
-    public BoardMediaService (BoardMediaRepository boardMediaRepository, BoardsRepository boardsRepository) {
-        this.boardMediaRepository = boardMediaRepository; 
-        this.boardsRepository = boardsRepository;
-    }
+    @Autowired
+    private BoardMediaRepository boardMediaRepository; 
 
-    public void addMediaToBoard(Long boardId, Long mediaApiId) {
+    @Autowired
+    private BoardsRepository boardsRepository; 
 
-        // Ensures no duplicate media is in the board chosen
-        if (boardMediaRepository.existsByBoardIdAndMediaApiId(boardId, mediaApiId)) {
-            throw new RuntimeException("Movie already exists in this board.");
-        }
+    public void addMediaToBoard(Long boardId, Long mediaApiId, String mediaType, Map<String, Object> body) {
 
         Boards board = boardsRepository.findById(boardId)
-                    .orElseThrow(() -> new RuntimeException("Board is delete or error occur" ));
+                    .orElseThrow(() -> new RuntimeException("Board is deleted or error occurred"));
 
-        BoardMedia boardMedia = new BoardMedia(); 
+        BoardMedia boardMedia = new BoardMedia();
+        boardMedia.setBoard(board);
+
+        if ("music".equals(mediaType)) {
+            String artist = body.get("artist").toString();
+            String track = body.get("track").toString();
+
+            if (boardMediaRepository.existsByBoardIdAndMediaTypeAndArtistAndTrack(boardId, mediaType, artist, track)) {
+                throw new RuntimeException("This song already exists in this board.");
+            }
+
+            boardMedia.setMediaType("music");
+            boardMedia.setArtist(artist);
+            boardMedia.setTrack(track);
+
+        } else {
+            if (boardMediaRepository.existsByBoardIdAndMediaTypeAndMediaApiId(boardId, mediaType, mediaApiId)) {
+                throw new RuntimeException("This media already exists in this board.");
+            }
+
+            boardMedia.setMediaType(mediaType); // "movie" or "game"
             boardMedia.setMediaApiId(mediaApiId);
-            boardMedia.setBoard(board);
+        }
 
         boardMediaRepository.save(boardMedia);
     }
+
+    public void removeMediaFromBoard(Long boardId, Long boardMediaId) {
+
+        // Find the saved media
+        BoardMedia media = boardMediaRepository.findById(boardMediaId)
+            .orElseThrow(() -> new RuntimeException("Media not found"));
+
+        // Security Check to see if this media already belongs to this board or not
+        if (!media.getBoard().getId().equals(boardId)) {
+            throw new RuntimeException("This media does not belong to this board");
+        }
+
+        boardMediaRepository.delete(media);
+    }
+
+    /*
+    public void addMediaToBoard(Long boardId, Map<String, Object> body) {
+
+        String mediaType = (String) body.get("type");
+
+        Boards board = boardsRepository.findById(boardId)
+                .orElseThrow(() -> new RuntimeException("Board not found"));
+
+        BoardMedia boardMedia = new BoardMedia();
+        boardMedia.setBoard(board);
+        boardMedia.setMediaType(mediaType);
+
+        if (mediaType.equals("movie") || mediaType.equals("game")) {
+
+            Long mediaApiId = Long.valueOf(body.get("mediaApiId").toString());
+
+            if (boardMediaRepository.existsByBoardIdAndMediaTypeAndMediaApiId(boardId, mediaType, mediaApiId)) {
+                throw new RuntimeException("You already have this in this board.");
+            }
+
+            boardMedia.setMediaApiId(mediaApiId);
+
+        } else if (mediaType.equals("music")) {
+
+            String artist = (String) body.get("artist");
+            String track = (String) body.get("track");
+
+            if (boardMediaRepository.existsByBoardIdAndMediaTypeAndArtistAndTrack(boardId, mediaType, artist, track)) {
+                throw new RuntimeException("You already have this in this board.");
+            }
+
+            boardMedia.setMediaApiId(null);
+            boardMedia.setArtist(artist);
+            boardMedia.setTrack(track);
+        }
+
+        boardMediaRepository.save(boardMedia);
+    } */
 }

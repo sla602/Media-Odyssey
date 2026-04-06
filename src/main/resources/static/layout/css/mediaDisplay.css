@@ -12,7 +12,7 @@ body {
   color: #fff;
 }
 
-.movie-container {
+.media-container {
   max-width: 1000px;
   margin: 0 auto;
   background: rgba(255, 255, 255, 0.05);
@@ -22,8 +22,12 @@ body {
   border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-/* Top Section: Poster + Info */
-.movie-header {
+/* Main content */
+/* ==========================================================================
+*               MEDIA HEADER
+*              POSTER + INFO
+==========================================================================*/
+.media-header {
   display: flex;
   gap: 30px;
   margin-bottom: 25px;
@@ -37,7 +41,7 @@ body {
   margin-top: 15px;
   border-radius: 15px;
   overflow: hidden;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 10px 40px rgba(118, 75, 162, 0.4);
 }
 
 .poster-card img {
@@ -45,10 +49,11 @@ body {
   height: 100%;
   object-fit: cover;
   display: block;
+  border-radius: 12px;
 }
 
-/* Movie Info (Right of Poster) */
-.movie-info {
+/* Media Info (Right of Poster) */
+.media-info {
   flex: 1;
   display: flex;
   flex-direction: column;
@@ -56,12 +61,13 @@ body {
   padding-top: 10px;
 }
 
-.movie-title {
+.media-title {
   font-size: 2.2rem;
   font-weight: 700;
   color: #fff;
   margin-bottom: 15px;
   line-height: 1.2;
+  letter-spacing: 0.5px;
 }
 
 /* Genre Tags */
@@ -109,15 +115,19 @@ body {
   fill: #888;
 }
 
-/* Middle Section: Overview + Actions */
-.movie-middle {
+/* ==========================================================================
+*               MEDIA MIDDLE
+*              OVERVIEW + ACTIONS (LIKES, RATES, ADD TO BOARD)
+==========================================================================*/
+
+.media-middle {
   display: flex;
   gap: 25px;
   margin-bottom: 25px;
 }
 
 /* Overview Box */
-.movie-overview {
+.media-overview {
   flex: 1;
   background: rgba(255, 255, 255, 0.08);
   border-radius: 15px;
@@ -126,14 +136,14 @@ body {
   max-width: 620px;
 }
 
-.movie-overview  h3 {
+.media-overview  h3 {
   font-size: 1.1rem;
   color: #fff;
   margin-bottom: 12px;
   font-weight: 600;
 }
 
-.movie-overview  p {
+.media-overview  p {
   color: #c0c0c0;
   line-height: 1.7;
   font-size: 0.95rem;
@@ -242,11 +252,14 @@ body {
 
 /* Theme Board Dropdown */
 .theme-dropdown {
+  width: 100%;
+  max-width: 220px;
   position: relative;
 }
 
 .dropdown-btn {
-  width: 100%;
+  width: 220px;
+  min-width: 220px;
   padding: 12px 15px;
   background: rgba(255, 255, 255, 0.1);
   border: 1px solid rgba(255, 255, 255, 0.2);
@@ -281,10 +294,15 @@ body {
   top: calc(100% + 8px);
   left: 0;
   right: 0;
+
+  min-width: 220px;
+  width: 100%;
+
   background: #2a2a4a;
   border-radius: 15px;
   overflow: hidden;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+
   opacity: 0;
   visibility: hidden;
   transform: translateY(-10px);
@@ -299,17 +317,24 @@ body {
 }
 
 .dropdown-item {
+  width: 100%;        
+  display: block;         
+  text-align: left;        
+
   padding: 12px 18px;
   cursor: pointer;
-  transition: background 0.2s;
   font-size: 0.9rem;
-  display: flex;
-  align-items: center;
-  gap: 10px;
+
+  white-space: nowrap;    
+  overflow: hidden;
+  text-overflow: ellipsis;  
+
+  transition: background 0.2s;
 }
 
 .dropdown-item:hover {
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.12);
+  padding-left: 22px;
 }
 
 .dropdown-item svg {
@@ -318,7 +343,11 @@ body {
   fill: #888;
 }
 
-/* Bottom Section: Streaming Platforms */
+/* ==========================================================================
+*               MEDIA FOOTER
+*              PLATFORMS + EXTRA INFOS 
+==========================================================================*/
+
 .streaming-section {
   margin-top: 10px;
 }
@@ -344,17 +373,17 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  cursor: pointer;
   transition: all 0.3s ease;
   border: 2px solid transparent;
 }
 
+/* This element is commented about because streaming icon is not clickable.
 .platform-icon:hover {
   transform: scale(1.1);
   background: rgba(255, 255, 255, 0.15);
   border-color: rgba(255, 255, 255, 0.3);
 }
-
+*/
 .platform-icon img {
   width: 35px;
   height: 35px;
@@ -397,9 +426,40 @@ body {
   background: rgba(139, 92, 246, 0.15);
 }
 
+/* Alert message pop up (replace browser alert) */
+.custom-popup {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    padding: 1rem 1.5rem;
+    border-radius: 12px;
+    color: #fff;
+    font-weight: 600;
+    opacity: 0;
+    transform: translateY(20px);
+    transition: all 0.3s ease;
+    z-index: 9999;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+}
+
+.custom-popup.show {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* Success */
+.custom-popup.success {
+    background: linear-gradient(135deg, #22c55e, #16a34a);
+}
+
+/* Error */
+.custom-popup.error {
+    background: linear-gradient(135deg, #ef4444, #dc2626);
+}
+
 /* Responsive */
 @media (max-width: 768px) {
-  .movie-header {
+  .media-header {
     flex-direction: column;
     align-items: center;
     text-align: center;
@@ -413,7 +473,7 @@ body {
     justify-content: center;
   }
 
-  .movie-middle {
+  .media-middle {
     flex-direction: column;
   }
 

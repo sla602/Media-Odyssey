@@ -39,7 +39,7 @@ public class homeController {
         User user = (User) authentication.getPrincipal();
 
         //shows only created boards by the user
-//       List<Boards> boards = boardsService.findBoardsByUser(user);
+        //List<Boards> boards = boardsService.findBoardsByUser(user);
 
         //all roltype joined boards
         List<Boards> boards = boardsService.getJoinedBoards(user.getId());

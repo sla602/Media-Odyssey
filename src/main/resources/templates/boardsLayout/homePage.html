@@ -58,12 +58,6 @@
                     <button class="rec-tab" data-type="SONG">🎵 Songs</button>
                 </div>
 
-                <div th:if="${errorMessage}">
-                    <script th:inline="javascript">
-                        alert([[${errorMessage}]]);
-                    </script>
-                </div>
-
                 <!-- Status message (loading / no data yet) -->
                 <p id="recStatus" class="rec-status"></p>
 
@@ -71,13 +65,6 @@
                 <div id="recCards" class="rec-cards"></div>
             </div>
         </div>
-
-        <!-- ADMINS ALLOWANCE TO VIEW USERS DATABASE -->
-        <div sec:authorize="hasRole('ADMIN')">
-            <a th:href="@{/admin/users}" class="admin-btn">
-                View Users Database
-            </a>
-        </div> 
 
         <script th:src="@{/layout/js/homePage.js}"></script>
         <script th:src="@{/layout/js/fragments.js}"></script>
