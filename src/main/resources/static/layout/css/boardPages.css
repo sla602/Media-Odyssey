@@ -190,201 +190,10 @@ body {
     box-shadow: 0 8px 25px rgba(99, 102, 241, 0.3);
 }
 
-/* =============================================================== 
+
+/* ============================================================================================= 
         BOARD DISPLAY SECTION 
-==================================================================*/ 
-/* Board Display Page Styles */
-
-/* Main container */
-.board-container {
-    margin-left: 240px;
-    margin-top: 80px;
-    max-width: 1200px;
-    padding: 2rem;
-    transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.side-bar.collapsed ~ .board-container,
-.board-container.sidebar-collapsed {
-    margin-left: 0;
-}
-
-/* Board Header Section */
-.board-header {
-    display: flex;
-    align-items: flex-start;
-    gap: 2rem;
-    padding: 2rem;
-    background: linear-gradient(145deg, #1a1a2e 0%, #252545 100%);
-    border-radius: 16px;
-    margin-bottom: 2rem;
-    border: 1px solid rgba(99, 102, 241, 0.1);
-}
-
-.board-avatar {
-    flex-shrink: 0;
-}
-
-.board-avatar-placeholder {
-    width: 120px;
-    height: 120px;
-    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
-    border-radius: 16px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 3rem;
-    font-weight: 700;
-    color: #ffffff;
-    text-transform: uppercase;
-}
-
-.board-avatar img {
-    width: 120px;
-    height: 120px;
-    border-radius: 16px;
-    object-fit: cover;
-}
-
-.board-Info {
-    flex: 1;
-}
-
-.board-title {
-    font-size: 2rem;
-    font-weight: 700;
-    color: #ffffff;
-    margin-bottom: 0.75rem;
-    line-height: 1.2;
-}
-
-.board-description {
-    color: #a0a0b0;
-    font-size: 1rem;
-    line-height: 1.6;
-    margin-bottom: 1rem;
-}
-
-.board-meta {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-}
-
-.board-type-badge {
-    display: inline-block;
-    padding: 0.375rem 1rem;
-    background: rgba(99, 102, 241, 0.2);
-    color: #818cf8;
-    border-radius: 20px;
-    font-size: 0.875rem;
-    font-weight: 500;
-    text-transform: capitalize;
-}
-
-/* Middle Section - Posts & Media */
-.board-middle {
-    background: linear-gradient(145deg, #1a1a2e 0%, #252545 100%);
-    border-radius: 16px;
-    padding: 1.5rem;
-    border: 1px solid rgba(99, 102, 241, 0.1);
-}
-
-.middle-select {
-    display: flex;
-    gap: 0.5rem;
-    margin-bottom: 1.5rem;
-    border-bottom: 1px solid rgba(99, 102, 241, 0.2);
-    padding-bottom: 1rem;
-}
-
-.board-post,
-.board-media {
-    padding: 0.75rem 2rem;
-    background: transparent;
-    border: none;
-    color: #a0a0b0;
-    font-size: 1rem;
-    font-weight: 600;
-    cursor: pointer;
-    border-radius: 8px;
-    transition: all 0.3s ease;
-    font-family: 'Space Grotesk', sans-serif;
-}
-
-.board-post:hover,
-.board-media:hover {
-    color: #ffffff;
-    background: rgba(99, 102, 241, 0.1);
-}
-
-.board-post.active,
-.board-media.active {
-    color: #ffffff;
-    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
-}
-
-/* Content Containers */
-.board-POST-container,
-.board-MEDIA-container {
-    min-height: 200px;
-    padding: 1rem;
-}
-
-.empty-message {
-    text-align: center;
-    color: #6a6a7a;
-    font-size: 1rem;
-    padding: 3rem 1rem;
-}
-
-/* Responsive adjustments */
-@media (max-width: 1024px) {
-    .form-container {
-        margin-left: 200px;
-    }
-    
-    .board-container {
-        margin-left: 200px;
-    }
-}
-
-@media (max-width: 768px) {
-    .form-container {
-        margin-left: 0;
-        padding: 2rem 1rem;
-    }
-
-    .create-board-form {
-        min-width: auto;
-        padding: 2rem 1.5rem;
-    }
-    
-    .board-container {
-        margin-left: 0;
-        padding: 1rem;
-    }
-
-    .board-header {
-        flex-direction: column;
-        align-items: center;
-        text-align: center;
-    }
-
-    .board-title {
-        font-size: 1.5rem;
-    }
-
-    .board-avatar-placeholder {
-        width: 80px;
-        height: 80px;
-        font-size: 2rem;
-    }
-}
-
-/* =============================================================== 
-        BOARD DISPLAY SECTION 
-==================================================================*/ 
+===============================================================================================*/ 
 /* Board Display Page Styles */
 
 /* Main container */
@@ -549,7 +358,7 @@ body {
 
 /* Sections */
 .media-section {
-    margin-top: 1rem;
+    margin-top: 1.5rem;
 }
 
 /* ====================================
@@ -567,7 +376,7 @@ body {
 /* Individual Movie Card */
 .media-card {
     background: linear-gradient(145deg, #1e1e3f 0%, #2d2d5a 100%);
-    border-radius: 16px;
+    border-radius: 14px;
     overflow: hidden;
     width: 180px;
     flex-shrink: 0;
@@ -576,21 +385,21 @@ body {
     align-items: center;
     transition: transform 0.2s, box-shadow 0.2s;
     border: 1px solid rgba(99, 102, 241, 0.15);
-    transition: all 0.3s ease;
+    transition: all 0.25s ease;
     cursor: pointer;
 }
 
 /* Hover Effect */
 .media-card:hover {
     transform: translateY(-6px);
-    box-shadow: 0 10px 25px rgba(99, 102, 241, 0.3);
+    box-shadow: 0 8px 20px rgba(99, 102, 241, 0.3);
     border-color: rgba(139, 92, 246, 0.5);
 }
 
 /* Movie Image */
 .media-card img {
     width: 100%;
-    height: 270px;
+    height: 190px;
     object-fit: cover;
     display: block;
     border-bottom: 1px solid rgba(99, 102, 241, 0.1);
@@ -598,11 +407,27 @@ body {
 
 /* Movie Title */
 .media-card h4 {
-    padding: 0.75rem 1rem;
-    font-size: 0.95rem;
+    font-size: 0.85rem;
     font-weight: 600;
     color: #e2e8f0;
     text-align: center;
+    padding: 0.5rem 0.6rem 0.2rem;
+    line-height: 1.3;
+}
+
+.media-extra {
+    font-size: 0.75rem;
+    color: #a0a0b0;
+    text-align: center;
+    padding-bottom: 0.6rem;
+}
+
+.media-link {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    text-decoration: none;
+    color: inherit;
 }
 
 /* Remove default link styling */

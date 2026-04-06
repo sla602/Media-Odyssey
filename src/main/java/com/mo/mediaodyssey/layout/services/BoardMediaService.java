@@ -40,11 +40,11 @@ public class BoardMediaService {
             boardMedia.setTrack(track);
 
         } else {
-            if (boardMediaRepository.existsByBoardIdAndMediaApiId(boardId, mediaApiId)) {
+            if (boardMediaRepository.existsByBoardIdAndMediaTypeAndMediaApiId(boardId, mediaType, mediaApiId)) {
                 throw new RuntimeException("This media already exists in this board.");
             }
 
-            boardMedia.setMediaType("movie"); // or "game", depending
+            boardMedia.setMediaType(mediaType); // "movie" or "game"
             boardMedia.setMediaApiId(mediaApiId);
         }
 
