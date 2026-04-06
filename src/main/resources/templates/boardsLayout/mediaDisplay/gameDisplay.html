@@ -43,12 +43,12 @@
                         <span th:each="genre : ${game.genres}" th:text="${genre.name}" class="genre-tag"></span>
                     </div>
 
-                    <!-- Meta info (released date and the game's length)-->
+                    <!-- Meta info (released date) -->
                     <div class="meta-info">
                         <!-- release date of the game -->
                         <div class="meta-item">
                             <h3 class="release-date-title">Released on:</h3>
-                            <span th:text="${game.release_date}"></span>
+                            <span th:text="${game.release_date?: 'Unkown'}"></span>
                         </div>
                     </div>
                 </div>
@@ -59,7 +59,7 @@
                 <!--Game's Overview-->
                 <div class="media-overview">
                     <h3>Overview:</h3>
-                    <p th:text="${game.description}"></p>
+                    <p th:text="${game.description?: 'No description available for this game.'}"></p>
                 </div>
 
                 <!-- Interact/ Actions Space -->

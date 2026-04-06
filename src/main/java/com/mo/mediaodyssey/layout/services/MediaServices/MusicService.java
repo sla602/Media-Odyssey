@@ -49,13 +49,19 @@ public class MusicService {
         music.setAlbum(response.getTrack().getAlbum().getTitle()); //get name of the album 
 
         // tags for the song
+        if (response.getTrack().getTopTags() == null) {
+            music.setGenres(List.of("Unknown"));
+        }
         if (response.getTrack().getTopTags() != null &&
-            response.getTrack().getTopTags().getTags() != null) {
+            response.getTrack().getTopTags().getTag() != null) {
 
             List<String> genres = response.getTrack().getTopTags()
-                    .getTags().stream().map(tag -> tag.getName())
+                    .getTag().stream().map(tag -> tag.getName())
                     .collect(Collectors.toList());
 
+            if (genres.isEmpty()) {
+                genres = List.of("Unknown"); 
+            }
             music.setGenres(genres);
         }
 
@@ -76,7 +82,7 @@ public class MusicService {
     // Private functions: 
     // Trim unecessary elements in return JSON object 
     private String cleanSummary (String summary){
-        if (summary != null) return "";
+        if (summary == null) return "";
 
         int linkIndex = summary.indexOf("<a");
         if (linkIndex != -1) {
