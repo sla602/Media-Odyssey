@@ -93,7 +93,7 @@ function buildCard(item) {
     const img = item.mediaType === "SONG"
         ? ""
         : item.imageUrl && item.imageUrl !== "null"
-            ? `<img class="rec-img" src="${item.imageUrl}" alt="${item.title}" onerror="this.style.display='none'">`
+            ? `<img class="rec-img" src="${item.imageUrl}" alt="${item.title}" loading="lazy" onerror="this.style.display='none'">`
             : `<div class="rec-img rec-img-placeholder">No Image</div>`;
 
     const destination = `/mediaView/${item.mediaType.toLowerCase()}/${item.mediaApiId}`;

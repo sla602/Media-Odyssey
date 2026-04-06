@@ -60,7 +60,7 @@ function renderSearchCards(items) {
         const img = item.mediaType === "SONG"
             ? ""
             : item.imageUrl && item.imageUrl !== "null"
-                ? `<img class="rec-img" src="${item.imageUrl}" alt="${item.title}" onerror="this.style.display='none'">`
+                ? `<img class="rec-img" src="${item.imageUrl}" alt="${item.title}" loading="lazy" onerror="this.style.display='none'">`
                 : `<div class="rec-img rec-img-placeholder">No Image</div>`;
 
         const mediaType   = item.mediaType.toLowerCase();
@@ -126,7 +126,10 @@ async function toggleSearchLike(btn) {
                     mediaApiId,
                     interactionType: "LIKE",
                     mediaType,
-                    genres: genre ? [genre] : []  // empty array = interaction saved, no genre rows written
+                    genres: genre ? [genre] : [],
+                    title: card.querySelector(".rec-title")?.textContent || "",
+                    artist: card.querySelector(".rec-meta")?.textContent?.split(" · ")[1] || "",
+                    imageUrl: card.querySelector(".rec-img")?.src || ""
                 })
             });
             if (res.ok) {

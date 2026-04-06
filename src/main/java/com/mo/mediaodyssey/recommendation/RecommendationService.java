@@ -225,9 +225,19 @@ public class RecommendationService {
         return filterAndMarkLiked(results, userId);
     }
 
+    
+    // Loads all banned mediaApiIds into a Set in one query — used by all fetch methods
+    // to replace N individual existsByMediaApiId calls with a single DB round trip
+    private Set<String> loadBannedIds() {
+        return bannedMediaRepository.findAll().stream()
+                .map(BannedMedia::getMediaApiId)
+                .collect(Collectors.toSet());
+    }
+
     // fallback: top popular movies from TMDB — random page for variety
     private List<RecommendationResponse> fetchTmdbPopular() {
         List<RecommendationResponse> results = new ArrayList<>();
+        Set<String> banned = loadBannedIds();
         int page = random.nextInt(5) + 1;
         String url = "https://api.themoviedb.org/3/movie/popular?api_key=" + tmdbApiKey
                 + "&page=" + page;
@@ -236,7 +246,7 @@ public class RecommendationService {
             JsonNode movies = objectMapper.readTree(response).path("results");
             for (JsonNode movie : movies) {
                 String mediaApiId = movie.path("id").asText();
-                if (bannedMediaRepository.existsByMediaApiId(mediaApiId)) continue;
+                if (banned.contains(mediaApiId)) continue;
                 String title    = movie.path("title").asText();
                 String imageUrl = "https://image.tmdb.org/t/p/w500" + movie.path("poster_path").asText();
                 double score    = movie.path("popularity").asDouble();
@@ -259,6 +269,7 @@ public class RecommendationService {
     // fallback: top rated games from RAWG — random page for variety
     private List<RecommendationResponse> fetchRawgPopular() {
         List<RecommendationResponse> results = new ArrayList<>();
+        Set<String> banned = loadBannedIds();
         int page = random.nextInt(5) + 1;
         String url = "https://api.rawg.io/api/games?key=" + rawgApiKey +
                 "&ordering=-metacritic&dates=2016-01-01,2099-12-31&page_size=20&page=" + page;
@@ -267,7 +278,7 @@ public class RecommendationService {
             JsonNode games = objectMapper.readTree(response).path("results");
             for (JsonNode game : games) {
                 String mediaApiId = game.path("id").asText();
-                if (bannedMediaRepository.existsByMediaApiId(mediaApiId)) continue;
+                if (banned.contains(mediaApiId)) continue;
                 String title    = game.path("name").asText();
                 String imageUrl = game.path("background_image").asText();
                 double score    = game.path("metacritic").asDouble();
@@ -312,6 +323,7 @@ public class RecommendationService {
         Integer genreId = TMDB_GENRE_IDS.get(genre);
         if (genreId == null) return results;
 
+        Set<String> banned = loadBannedIds();
         int page = random.nextInt(10) + 1;
         String url = "https://api.themoviedb.org/3/discover/movie"
                 + "?api_key=" + tmdbApiKey
@@ -325,7 +337,7 @@ public class RecommendationService {
 
             for (JsonNode movie : movies) {
                 String mediaApiId = movie.path("id").asText();
-                if (bannedMediaRepository.existsByMediaApiId(mediaApiId)) continue;
+                if (banned.contains(mediaApiId)) continue;
                 String title    = movie.path("title").asText();
                 String imageUrl = "https://image.tmdb.org/t/p/w500" + movie.path("poster_path").asText();
                 double score    = movie.path("popularity").asDouble();
@@ -343,6 +355,7 @@ public class RecommendationService {
         List<RecommendationResponse> results = new ArrayList<>();
 
         String genreSlug = genre.toLowerCase().replace(" ", "-");
+        Set<String> banned = loadBannedIds();
         int page = random.nextInt(5) + 1;
 
         String url = "https://api.rawg.io/api/games"
@@ -359,7 +372,7 @@ public class RecommendationService {
 
             for (JsonNode game : games) {
                 String mediaApiId = game.path("id").asText();
-                if (bannedMediaRepository.existsByMediaApiId(mediaApiId)) continue;
+                if (banned.contains(mediaApiId)) continue;
                 String title    = game.path("name").asText();
                 String imageUrl = game.path("background_image").asText();
                 double score    = game.path("metacritic").asDouble();
@@ -376,6 +389,7 @@ public class RecommendationService {
     private List<RecommendationResponse> fetchLastfmRecommendations(String genre, int limit) {
         List<RecommendationResponse> results = new ArrayList<>();
         try {
+            Set<String> banned = loadBannedIds();
             String tag = java.net.URLEncoder.encode(genre.toLowerCase(), "UTF-8");
             int page = random.nextInt(5) + 1;
             String lastfmUrl = "https://ws.audioscrobbler.com/2.0/?method=tag.getTopTracks"
@@ -389,7 +403,7 @@ public class RecommendationService {
             for (JsonNode track : tracks) {
                 String mediaApiId = track.path("url").asText();
                 if (mediaApiId.isEmpty()) continue;
-                if (bannedMediaRepository.existsByMediaApiId(mediaApiId)) continue;
+                if (banned.contains(mediaApiId)) continue;
                 String title  = track.path("name").asText();
                 String artist = track.path("artist").path("name").asText();
                 double score  = track.path("playcount").asDouble();

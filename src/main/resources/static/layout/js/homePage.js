@@ -11,23 +11,19 @@ function initBoardsScroll() {
   const container = document.getElementById('personalBoardsContainer');
   if (!container) return;
 
-  // Get all board elements (create button + board cards)
   const createBoard = container.querySelector('.create-board');
   const boardCards = container.querySelectorAll('.board-card');
   const title = container.querySelector('.personal-boards-title');
 
-  // Remove existing board elements from container (keep title)
   if (createBoard) createBoard.remove();
   boardCards.forEach(card => card.remove());
 
-  // Create the scroll wrapper structure
   const scrollWrapper = document.createElement('div');
   scrollWrapper.className = 'boards-scroll-wrapper';
 
   const scrollContainer = document.createElement('div');
   scrollContainer.className = 'boards-scroll-container';
 
-  // Create navigation buttons
   const prevBtn = document.createElement('button');
   prevBtn.className = 'scroll-nav-btn prev';
   prevBtn.innerHTML = `
@@ -46,59 +42,42 @@ function initBoardsScroll() {
   `;
   nextBtn.setAttribute('aria-label', 'Scroll right');
 
-  // Add create board button first
   if (createBoard) {
     scrollContainer.appendChild(createBoard);
   }
 
-  // Add all board cards
   boardCards.forEach(card => {
     scrollContainer.appendChild(card);
   });
 
-  // Assemble the wrapper
   scrollWrapper.appendChild(prevBtn);
   scrollWrapper.appendChild(scrollContainer);
   scrollWrapper.appendChild(nextBtn);
 
-  // Insert after title
   if (title) {
     title.after(scrollWrapper);
   } else {
     container.appendChild(scrollWrapper);
   }
 
-  // Scroll amount per click (card width + gap)
   const scrollAmount = 240;
 
-  // Navigation click handlers
   prevBtn.addEventListener('click', () => {
-    scrollContainer.scrollBy({
-      left: -scrollAmount,
-      behavior: 'smooth'
-    });
+    scrollContainer.scrollBy({ left: -scrollAmount, behavior: 'smooth' });
   });
 
   nextBtn.addEventListener('click', () => {
-    scrollContainer.scrollBy({
-      left: scrollAmount,
-      behavior: 'smooth'
-    });
+    scrollContainer.scrollBy({ left: scrollAmount, behavior: 'smooth' });
   });
 
-  // Update button visibility based on scroll position
   function updateNavButtons() {
     const { scrollLeft, scrollWidth, clientWidth } = scrollContainer;
     const maxScroll = scrollWidth - clientWidth;
-
-    // Show/hide prev button
     if (scrollLeft > 10) {
       prevBtn.classList.add('visible');
     } else {
       prevBtn.classList.remove('visible');
     }
-
-    // Show/hide next button
     if (scrollLeft < maxScroll - 10) {
       nextBtn.classList.add('visible');
     } else {
@@ -106,16 +85,10 @@ function initBoardsScroll() {
     }
   }
 
-  // Initial check
   updateNavButtons();
-
-  // Update on scroll
   scrollContainer.addEventListener('scroll', updateNavButtons);
-
-  // Update on window resize
   window.addEventListener('resize', updateNavButtons);
 
-  // Add keyboard navigation support
   scrollContainer.setAttribute('tabindex', '0');
   scrollContainer.addEventListener('keydown', (e) => {
     if (e.key === 'ArrowLeft') {
@@ -125,13 +98,11 @@ function initBoardsScroll() {
     }
   });
 
-  // Touch/drag scroll support for mobile
   let isDown = false;
   let startX;
   let scrollLeftStart;
 
   scrollContainer.addEventListener('mousedown', (e) => {
-    // Only enable drag if clicking on empty space
     if (e.target === scrollContainer) {
       isDown = true;
       scrollContainer.style.cursor = 'grabbing';
@@ -165,10 +136,32 @@ function initBoardsScroll() {
 
 let currentMediaType = "MOVIE";
 
-// Fetch recommendations for the selected media type
+// Cache: only used by prefetch so the first-ever load of each tab is instant
+// if the background fetch finished before the user clicks. Tab clicks always
+// clear this so they get fresh recommendations, not stale cached ones.
+const recCache = {};
+
+// Tracks in-flight user-initiated requests (tab clicks + initial load)
+const recInFlight = {};
+
+// Tracks in-flight background prefetch requests — separate from recInFlight
+// so a running prefetch never blocks loadRecommendations on a tab click
+const prefetchInFlight = new Set();
+
 async function loadRecommendations(mediaType) {
     const statusEl = document.getElementById("recStatus");
     const cardsEl  = document.getElementById("recCards");
+
+    // Serve from cache if available (only hits on first load if prefetch finished)
+    if (recCache[mediaType]) {
+        statusEl.textContent = "";
+        cardsEl.innerHTML = "";
+        renderCards(recCache[mediaType]);
+        return;
+    }
+
+    if (recInFlight[mediaType]) return;
+    recInFlight[mediaType] = true;
 
     statusEl.textContent = "Loading… wait time is 30 seconds max. Thank you for your patience!";
     cardsEl.innerHTML    = "";
@@ -189,28 +182,46 @@ async function loadRecommendations(mediaType) {
             return;
         }
 
-        statusEl.textContent = "";
-        renderCards(data);
+        recCache[mediaType] = data;
+
+        // Only render if this type is still the active tab when the response arrives
+        if (mediaType === currentMediaType) {
+            statusEl.textContent = "";
+            renderCards(data);
+        }
 
     } catch (err) {
-        statusEl.textContent = "Could not load recommendations.";
+        if (mediaType === currentMediaType) {
+            statusEl.textContent = "Could not load recommendations.";
+        }
         console.error(err);
+    } finally {
+        recInFlight[mediaType] = false;
     }
 }
 
-// Build a card for each recommendation
+// Silently fetch and cache without touching the DOM
+async function prefetchRecommendations(mediaType) {
+    if (recCache[mediaType] || prefetchInFlight.has(mediaType)) return;
+    prefetchInFlight.add(mediaType);
+    try {
+        const res = await fetch(`/api/recommendations?mediaType=${mediaType}`);
+        if (!res.ok) return;
+        const data = await res.json();
+        if (data && data.length > 0) {
+            recCache[mediaType] = data;
+        }
+    } catch (err) {
+        console.error(`Prefetch failed for ${mediaType}:`, err);
+    } finally {
+        prefetchInFlight.delete(mediaType);
+    }
+}
+
 function renderCards(items) {
     const cardsEl = document.getElementById("recCards");
 
-    /*
-        *** This <div> HTML will be modified so user can click on them and be brought to HTML that displays
-        **  details information of the meta they clicked on.
-        ** Logic: Media display Controller will have the path /mediaView/mediaType/mediaId
-        *  This ensures the type of media being clicked on and its id. (nice =])
-        *
-        *** Only movie is being worked on right now.
-    */
-    items.sort(() => Math.random() - 0.5); // shuffle
+    items.sort(() => Math.random() - 0.5);
     items.forEach(item => {
         const card = document.createElement("a");
         card.className = "rec-card";
@@ -224,15 +235,13 @@ function renderCards(items) {
         const img = item.mediaType === 'SONG'
             ? ''
             : item.imageUrl && item.imageUrl !== "null"
-                ? `<img class="rec-img" src="${item.imageUrl}" alt="${item.title}" onerror="this.style.display='none'">`
+                ? `<img class="rec-img" src="${item.imageUrl}" alt="${item.title}" loading="lazy" onerror="this.style.display='none'">`
                 : `<div class="rec-img rec-img-placeholder">No Image</div>`;
 
-        // Intercept click: record VIEW interaction then navigate
         const mediaType = item.mediaType.toLowerCase();
         const destination = `/mediaView/${mediaType}/${item.mediaApiId}`;
         card.href = "javascript:void(0)";
         card.addEventListener("click", async (e) => {
-            // Allow like button clicks to bubble without triggering navigation
             if (e.target.closest(".rec-btn")) return;
             e.preventDefault();
             await recordInteraction(card, "VIEW");
@@ -250,7 +259,6 @@ function renderCards(items) {
             </div>
         `;
 
-        // If user already liked this item, show it as liked immediately
         if (item.userLiked) {
             const likeBtn = card.querySelector(".like-btn");
             likeBtn.textContent = "❤ Liked!";
@@ -262,16 +270,14 @@ function renderCards(items) {
     });
 }
 
-// Toggle like/unlike on a rec card
 async function toggleLike(btn) {
-    const card      = btn.closest(".rec-card");
+    const card       = btn.closest(".rec-card");
     const mediaApiId = card.dataset.mediaApiId;
     const mediaType  = card.dataset.mediaType;
     const genre      = card.dataset.genre;
     const isLiked    = btn.dataset.liked === "true";
 
     if (isLiked) {
-        // Unlike
         try {
             const res = await fetch(`/api/recommendations/interactions/like?mediaApiId=${encodeURIComponent(mediaApiId)}`, {
                 method: "DELETE"
@@ -287,7 +293,6 @@ async function toggleLike(btn) {
             console.error("Unlike error:", err);
         }
     } else {
-        // Like
         try {
             const res = await fetch("/api/recommendations/interactions", {
                 method: "POST",
@@ -315,7 +320,6 @@ async function toggleLike(btn) {
     }
 }
 
-// POST a VIEW interaction to the backend
 async function recordInteraction(btnOrCard, interactionType) {
     const card = btnOrCard.classList.contains("rec-card")
         ? btnOrCard
@@ -336,7 +340,6 @@ async function recordInteraction(btnOrCard, interactionType) {
                 genres: [genre]
             })
         });
-
         if (!res.ok) {
             console.warn("Interaction failed:", res.status);
         }
@@ -345,15 +348,18 @@ async function recordInteraction(btnOrCard, interactionType) {
     }
 }
 
-// Tab switching
+// Tab switching — clear cache for the clicked type so it always fetches fresh
 document.querySelectorAll(".rec-tab").forEach(tab => {
     tab.addEventListener("click", () => {
         document.querySelectorAll(".rec-tab").forEach(t => t.classList.remove("active"));
         tab.classList.add("active");
         currentMediaType = tab.dataset.type;
+        delete recCache[currentMediaType]; // force fresh fetch on every tab click
         loadRecommendations(currentMediaType);
     });
 });
 
-// Load on page open
+// Start all three fetches simultaneously — MOVIE renders when done,
+// GAME and SONG go straight to cache so first click is instant
 loadRecommendations(currentMediaType);
+["GAME", "SONG"].forEach(type => prefetchRecommendations(type));
