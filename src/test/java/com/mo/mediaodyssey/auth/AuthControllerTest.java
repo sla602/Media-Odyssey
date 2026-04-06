@@ -3,6 +3,7 @@ package com.mo.mediaodyssey.auth;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -25,7 +26,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
-import org.springframework.security.web.authentication.RememberMeServices;
+import org.springframework.security.web.authentication.rememberme.TokenBasedRememberMeServices;
 import org.springframework.security.web.authentication.session.SessionAuthenticationStrategy;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
@@ -66,7 +67,7 @@ class AuthControllerTest {
     private CurrentAccountService currentAccountService;
 
     @MockitoBean
-    private RememberMeServices rememberMeServices;
+    private TokenBasedRememberMeServices rememberMeServices;
 
     @AfterEach
     void cleanupAuthState() {
@@ -94,7 +95,8 @@ class AuthControllerTest {
 
         verify(sessionAuthenticationStrategy).onAuthentication(any(Authentication.class), any(), any());
         verify(currentAccountService).refreshPrincipal(any(Authentication.class), any(), any());
-        verifyNoInteractions(rememberMeServices);
+        verify(rememberMeServices).loginFail(any(), any());
+        verify(rememberMeServices, never()).onLoginSuccess(any(), any(), any(Authentication.class));
     }
 
     @Test
@@ -113,7 +115,8 @@ class AuthControllerTest {
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.status").value("AUTH_LOGIN_SUCCESS"));
 
-        verify(rememberMeServices).loginSuccess(any(), any(), any(Authentication.class));
+        verify(rememberMeServices).onLoginSuccess(any(), any(), any(Authentication.class));
+        verify(rememberMeServices, never()).loginFail(any(), any());
     }
 
     @Test

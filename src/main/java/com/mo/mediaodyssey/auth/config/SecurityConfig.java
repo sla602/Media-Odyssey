@@ -35,17 +35,25 @@ import com.mo.mediaodyssey.shared.services.CurrentAccountService;
 @EnableWebSecurity
 public class SecurityConfig {
 
+        private static final int MAX_CONCURRENT_SESSIONS = 1;
+
         @Bean
         public SecurityFilterChain filterChain(HttpSecurity http, MOOAuth2UserService customOAuth2UserService,
                         CurrentAccountService currentAccountService,
                         SessionAuthenticationStrategy sessionAuthenticationStrategy,
+                        SessionRegistry sessionRegistry,
                         RememberMeServices rememberMeServices)
                         throws Exception {
                 http
                                 .csrf(csrf -> csrf.disable())
                                 .sessionManagement((session) -> session
                                                 .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
-                                                .sessionAuthenticationStrategy(sessionAuthenticationStrategy))
+                                                .sessionAuthenticationStrategy(sessionAuthenticationStrategy)
+                                                .sessionConcurrency((concurrency) -> concurrency
+                                                                .maximumSessions(MAX_CONCURRENT_SESSIONS)
+                                                                .maxSessionsPreventsLogin(false)
+                                                                .sessionRegistry(sessionRegistry)
+                                                                .expiredUrl("/auth/login?sessionExpired=true")))
                                 .authorizeHttpRequests(auth -> auth
                                                 .requestMatchers( // Public access.
                                                                 "/auth/**",
@@ -108,13 +116,16 @@ public class SecurityConfig {
         }
 
         @Bean
-        public RememberMeServices rememberMeServices(MOUserDetailsService userDetailsService,
+        public TokenBasedRememberMeServices rememberMeServices(MOUserDetailsService userDetailsService,
                         @Value("${security.remember-me.key}") String rememberMeKey) {
                 TokenBasedRememberMeServices rememberMeServices = new TokenBasedRememberMeServices(
                                 rememberMeKey,
                                 userDetailsService::loadUserByUsername);
                 rememberMeServices.setTokenValiditySeconds(14 * 24 * 60 * 60); // 14 days
                 rememberMeServices.setParameter("remember-me");
+                // Keep remember-me disabled by default. AuthController invokes token creation
+                // only when the User explicitly checks the remember-me option.
+                rememberMeServices.setAlwaysRemember(false);
                 return rememberMeServices;
         }
 
@@ -156,7 +167,7 @@ public class SecurityConfig {
                                                                                                               // invalidated.
                 ConcurrentSessionControlAuthenticationStrategy concurrent = new ConcurrentSessionControlAuthenticationStrategy(
                                 sessionRegistry);
-                concurrent.setMaximumSessions(1);
+                concurrent.setMaximumSessions(MAX_CONCURRENT_SESSIONS);
                 concurrent.setExceptionIfMaximumExceeded(false);
 
                 return new CompositeSessionAuthenticationStrategy(List.of(

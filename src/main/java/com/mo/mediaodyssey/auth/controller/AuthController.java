@@ -7,7 +7,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.web.authentication.RememberMeServices;
+import org.springframework.security.web.authentication.rememberme.TokenBasedRememberMeServices;
 import org.springframework.security.web.authentication.session.SessionAuthenticationStrategy;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -53,7 +53,7 @@ public class AuthController {
     private CurrentAccountService currentAccountService;
 
     @Autowired
-    private RememberMeServices rememberMeServices;
+    private TokenBasedRememberMeServices rememberMeServices;
 
     /**
      * Handles account login requests.
@@ -83,7 +83,9 @@ public class AuthController {
 
         // Remember-me is login-only and opt-in.
         if (dto.rememberMeRequested()) {
-            rememberMeServices.loginSuccess(request, response, authentication);
+            rememberMeServices.onLoginSuccess(request, response, authentication);
+        } else {
+            rememberMeServices.loginFail(request, response);
         }
 
         // Return OK - successfully logged in
