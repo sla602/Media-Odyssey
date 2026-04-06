@@ -11,8 +11,8 @@
             </li>
 
             <!-- Navigates over to social.html (name can be changed)-->
-            <li data-feature="socialFeature">
-                <a href="/socialTab" class="sidebar-menu-items">Community</a>
+            <li data-feature="exploreBoards">
+                <a href="/exploreBoards" class="sidebar-menu-items">Explore</a>
             </li>
 
             <!-- Navigates over to trending.html (name can be changed)-->
@@ -25,7 +25,9 @@
 
         <!-- Called this "Friends": Social Section -->
         <ul class="features-list">
-            <li data-feature=""></li>
+            <li data-feature="friendsTab">
+                <a href="/friendsTab" class="sidebar-menu-items">Friends</a>
+            </li>
         </ul>
 
         <div class="sidebar-divider"></div>
@@ -37,7 +39,7 @@
 
         <!-- This footer in the sidebar will be at the botton of the side bar. 
         This is to navigate to user profile + log out -->
-         <!-- Fixed Footer for Current User -->
+        <!-- Fixed Footer for Current User -->
         <div class="sidebar-footer user-footer">
             <a href="/profile" class="sidebar-menu-items">
                 <img th:src="${user.selected_avatar_type == 'custom' 
