@@ -642,11 +642,12 @@
                 <!-- =====================================================
                                     Media type selector 
                 ===========================================================-->
-                <div class="media-select">
-                    <button class="media-tab active" id="moviesTab">Movies</button>
-                    <button class="media-tab" id="gamesTab">Games</button>
-                    <button class="media-tab" id="musicTab">Music</button>
-                </div>
+                <div class="media-container" id="mediaContainer" style="display: none;">
+                    <div class="media-select">
+                        <button class="media-tab active" id="moviesTab">Movies</button>
+                        <button class="media-tab" id="gamesTab">Games</button>
+                        <button class="media-tab" id="musicTab">Music</button>
+                    </div>
 
                     <!-- Movies --> 
                     <div class="media-section" id="moviesSection">
@@ -662,7 +663,6 @@
                     <div class="media-section" id="musicSection" style="display:none;">
                         <div class="media-card-display"></div>
                     </div>
-
                 </div>
             </div>
             <!-- Footer Section: in thoughts progress...-->

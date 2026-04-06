@@ -23,6 +23,7 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
 import com.mo.mediaodyssey.shared.model.User;
+import com.mo.mediaodyssey.layout.DTO.BoardMediaDTO;
 import com.mo.mediaodyssey.layout.DTO.GamesRAWG.GameResponse;
 import com.mo.mediaodyssey.layout.DTO.MoviesTMDB.MovieResponse;
 import com.mo.mediaodyssey.layout.models.BoardMedia;
@@ -33,9 +34,6 @@ import com.mo.mediaodyssey.layout.services.BoardsService;
 import com.mo.mediaodyssey.layout.services.MediaServices.GameService;
 import com.mo.mediaodyssey.layout.services.MediaServices.MovieService;
 
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.ResponseBody;
-import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 
@@ -398,42 +396,84 @@ public class BoardsController {
     * ** Error Message: This function is actived when user clicked on a board that is already existed.
     * ** If backend cannot find a board by Id when user is able to click on it. Something is wrong with application.
     */
-   @GetMapping("/display/{boardId}/movies")
-   @ResponseBody
-   public List<MovieResponse> getBoardMovies (@PathVariable Long boardId) {
-        
-        List<BoardMedia> boardMediaList = boardMediaRepository.findByBoardId(boardId);
-        List<Long> ids = boardMediaList.stream()
-        .filter(m -> "movie".equals(m.getMediaType()))
-        .map(BoardMedia::getMediaApiId)
-        .toList();
+    @GetMapping("/display/{boardId}/movies")
+    @ResponseBody
+    public List<BoardMediaDTO> getBoardMovies(@PathVariable Long boardId) {
 
-        return movieService.getMoviesByIds(ids);
+        List<BoardMedia> list = boardMediaRepository.findByBoardId(boardId);
+        List<BoardMediaDTO> result = new ArrayList<>();
+
+        for (BoardMedia m : list) {
+            if (!"movie".equals(m.getMediaType())) continue;
+
+            MovieResponse movie = movieService.getMovieById(m.getMediaApiId());
+            if (movie == null) continue;
+
+            BoardMediaDTO dto = new BoardMediaDTO();
+            dto.setId(m.getId()); 
+            dto.setMediaApiId(m.getMediaApiId());
+            dto.setMediaType("movie");
+
+            dto.setTitle(movie.getTitle());
+            dto.setPoster_path(movie.getPoster_path());
+
+            result.add(dto);
+        }
+
+        return result;
     }
 
     //For games 
     @GetMapping("/display/{boardId}/games")
     @ResponseBody
-    public List<GameResponse> getBoardGames(@PathVariable Long boardId) {
+    public List<BoardMediaDTO> getBoardGames(@PathVariable Long boardId) {
 
         List<BoardMedia> list = boardMediaRepository.findByBoardId(boardId);
+        List<BoardMediaDTO> result = new ArrayList<>();
 
-        List<Long> ids = list.stream()
-            .filter(m -> "game".equals(m.getMediaType()))
-            .map(BoardMedia::getMediaApiId)
-            .toList();
+        for (BoardMedia m : list) {
+            if (!"game".equals(m.getMediaType())) continue;
 
-        return gameService.getGamesByIds(ids);
+            GameResponse game = gameService.getGameById(m.getMediaApiId());
+            if (game == null) continue; // ✅ safety
+
+            BoardMediaDTO dto = new BoardMediaDTO();
+            dto.setId(m.getId());
+            dto.setMediaApiId(m.getMediaApiId());
+            dto.setMediaType("game");
+
+            dto.setTitle(game.getTitle());
+
+            dto.setPoster_path(game.getPoster_path());
+
+            result.add(dto);
+        }
+
+        return result;
     }
 
     // For Music
     @GetMapping("/display/{boardId}/music")
     @ResponseBody
-    public List<Music> getBoardMusic(@PathVariable Long boardId) {
+    public List<BoardMediaDTO> getBoardMusic(@PathVariable Long boardId) {
 
         List<BoardMedia> list = boardMediaRepository.findByBoardId(boardId);
+        List<BoardMediaDTO> result = new ArrayList<>();
 
-        return musicService.getMusicByBoardMediaList(list);
+        for (BoardMedia m : list) {
+            if (!"music".equals(m.getMediaType())) continue;
+
+            BoardMediaDTO dto = new BoardMediaDTO();
+            dto.setId(m.getId()); 
+            dto.setMediaType("music");
+
+            dto.setTitle(m.getTrack());
+            dto.setArtist(m.getArtist());
+            dto.setPoster_path(m.getMedia_poster_path());
+
+            result.add(dto);
+        }
+
+        return result;
     }
-   
 }

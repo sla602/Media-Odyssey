@@ -9,6 +9,7 @@ import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -56,6 +57,21 @@ public class boardMediaController {
         } catch (Exception e) {
             // Catch all unexpected errors
             return ResponseEntity.status(500).body(Map.of("status", "error", "message", "Server error"));
+        }
+    }
+
+    @DeleteMapping("/{board_id}/media/{boardMedia_id}")
+    public ResponseEntity<?> deleteMedia(
+            @PathVariable Long board_id,
+            @PathVariable Long boardMedia_id) {
+
+        try {
+            boardMediaService.removeMediaFromBoard(board_id, boardMedia_id);
+            return ResponseEntity.ok(Map.of("message", "Deleted successfully"));
+
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest()
+                    .body(Map.of("message", e.getMessage()));
         }
     }
     

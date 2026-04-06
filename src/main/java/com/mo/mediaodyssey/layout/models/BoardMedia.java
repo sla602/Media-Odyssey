@@ -28,11 +28,10 @@ public class BoardMedia {
 
     private String media_title; 
     private String media_poster_path; 
-    private String media_genres;
 
     public BoardMedia (){}
     public BoardMedia(Long id, Boards board, Long mediaApiId, String mediaType, String artist, String track,
-            String media_title, String media_poster_path, String media_genres) {
+            String media_title, String media_poster_path) {
         this.id = id;
         this.board = board;
         this.mediaApiId = mediaApiId;
@@ -41,7 +40,6 @@ public class BoardMedia {
         this.track = track;
         this.media_title = media_title;
         this.media_poster_path = media_poster_path;
-        this.media_genres = media_genres;
     }
     public Long getId() {
         return id;
@@ -80,14 +78,6 @@ public class BoardMedia {
 
     public void setMedia_poster_path(String media_poster_path) {
         this.media_poster_path = media_poster_path;
-    }
-
-    public String getMedia_genres() {
-        return media_genres;
-    }
-
-    public void setMedia_genres(String media_genres) {
-        this.media_genres = media_genres;
     }
 
     public String getArtist() {

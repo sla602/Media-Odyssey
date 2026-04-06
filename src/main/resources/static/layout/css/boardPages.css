@@ -532,6 +532,39 @@ body {
     color: inherit;
     transition: color 0.2s ease;
 }
+
+/* Alert message pop up (replace browser alert) */
+.custom-popup {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    padding: 1rem 1.5rem;
+    border-radius: 12px;
+    color: #fff;
+    font-weight: 600;
+    opacity: 0;
+    transform: translateY(20px);
+    transition: all 0.3s ease;
+    z-index: 9999;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+}
+
+.custom-popup.show {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* Success */
+.custom-popup.success {
+    background: linear-gradient(135deg, #22c55e, #16a34a);
+}
+
+/* Error */
+.custom-popup.error {
+    background: linear-gradient(135deg, #ef4444, #dc2626);
+}
+
+
 .author-link:hover {
     color: #c4b5fd;
     text-decoration: underline;

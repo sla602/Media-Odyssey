@@ -51,6 +51,20 @@ public class BoardMediaService {
         boardMediaRepository.save(boardMedia);
     }
 
+    public void removeMediaFromBoard(Long boardId, Long boardMediaId) {
+
+        // Find the saved media
+        BoardMedia media = boardMediaRepository.findById(boardMediaId)
+            .orElseThrow(() -> new RuntimeException("Media not found"));
+
+        // Security Check to see if this media already belongs to this board or not
+        if (!media.getBoard().getId().equals(boardId)) {
+            throw new RuntimeException("This media does not belong to this board");
+        }
+
+        boardMediaRepository.delete(media);
+    }
+
     /*
     public void addMediaToBoard(Long boardId, Map<String, Object> body) {
 

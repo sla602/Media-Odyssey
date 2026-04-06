@@ -83,9 +83,9 @@ document.addEventListener('DOMContentLoaded', function() {
         let link = '';
 
         if (type === 'movie') {
-            link = `/mediaView/movie/${item.id}`;
+            link = `/mediaView/movie/${item.mediaApiId}`;
         } else if (type === 'game') {
-            link = `/mediaView/game/${item.id}`;
+            link = `/mediaView/game/${item.mediaApiId}`;
         } else if (type === 'music') {
             link = `/mediaView/music?artist=${encodeURIComponent(item.artist)}&track=${encodeURIComponent(item.title)}`;
         }
@@ -106,33 +106,51 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // delete media from the theme board
-    document.addEventListener('click', async function(e) {
+   document.addEventListener('click', function (e) {
         if (e.target.classList.contains('remove-btn')) {
-            const mediaId = e.target.dataset.id;
-            const boardId = window.location.pathname.split('/').pop();
-
-            try {
-                const res = await fetch(`/api/boards/${boardId}/media/${mediaId}`, {
-                    method: 'DELETE'
-                });
-
-                const result = await res.json();
-
-                if (res.ok) {
-                    showPopup(result.message, "success");
-
-                    // remove card from UI instantly
-                    e.target.closest('.media-card').remove();
-                } else {
-                    showPopup(result.message, "error");
-                }
-
-            } catch (err) {
-                console.error(err);
-                showPopup("Delete failed", "error");
-            }
+            const boardMediaId = e.target.dataset.id;
+            deleteMedia(boardId, boardMediaId);
         }
     });
+
+    async function deleteMedia(boardId, boardMediaId) {
+        try {
+            const res = await fetch(`/api/boards/${boardId}/media/${boardMediaId}`, {
+                method: "DELETE"
+            });
+
+            const result = await res.json();
+
+            if (res.ok) {
+                showPopup("Removed successfully", "success");
+                location.reload();
+            } else {
+                showPopup(result.message || "Failed to delete", "error");
+            }
+
+        } catch (err) {
+            console.error(err);
+            showPopup("Network error", "error");
+        }
+    }
+
+    // Change from browser alert to pop up message 
+    function showPopup(message, type) {
+        let popup = document.createElement("div");
+        popup.className = `custom-popup ${type}`;
+        popup.innerText = message;
+
+        document.body.appendChild(popup);
+
+        setTimeout(() => {
+            popup.classList.add("show");
+        }, 10);
+
+        setTimeout(() => {
+            popup.classList.remove("show");
+            setTimeout(() => popup.remove(), 300);
+        }, 2500);
+    }
 
     // HELPERS (normalize fields)
     function getTitle(item, type) {
@@ -143,7 +161,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function getImage(item, type) {
         if (type === 'movie') return `https://image.tmdb.org/t/p/w500${item.poster_path}`;
-        if (type === 'game') return item.background_image;
+        if (type === 'game') return item.poster_path;
         if (type === 'music') return item.poster_path;
     }
 
