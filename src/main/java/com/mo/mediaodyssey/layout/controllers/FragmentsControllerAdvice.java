@@ -32,7 +32,6 @@ public class FragmentsControllerAdvice {
             // Catch no, anonymous, or invalid authentication. This global controller is
             // used on pages where there is no authentication required. Without catching the
             // exception, these pages fail to load.
-            // TODO: is this intended behavior?
             return null;
         }
     }

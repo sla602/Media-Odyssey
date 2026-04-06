@@ -1,7 +1,5 @@
 package com.mo.mediaodyssey.community.favorite;
 
-import com.mo.mediaodyssey.community.favorite.Media;
-import com.mo.mediaodyssey.community.favorite.MediaRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
@@ -11,12 +9,8 @@ import java.util.List;
 @Component
 public class TrendingScheduler {
 
-    private final MediaRepository mediaRepository;
-
     @Autowired
-    public TrendingScheduler(MediaRepository mediaRepository) {
-        this.mediaRepository = mediaRepository;
-    }
+    private MediaRepository mediaRepository;
 
     /**
      * Runs every Sunday at midnight (cron: 0 0 0 * * SUN).

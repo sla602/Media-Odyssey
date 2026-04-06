@@ -69,11 +69,9 @@ public class SecurityConfig {
                                                 .anyRequest().authenticated()) // All others require authentication with
                                                                                // any role.
                                 .exceptionHandling(ex -> ex.authenticationEntryPoint(
-                                                new LoginUrlAuthenticationEntryPoint("/auth"))) // Redirect
-                                                                                                // requests
+                                                new LoginUrlAuthenticationEntryPoint("/auth"))) // Redirect requests
                                                                                                 // requiring
-                                                                                                // authentication
-                                                                                                // to
+                                                                                                // authentication to
                                                                                                 // "/auth".
                                 .formLogin((form) -> form.disable()) // Disable default Spring Security form login.
                                 .httpBasic((basic) -> basic.disable()) // Disable default Spring Security basic HTTP
@@ -93,7 +91,6 @@ public class SecurityConfig {
                                                 .successHandler((request, response, authentication) -> {
                                                         currentAccountService.refreshPrincipal(authentication, request,
                                                                         response);
-
                                                         response.sendRedirect("/");
                                                 }))
                                 .logout((logout) -> logout // Configure Spring Security log out with customization.
@@ -110,8 +107,7 @@ public class SecurityConfig {
                                                         } else {
                                                                 response.sendRedirect("/auth");
                                                         }
-                                                })
-                                                .permitAll());
+                                                }).permitAll());
                 return http.build();
         }
 
@@ -149,22 +145,9 @@ public class SecurityConfig {
         }
 
         @Bean
-        public SessionAuthenticationStrategy sessionAuthenticationStrategy(SessionRegistry sessionRegistry) { // Limit
-                                                                                                              // maximum
-                                                                                                              // concurrent
-                                                                                                              // sessions
-                                                                                                              // to 1
-                                                                                                              // per
-                                                                                                              // account.
-                                                                                                              // If
-                                                                                                              // limit
-                                                                                                              // is
-                                                                                                              // exceeded,
-                                                                                                              // the
-                                                                                                              // oldest
-                                                                                                              // session
-                                                                                                              // is
-                                                                                                              // invalidated.
+        public SessionAuthenticationStrategy sessionAuthenticationStrategy(SessionRegistry sessionRegistry) {
+                // Limit maximum concurrent sessions to 1 per account.
+                // If limit is exceeded, the oldest session is invalidated.
                 ConcurrentSessionControlAuthenticationStrategy concurrent = new ConcurrentSessionControlAuthenticationStrategy(
                                 sessionRegistry);
                 concurrent.setMaximumSessions(MAX_CONCURRENT_SESSIONS);

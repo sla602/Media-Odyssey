@@ -4,7 +4,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mo.mediaodyssey.recommendation.UserInteractionRepository;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
@@ -228,7 +227,7 @@ public class MediaRankingService {
         String upper = value.trim().toUpperCase();
         return switch (upper) {
             case "MOVIE", "MOVIES" -> "MOVIE";
-            case "GAME", "GAMES"   -> "GAME";
+            case "GAME", "GAMES" -> "GAME";
             case "SONG", "SONGS", "MUSIC" -> "SONG";
             default -> upper;
         };
