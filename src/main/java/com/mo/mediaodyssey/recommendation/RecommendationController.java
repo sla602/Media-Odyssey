@@ -56,6 +56,15 @@ public class RecommendationController {
         return ResponseEntity.ok(recommendations);
     }
 
+    // GET /api/recommendations/liked
+    // Returns all media the logged-in user has liked, enriched with title/image from external APIs
+    @GetMapping("/liked")
+    public ResponseEntity<List<RecommendationResponse>> getLikedMedia(Authentication auth) {
+        Long userId = getUserIdFromSession(auth);
+        List<RecommendationResponse> liked = recommendationService.getLikedMedia(userId);
+        return ResponseEntity.ok(liked);
+    }
+
     // POST /api/recommendations/admin/ban?mediaApiId=123&mediaType=MOVIE
     @PostMapping("/admin/ban")
     public ResponseEntity<Void> banMedia(@RequestParam String mediaApiId,

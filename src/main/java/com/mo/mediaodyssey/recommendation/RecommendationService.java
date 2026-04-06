@@ -101,6 +101,14 @@ public class RecommendationService {
         interaction.setMediaType(request.getMediaType());
         interaction.setGenres(request.getGenres());
         interaction.setTimestamp(LocalDateTime.now());
+
+        // Store display fields on LIKE so Liked Media page needs zero external API calls
+        if ("LIKE".equals(request.getInteractionType())) {
+            interaction.setTitle(request.getTitle());
+            interaction.setArtist(request.getArtist());
+            interaction.setImageUrl(request.getImageUrl());
+        }
+
         userInteractionRepository.save(interaction);
     }
 
@@ -389,6 +397,31 @@ public class RecommendationService {
             }
         } catch (Exception e) {
             System.err.println("Last.fm recommendations error: " + e.getMessage());
+        }
+        return results;
+    }
+
+    // Returns all media the user has liked directly from the DB — no external API calls.
+    // Title, artist, and imageUrl were stored at like-time from the frontend card data.
+    public List<RecommendationResponse> getLikedMedia(Long userId) {
+        List<UserInteraction> liked = userInteractionRepository
+                .findByUserIdAndInteractionType(userId, "LIKE");
+
+        List<RecommendationResponse> results = new ArrayList<>();
+        for (UserInteraction interaction : liked) {
+            String genre = interaction.getGenres() != null && !interaction.getGenres().isEmpty()
+                           ? interaction.getGenres().get(0) : "";
+            RecommendationResponse response = new RecommendationResponse(
+                    interaction.getMediaApiId(),
+                    interaction.getTitle() != null ? interaction.getTitle() : "",
+                    interaction.getArtist() != null ? interaction.getArtist() : "",
+                    interaction.getMediaType(),
+                    genre,
+                    interaction.getImageUrl() != null ? interaction.getImageUrl() : "",
+                    0
+            );
+            response.setUserLiked(true);
+            results.add(response);
         }
         return results;
     }

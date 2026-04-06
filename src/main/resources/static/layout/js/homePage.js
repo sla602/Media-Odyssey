@@ -296,7 +296,10 @@ async function toggleLike(btn) {
                     mediaApiId,
                     interactionType: "LIKE",
                     mediaType,
-                    genres: [genre]
+                    genres: [genre],
+                    title: card.querySelector(".rec-title")?.textContent || "",
+                    artist: card.querySelector(".rec-meta")?.textContent?.split(" · ")[1] || "",
+                    imageUrl: card.querySelector(".rec-img")?.src || ""
                 })
             });
             if (res.ok) {

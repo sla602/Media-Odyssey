@@ -42,5 +42,11 @@ public class MappingController {
     public String navToUserProfile() {
         return "boardsLayout/userSide/userProfile";
     }
+
+    /* Bring user to the Liked Media page */
+    @GetMapping("/likedMediaTab")
+    public String navToLikedMediaTab() {
+        return "boardsLayout/features/likedMedia";
+    }
     
 }
