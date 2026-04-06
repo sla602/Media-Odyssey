@@ -3,6 +3,7 @@ package com.mo.mediaodyssey.layout.controllers;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mo.mediaodyssey.auth.repository.UserRepository;
+import com.mo.mediaodyssey.recommendation.UserInteractionRepository;
 import com.mo.mediaodyssey.shared.model.User;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
@@ -15,8 +16,10 @@ import org.springframework.web.client.RestTemplate;
 import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 @Controller
 public class SearchController {
@@ -24,6 +27,7 @@ public class SearchController {
     private final RestTemplate restTemplate;
     private final ObjectMapper objectMapper;
     private final UserRepository userRepository;
+    private final UserInteractionRepository userInteractionRepository;
 
     @Value("${tmdb.api.key}")
     private String tmdbApiKey;
@@ -57,8 +61,10 @@ public class SearchController {
         TMDB_GENRE_NAMES.put(37,    "Western");
     }
 
-    public SearchController(UserRepository userRepository) {
+    public SearchController(UserRepository userRepository,
+                            UserInteractionRepository userInteractionRepository) {
         this.userRepository = userRepository;
+        this.userInteractionRepository = userInteractionRepository;
         this.restTemplate = new RestTemplate();
         this.objectMapper = new ObjectMapper();
     }
@@ -81,21 +87,23 @@ public class SearchController {
     @ResponseBody
     public ResponseEntity<List<Map<String, Object>>> searchApi(
             @RequestParam String q,
-            @RequestParam(defaultValue = "MOVIE") String type) {
+            @RequestParam(defaultValue = "MOVIE") String type,
+            Authentication authentication) {
+
+        User user = (User) authentication.getPrincipal();
+
+        // load all liked media IDs for this user once — checked per result below
+        Set<String> likedIds = new HashSet<>(
+            userInteractionRepository.findLikedMediaApiIdsByUserId(user.getId())
+        );
 
         List<Map<String, Object>> results = new ArrayList<>();
 
         try {
             switch (type.toUpperCase()) {
-                case "MOVIE":
-                    results = searchMovies(q);
-                    break;
-                case "GAME":
-                    results = searchGames(q);
-                    break;
-                case "SONG":
-                    results = searchSongs(q);
-                    break;
+                case "MOVIE": results = searchMovies(q, likedIds); break;
+                case "GAME":  results = searchGames(q, likedIds);  break;
+                case "SONG":  results = searchSongs(q, likedIds);  break;
             }
         } catch (Exception e) {
             System.err.println("Search error: " + e.getMessage());
@@ -104,7 +112,7 @@ public class SearchController {
         return ResponseEntity.ok(results);
     }
 
-    private List<Map<String, Object>> searchMovies(String query) throws Exception {
+    private List<Map<String, Object>> searchMovies(String query, Set<String> likedIds) throws Exception {
         List<Map<String, Object>> results = new ArrayList<>();
         String encoded = URLEncoder.encode(query, "UTF-8");
         String url = "https://api.themoviedb.org/3/search/movie"
@@ -126,21 +134,22 @@ public class SearchController {
                 genre = TMDB_GENRE_NAMES.getOrDefault(genreIds.get(0).asInt(), "Movie");
             }
 
+            String mediaApiId = movie.path("id").asText();
             results.add(Map.of(
-                "mediaApiId", movie.path("id").asText(),
+                "mediaApiId", mediaApiId,
                 "title",      movie.path("title").asText(),
                 "artist",     "",
                 "mediaType",  "MOVIE",
                 "genre",      genre,
                 "imageUrl",   imageUrl,
                 "score",      score,
-                "userLiked",  false
+                "userLiked",  likedIds.contains(mediaApiId)
             ));
         }
         return results;
     }
 
-    private List<Map<String, Object>> searchGames(String query) throws Exception {
+    private List<Map<String, Object>> searchGames(String query, Set<String> likedIds) throws Exception {
         List<Map<String, Object>> results = new ArrayList<>();
         String encoded = URLEncoder.encode(query, "UTF-8");
         String url = "https://api.rawg.io/api/games"
@@ -162,21 +171,22 @@ public class SearchController {
                 if (!raw.isBlank()) genre = raw.substring(0, 1).toUpperCase() + raw.substring(1);
             }
 
+            String mediaApiId = game.path("id").asText();
             results.add(Map.of(
-                "mediaApiId", game.path("id").asText(),
+                "mediaApiId", mediaApiId,
                 "title",      game.path("name").asText(),
                 "artist",     "",
                 "mediaType",  "GAME",
                 "genre",      genre,
                 "imageUrl",   imageUrl,
                 "score",      score,
-                "userLiked",  false
+                "userLiked",  likedIds.contains(mediaApiId)
             ));
         }
         return results;
     }
 
-    private List<Map<String, Object>> searchSongs(String query) throws Exception {
+    private List<Map<String, Object>> searchSongs(String query, Set<String> likedIds) throws Exception {
         List<Map<String, Object>> results = new ArrayList<>();
         String encoded = URLEncoder.encode(query, "UTF-8");
         String url = "https://ws.audioscrobbler.com/2.0/?method=track.search"
@@ -197,8 +207,6 @@ public class SearchController {
             String artist = track.path("artist").asText();
             String genre  = resolveLastfmGenre(title, artist);
 
-            // Map.of() throws NullPointerException on null values —
-            // convert null to "" here; the JS !genre guard handles the rest
             results.add(Map.of(
                 "mediaApiId", mediaApiId,
                 "title",      title,
@@ -207,7 +215,7 @@ public class SearchController {
                 "genre",      genre != null ? genre : "",
                 "imageUrl",   "",
                 "score",      0.0,
-                "userLiked",  false
+                "userLiked",  likedIds.contains(mediaApiId)
             ));
         }
         return results;
