@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+    <head>
+        <meta charset="UTF-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Media Odyssey - Liked Media</title>
+        <link rel="stylesheet" th:href="@{/layout/css/global.css}">
+        <link rel="stylesheet" th:href="@{/layout/css/homePage.css}">
+        <link rel="stylesheet" th:href="@{/layout/css/fragments.css}">
+    </head>
+    <body>
+        <!-- Header (logo, home button, search bar, avatar) -->
+        <div th:replace="boardsLayout/fragments/header :: header"></div>
+
+        <!-- Sidebar -->
+        <div th:replace="boardsLayout/fragments/sidebar :: sideBar"></div>
+
+        <div id="mainContent" class="main-content">
+
+            <div id="likedMediaSection" class="recommendations-section">
+                <h3 class="personal-boards-title">Media You've Liked:</h3>
+
+                <!-- Filter tabs — same layout as homepage recommendations -->
+                <div class="rec-tabs">
+                    <button class="rec-tab active" data-type="ALL">⭐ All</button>
+                    <button class="rec-tab" data-type="MOVIE">🎬 Movies</button>
+                    <button class="rec-tab" data-type="GAME">🎮 Games</button>
+                    <button class="rec-tab" data-type="SONG">🎵 Songs</button>
+                </div>
+
+                <!-- Status message (loading / empty) -->
+                <p id="likedStatus" class="rec-status"></p>
+
+                <!-- Cards render here -->
+                <div id="likedCards" class="rec-cards"></div>
+            </div>
+
+        </div>
+
+        <script th:src="@{/layout/js/likedMedia.js}"></script>
+        <script th:src="@{/layout/js/fragments.js}"></script>
+    </body>
+</html>

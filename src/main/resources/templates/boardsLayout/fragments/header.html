@@ -4,35 +4,26 @@
     <img th:src="@{/layout/images/LogoSidebar/closeLogo.svg}" alt="Logo" class="logo" id="logo">
 
     <!--Home Button (returns to the landing page)-->
-    <!-- Icons taken from free figma packs: https://www.figma.com/community/file/1319540334775439319/free-icon-set-by-iconstica-library-->
-    
     <a href="/">
         <img th:src="@{/layout/images/Home.svg}" alt="homeBtn" class="home-btn">
     </a>
 
     <!-- Search bar -->
     <div class="search-bar-container">
-        <input type="text" id="searchBar" class="search-bar" placeholder="What are you looking for, adventure?">
+        <input type="text" id="searchBar" class="search-bar"
+               placeholder="What are you looking for, adventure?"
+               th:value="${param.q != null ? param.q[0] : ''}"
+               onkeydown="if(event.key === 'Enter' && this.value.trim()) window.location.href='/search?q=' + encodeURIComponent(this.value.trim()) + '&type=MOVIE'">
     </div>
 
     <!-- User's avatar + settings drop down -->
     <div class="user-container">
-
-        <!-- Avatar's logic: 
-            Double check to see if the current user is logged in or if they have avatar or not yet. 
-            If they do, use that. If they don't, use a generel default avatar for them.    
-        -->
         <div class="avatar-box" id="avatarBox">
-            <img th:src="${user.selected_avatar_type == 'custom' ? user.custom_avatar_URL : user.default_avatar_URL}" 
+            <img th:src="${user.selected_avatar_type == 'custom' ? user.custom_avatar_URL : user.default_avatar_URL}"
             alt="Avatar" class="avatar userItem">
-
         </div>
 
-        <!-- This div will be displayed when user clicked on their avatar.
-        The elements in this box will lead user to different pages that are related to settings + account
-        These elements can be found under front-end boardsLayout -> userSide folder. -->
         <div class="settings-box hidden" id="settingsBox">
-
             <ul class="settings-menu">
                 <li data-setting="Profile">
                     <a href="/userProfile" class="settings-menu-items">Profile</a>
@@ -41,12 +32,10 @@
                 <li data-setting="Friends">
                     <a th:href="@{/friends}" class="settings-menu-items">Friends</a>
                 </li>
-
                 <li data-setting="logout">
                     <a href="/auth/logout" class="settings-menu-items">Log out</a>
                 </li>
             </ul>
-
         </div>
     </div>
 </header>

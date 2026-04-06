@@ -9,10 +9,343 @@
     <link rel="stylesheet" th:href="@{/layout/css/fragments.css}">
 
     <style>
-      /* Added for current iteration:
-         show popularity score in Top 10 cards
-         while keeping the rest of the page structure mostly unchanged. */
-      
+      /* =============================================
+         COMMUNITY FAVOURITES PAGE STYLES
+         Matches homePage.css and fragments.css theme
+         Dark purple/indigo palette, Space Grotesk font
+         ============================================= */
+
+      /* === Page Title === */
+      .main-content h1 {
+        font-size: 1.75rem;
+        font-weight: 700;
+        color: #e0e0e0;
+        letter-spacing: 0.5px;
+        margin-bottom: 1.25rem;
+      }
+
+      /* === Score Info Banner === */
+      /* Subtle info box explaining the popularity score formula */
+      .score-info {
+        background: linear-gradient(135deg, #1e1e3f 0%, #2d2d5a 100%);
+        border: 1px solid rgba(99, 102, 241, 0.2);
+        border-left: 3px solid #6366f1;
+        border-radius: 10px;
+        padding: 0.75rem 1.25rem;
+        font-size: 0.88rem;
+        color: #a0a0b0;
+        margin-bottom: 1.5rem;
+        line-height: 1.6;
+        flex-direction: column;
+        display: flex;
+      }
+
+      .score-info strong {
+        color: #c4b5fd;
+      }
+
+      /* === Category Tabs === */
+      /* Pill-style filter tabs matching rec-tab style from homePage.css */
+      .tab-container {
+        display: flex;
+        gap: 0.75rem;
+        margin-bottom: 1.25rem;
+        flex-wrap: wrap;
+      }
+
+      .tab-container a {
+        text-decoration: none;
+      }
+
+      .tab-btn {
+        padding: 0.625rem 1.25rem;
+        background: #1a1a2e;
+        border: 1px solid #2d2d5a;
+        border-radius: 25px;
+        color: #a0a0b0;
+        font-size: 0.9rem;
+        font-family: 'Space Grotesk', sans-serif;
+        cursor: pointer;
+        transition: all 0.3s ease;
+      }
+
+      .tab-btn:hover {
+        background: #252545;
+        color: #ffffff;
+      }
+
+      /* Active tab uses the same indigo gradient as homePage rec-tabs */
+      .tab-btn.active {
+        background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+        border-color: transparent;
+        color: #ffffff;
+      }
+
+      /* === Live Search Input === */
+      /* Styled to match the global search bar in fragments.css */
+      #localSearch {
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        width: 100%;
+        max-width: 400px;
+        padding: 0.625rem 1rem;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(139, 92, 246, 0.3);
+        border-radius: 25px;
+        color: #e2e8f0;
+        font-size: 0.9rem;
+        font-family: 'Space Grotesk', sans-serif;
+        outline: none;
+        transition: all 0.3s ease;
+        margin-bottom: 1.25rem;
+        display: block;
+      }
+
+      #localSearch::placeholder {
+        color: rgba(203, 213, 225, 0.5);
+        font-style: italic;
+      }
+
+      #localSearch:focus {
+        background: rgba(255, 255, 255, 0.08);
+        border-color: rgba(139, 92, 246, 0.6);
+        box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.15),
+                    0 4px 20px rgba(139, 92, 246, 0.2);
+      }
+
+      /* === Divider === */
+      hr {
+        border: none;
+        height: 1px;
+        background: linear-gradient(
+          90deg,
+          transparent 0%,
+          rgba(139, 92, 246, 0.3) 50%,
+          transparent 100%
+        );
+        margin: 1.5rem 0;
+      }
+
+      /* === Section Headings === */
+      /* Shared h2 style for Fast-Rising and Top 10 sections */
+      .trending-section h2,
+      .ranking-section h2 {
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: #e0e0e0;
+        letter-spacing: 0.5px;
+        margin-bottom: 1.25rem;
+      }
+
+      /* === Empty State Message === */
+      .trending-section p,
+      .ranking-section p {
+        color: #6b7280;
+        font-size: 0.9rem;
+      }
+
+      /* =============================================
+         MEDIA CARD
+         Visual style matches homePage.css rec-card:
+         same width, background, border, border-radius,
+         overflow, hover border-color, and text-decoration.
+         ============================================= */
+
+      /* Card grid — trendingGrid: 5 equal columns to match Top 10 layout */
+      #trendingGrid {
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        gap: 1.25rem;
+      }
+
+      /* Card grid — top10Grid: fixed 5-column grid so cards always fill 5×2 evenly */
+      #top10Grid {
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        gap: 1.25rem;
+      }
+
+      /* Card shell — mirrors rec-card from homePage.css */
+      .media-card {
+        width: 100%;
+        background-color: #2a2a2a;
+        border-radius: 10px;
+        overflow: hidden;
+        border: 1px solid #444;
+        transition: border-color 0.2s;
+        text-decoration: none;
+        position: relative;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .media-card:hover {
+        border-color: #7b2dff;
+      }
+
+      /* === Thumbnail Image === */
+      /* Mirrors rec-img from homePage.css: full width, fixed height, object-fit cover */
+      .media-thumbnail {
+        width: 100%;
+        height: 130px;
+        object-fit: contain;
+        display: block;
+      }
+
+      /* Placeholder shown when imageUrl is missing */
+      .media-thumbnail-placeholder {
+        width: 100%;
+        height: 130px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background-color: #3a3a3a;
+        color: #888;
+        font-size: 15px;
+      }
+
+      /* === Card Info Block === */
+      /* Mirrors rec-info from homePage.css */
+      .card-title {
+        padding: 8px 10px;
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+      }
+
+      /* Title text — mirrors rec-title from homePage.css */
+      .card-title strong {
+        font-size: 15px;
+        font-weight: bold;
+        color: white;
+        margin: 0 0 4px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        display: block;
+      }
+
+      /* Artist name for songs — mirrors rec-meta colour from homePage.css */
+      .artist-name {
+        font-size: 15px;
+        color: #aaa;
+        display: block;
+      }
+
+      /* Media type tag — mirrors rec-meta from homePage.css */
+      .card-title em {
+        font-size: 13px;
+        color: #aaa;
+        font-style: normal;
+        margin: 0 0 8px;
+        display: block;
+      }
+
+      /* === Card Stats Row === */
+      /* Weekly likes and score shown below the title block */
+      .card-stats {
+        padding: 0 10px 8px;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        font-size: 13px;
+        color: #aaa;
+      }
+
+      /* =============================================
+         RANK NUMBER BADGE
+         Overlaid on the thumbnail, top-left corner.
+         Positioned relative to .media-card (position: relative).
+         ============================================= */
+
+      /* Rank number badge over thumbnail top-left corner */
+      .rank-number {
+        position: absolute;
+        top: 6px;
+        left: 6px;
+        background: rgba(15, 15, 26, 0.82);
+        color: #c4b5fd;
+        font-size: 0.82rem;
+        font-weight: 700;
+        line-height: 1;
+        padding: 3px 7px;
+        border-radius: 6px;
+        z-index: 2;
+        font-family: 'Space Grotesk', sans-serif;
+      }
+
+      /* === Popularity Score Block === */
+      /* Shown inside Top 10 cards below the title; same 11px/aaa style as rec-meta */
+      .popularity-score {
+        padding: 0 10px 8px;
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+        font-size: 13px;
+        color: #aaa;
+      }
+
+      /* Highlighted score number */
+      .score-number {
+        color: #c4b5fd;
+        font-weight: 700;
+        font-size: 13px;
+      }
+
+      /* Secondary detail line: likes · views */
+      .score-detail {
+        font-size: 13px;
+        color: #6b7280;
+      }
+
+      /* =============================================
+         RESPONSIVE ADJUSTMENTS
+         ============================================= */
+      @media (max-width: 1100px) {
+        /* 4-column on medium screens — keeps rows even for Top 10 (4+4+2) */
+        #trendingGrid,
+        #top10Grid {
+          grid-template-columns: repeat(4, 1fr);
+        }
+      }
+
+      @media (max-width: 900px) {
+        /* 3-column on narrow screens */
+        #trendingGrid,
+        #top10Grid {
+          grid-template-columns: repeat(3, 1fr);
+        }
+      }
+
+      @media (max-width: 768px) {
+        .tab-container {
+          gap: 0.5rem;
+        }
+
+        .tab-btn {
+          padding: 0.5rem 1rem;
+          font-size: 0.8rem;
+        }
+
+        /* 2-column on tablet */
+        #trendingGrid,
+        #top10Grid {
+          grid-template-columns: repeat(2, 1fr);
+        }
+      }
+
+      @media (max-width: 480px) {
+        .main-content h1 {
+          font-size: 1.4rem;
+        }
+
+        /* Single column on mobile */
+        #trendingGrid,
+        #top10Grid {
+          grid-template-columns: 1fr;
+        }
+      }
     </style>
   </head>
   <body>
@@ -30,9 +363,9 @@
       <!-- ── Score explanation ──────────────────────────────────────── -->
       <!-- Tells users how the Popularity Score is calculated -->
       <div class="score-info">
-        ⭐ <strong>Popularity Score</strong> = views × 1 + likes × 10.
-        The more the community interacts, the higher the score.
-        <strong>Fast-Rising</strong> shows the top 5 most-liked items in the past 7 days.
+        <div class="score-item"></div>
+         <strong>⭐ Popularity Score</strong> = views × 1 + likes × 10 — the more the community interacts, the higher the score.
+         <strong>🔥 Fast-Rising Score</strong> = total likes received in the past 7 days — reflects what's gaining momentum right now.
       </div>
 
       <!-- ── Category Tabs ──────────────────────────────────────────── -->
@@ -118,6 +451,10 @@
               class="media-thumbnail"
               onerror="this.style.display = 'none'"
             />
+            <div
+              th:if="${m.imageUrl == null or m.imageUrl.isEmpty()}"
+              class="media-thumbnail-placeholder"
+            >No Image</div>
 
             <div class="card-title">
               <strong th:text="${m.title}">Title</strong>
@@ -131,11 +468,7 @@
             </div>
 
             <div class="card-stats">
-              <span
-                >🔥 <span th:text="${m.weeklyLikes}">0</span> likes this
-                week</span
-              >
-              <span>Score: <span th:text="${m.totalScore}">0</span></span>
+              <span>🔥 Fast-Rising Score: <span class="score-number" th:text="${m.weeklyLikes}">0</span> likes this week</span>
             </div>
           </div>
         </div>
@@ -181,6 +514,10 @@
               class="media-thumbnail"
               onerror="this.style.display = 'none'"
             />
+            <div
+              th:if="${m.imageUrl == null or m.imageUrl.isEmpty()}"
+              class="media-thumbnail-placeholder"
+            >No Image</div>
 
             <!-- Title + artist + type -->
             <div class="card-title">

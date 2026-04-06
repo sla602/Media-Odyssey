@@ -1,8 +1,8 @@
-# Build, Push, and Deploy Docker image to Render with environment variables updated
+# Build, Publish, and Deploy Docker image to Render with environment variables updated.
 # Some steps uses the example in "Publishing images to GitHub Packages" in GitHub Docs: https://docs.github.com/en/actions/tutorials/publish-packages/publish-docker-images
 #
 # Image is being built in a workflow within GitHub Actions, instead of Render, because Render is very slow at building Docker images.
-name: test-build-push-deploy
+name: CI/CD - Build, Publish, Deploy to Render
 
 # Configures this workflow to run every time a change is pushed to the branch called `main` and on workflow_dispatch (triggered manually).
 on:
@@ -17,13 +17,14 @@ env:
 
 # There is a single job in this workflow. It's configured to run on the latest available version of Ubuntu.
 jobs:
-  test-build-push-deploy:
+  build-publish-deploy:
+    name: Build, Publish Image, Deploy to Render
     runs-on: ubuntu-latest
 
     # TODO: Fix environments to allow different environments working correctly (ex. an environment for each branch, type of branches, etc.)
     # environment: ${{ github.ref_name }} # Not correctly working
     # environment: misc/workflows # Temporarily hard coded during testing
-    environment: main # Use the main environment 
+    environment: main # Use the main environment
 
     # Sets the permissions granted to the `GITHUB_TOKEN` for the actions in this job.
     permissions:
@@ -37,6 +38,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v6
 
+      # TODO: Tests removed because it requires environment variables to be set to run successfully. Currently not being set in GitHub Actions secrets. Can be added back in the future when environment variables are set.
       # # Set up Temurin JDK 17 for Maven tests
       # - name: Set up Temurin JDK 17
       #   uses: actions/setup-java@v4
@@ -44,7 +46,7 @@ jobs:
       #     distribution: 'temurin'
       #     java-version: '17'
       #     cache: 'maven'
-      
+
       # # Run Maven tests
       # - name: Run Maven tests
       #   run: mvn test
@@ -133,7 +135,7 @@ jobs:
           done
 
       # This step triggers a deployment to Render with the pre-built Docker image link.
-      # 
+      #
       # Variable warning are not displayed again because last step displays them. The warning will be identical.
       # Skip warning is still shown from this step.
       #
@@ -161,7 +163,7 @@ jobs:
               \"clearCache\": \"clear\",
               \"imageUrl\": \"${IMAGE_URL}\"
             }")
-          
+
           echo "$response"
 
           RENDER_DEPLOY_ID=$(echo "$response" | jq -r '.id')
