@@ -32,23 +32,36 @@
 
         <div class="sidebar-divider"></div>
 
-        <!-- Called this "Users": User Section -->
+        <!-- Called this "Friends": Social Section -->
         <ul class="features-list">
-            <li data-feature=""></li>
+            <li data-feature="logOut">
+                <a href="/auth/logout" class="sidebar-menu-items">Log out</a>
+            </li>
+        </ul>
+
+        <!-- ADMIN SECTION: -->
+        <ul class="features-list">
+            <li data-feature="">
+                <div sec:authorize="hasRole('ADMIN')">
+                    <a th:href="@{/admin/users}" class="admin-btn">
+                        View Users Database
+                    </a>
+                </div>
+            </li>
         </ul>
 
         <!-- This footer in the sidebar will be at the botton of the side bar. 
         This is to navigate to user profile + log out -->
         <!-- Fixed Footer for Current User -->
+        <!--
         <div class="sidebar-footer user-footer">
-            <a href="/profile" class="sidebar-menu-items">
+            <a href="/profile" class="user-info">
                 <img th:src="${user.selected_avatar_type == 'custom' 
                 ? user.custom_avatar_URL : user.default_avatar_URL}"  
                 alt="User Avatar" class="avatar-small">
                 
-                <span class="username">Current User</span>
+                <span class="username">User</span>
             </a>
-            <a href="/auth/logout" class="sidebar-menu-items">Log out</a>
-        </div>
+        </div> -->
     </div>
 </aside>

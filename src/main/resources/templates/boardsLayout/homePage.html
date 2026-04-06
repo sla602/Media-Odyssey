@@ -66,13 +66,6 @@
             </div>
         </div>
 
-        <!-- ADMINS ALLOWANCE TO VIEW USERS DATABASE -->
-        <div sec:authorize="hasRole('ADMIN')">
-            <a th:href="@{/admin/users}" class="admin-btn">
-                View Users Database
-            </a>
-        </div> 
-
         <script th:src="@{/layout/js/homePage.js}"></script>
         <script th:src="@{/layout/js/fragments.js}"></script>
     </body>

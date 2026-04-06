@@ -481,7 +481,7 @@ header {
     pointer-events: none;
 }
 
-/* Sidebar section divider (if needed) */
+/* Sidebar section divider*/
 .sidebar-divider {
     height: 1px;
     margin: 1rem 1.5rem;
