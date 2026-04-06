@@ -368,7 +368,6 @@ body {
 
 .btn-cancel:hover { background: rgba(255, 255, 255, 0.05); color: #ffffff; }
 
-.author-link {
 /* ===== MEDIA TABS (Movies / Music / Games) ===== */
 .media-select {
     display: flex;
