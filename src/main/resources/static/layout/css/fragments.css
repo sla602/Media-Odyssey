@@ -451,9 +451,10 @@ header {
 }
 
 /* Icons for menu items (using data attributes) */
-.features-list li[data-feature="dashboard"] .sidebar-menu-items::after {
-    /* Dashboard icon placeholder - can be replaced with actual icon */
+.features-list li[data-feature="explore"] .sidebar-menu-items::after {
+    /* Explore icon placeholder - can be replaced with actual icon */
 }
+
 
 .features-list li[data-feature="socialFeature"] .sidebar-menu-items::after {
     /* Community icon placeholder */

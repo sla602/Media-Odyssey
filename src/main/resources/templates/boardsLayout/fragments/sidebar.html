@@ -4,9 +4,9 @@
     <div class="sidebar-content">
         <ul class="features-list">
 
-            <!-- Navigates over to dashboard.html (name can be changed) -->
-            <li data-feature="dashboard">
-                <a href="/dashboardTab" class="sidebar-menu-items">Dashboard</a>
+            <!-- Navigates over to exploreBoards.html (name can be changed) -->
+            <li data-feature="explore">
+                <a th:href="@{/explore}" class="sidebar-menu-items">Explore</a>
             </li>
 
             <!-- Navigates over to social.html (name can be changed)-->
@@ -17,6 +17,11 @@
             <!-- Navigates over to trending.html (name can be changed)-->
             <li data-feature="trending">
                 <a href="/trendingTab" class="sidebar-menu-items">Trending</a>
+            </li>
+
+            <!-- Navigates to the Liked Media page -->
+            <li data-feature="likedMedia">
+                <a href="/likedMediaTab" class="sidebar-menu-items">Liked Media</a>
             </li>
 
         </ul>

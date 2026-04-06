@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+    <head>
+        <meta charset="UTF-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Search — Media Odyssey</title>
+        <link rel="stylesheet" th:href="@{/layout/css/global.css}">
+        <link rel="stylesheet" th:href="@{/layout/css/homePage.css}">
+        <link rel="stylesheet" th:href="@{/layout/css/fragments.css}">
+    </head>
+    <body>
+        <div th:replace="boardsLayout/fragments/header :: header"></div>
+        <div th:replace="boardsLayout/fragments/sidebar :: sideBar"></div>
+
+        <div id="mainContent" class="main-content">
+
+            <h3 class="personal-boards-title"
+                th:text="${query != null && !query.isBlank()} ? 'Results for: ' + ${query} : 'Search for media'">
+                Search
+            </h3>
+
+            <!-- Media type tabs -->
+            <div class="rec-tabs">
+                <button class="rec-tab" data-type="MOVIE"
+                    th:classappend="${type == 'MOVIE'} ? ' active'">🎬 Movies</button>
+                <button class="rec-tab" data-type="GAME"
+                    th:classappend="${type == 'GAME'} ? ' active'">🎮 Games</button>
+                <button class="rec-tab" data-type="SONG"
+                    th:classappend="${type == 'SONG'} ? ' active'">🎵 Songs</button>
+            </div>
+
+            <p id="searchStatus" class="rec-status"></p>
+            <div id="searchCards" class="rec-cards"></div>
+        </div>
+
+        <script th:inline="javascript">
+            const initialQuery = [[${query}]];
+            const initialType  = [[${type}]];
+        </script>
+
+        <script th:src="@{/layout/js/search.js}"></script>
+        <script th:src="@{/layout/js/fragments.js}"></script>
+    </body>
+</html>

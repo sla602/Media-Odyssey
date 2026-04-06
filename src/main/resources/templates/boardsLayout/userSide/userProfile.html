@@ -3,8 +3,8 @@
       xmlns:th="http://www.thymeleaf.org"
       xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
     <head>
-        <meta charset="UTF-8"> 
-        <meta http-equiv="X-UA-Compatible" content="IE=edge"> 
+        <meta charset="UTF-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Media Odyssey-Home</title>
         <link rel="stylesheet" th:href="@{/layout/css/global.css}">
@@ -21,15 +21,26 @@
 
         <!--
         * This html is activated when users click on avatar picture, then choose profile.
-        ** userProfile.html currently will show user's: 
-        *   + avatar  +username  +description  +gender  +boards user created  +boards user've joined 
+        ** userProfile.html currently will show user's:
+        *   + avatar  +username  +description  +gender  +boards user created  +boards user've joined
         -->
+
+
 
         <!-- MAIN CONTENT STARTS HERE -->
         <main class="user-profile-container">
+            <!-- Flash messages — shown after save attempts or after being
+                 redirected here by a gated action (e.g. trying to add a friend
+                 without having set a username yet) -->
+
+
+
             <div class="profile-header">
 
-                <!-- Avatar is displayed on the right side as a circle, 
+                <div th:if="${successMessage}" class="flash-message flash-success" th:text="${successMessage}"></div>
+                <div th:if="${errorMessage}"   class="flash-message flash-error"   th:text="${errorMessage}"></div>
+
+                <!-- Avatar is displayed on the right side as a circle,
                 allows user to upload their own profile picture.
                 For new users (who haven't uploaded a profile picture yet) just displayed default avatar.
                 * This container will always display user's avatar. It will also has a box to contains avatars
@@ -38,7 +49,7 @@
                 <div class="avatar-container">
 
                     <!--Display avatar on webpage-->
-                    <img th:src="${user.selected_avatar_type == 'custom' 
+                    <img th:src="${user.selected_avatar_type == 'custom'
                     ? user.custom_avatar_URL : user.default_avatar_URL}" alt="Avatar" class="avatar-display">
 
                     <!-- The avatar selection box (that stores avatars) -->
@@ -48,45 +59,299 @@
                         <div class="stored-avatars-display" id="storedAvatarsDisplay">
                         <!-- This element will allow user to upload image files.
                         ** Design choice: It is determined that this element should always be presented even
-                        * after the user has uploaded anything. So both custom + default will be displayed. 
-                        * And this plus button will also be there, for simple & easy to understand design. 
+                        * after the user has uploaded anything. So both custom + default will be displayed.
+                        * And this plus button will also be there, for simple & easy to understand design.
                         *
-                        *** Logic: we will only accpet: .png, .jpg, .jpeg, .svg files as uploaded avatar. 
+                        *** Logic: we will only accpet: .png, .jpg, .jpeg, .svg files as uploaded avatar.
                         -->
                         <div class="upload-avatar-box" id="uploadAvatarBox">
                             <label for="fileUpload" class="avatar-placeholder">
                                 <span class="plus-icon">+</span>
                             </label>
-                            <input type="file" id="fileUpload" name="file" 
+                            <input type="file" id="fileUpload" name="file"
                             accept=".png, .jpg, .jpeg, .svg" style="display: none;">
                         </div>
 
 
                             <!-- For the custom avatar -->
-                            <img th:if="${user.custom_avatar_URL != null}" 
-                            th:src="${user.custom_avatar_URL}" alt="Custom Avatar" 
+                            <img th:if="${user.custom_avatar_URL != null}"
+                            th:src="${user.custom_avatar_URL}" alt="Custom Avatar"
                             class="avatar-option" data-avatar-type="custom">
 
                             <!-- For the default avatar -->
-                            <img th:src="${user.default_avatar_URL}" alt="Default Avatar" 
+                            <img th:src="${user.default_avatar_URL}" alt="Default Avatar"
                             class="avatar-option" data-avatar-type="default">
                         </div>
                     </div>
 
                 </div>
 
-                <!-- Displayed user's info (input elements can be left empty)-->
+                <!-- User info section -->
+                <!-- ============================================================
+                     OWN PROFILE: editable form with Save button
+                     ============================================================ -->
                 <div class="user-info-box">
-                    <input type="text" placeholder="Username" class="info-items">
 
-                    <input type="text" placeholder="description" class="info-items">
+                    <!-- ─── VIEW MODE (default, always visible on load) ─── -->
+                    <div id="profileView" class="profile-view-mode">
 
-                    <input type="text" placeholder="gender" class="info-items">
+                        <div class="info-field">
+                            <label class="info-label">
+                                <span class="info-label-icon">@</span>
+                                Username
+                            </label>
+                            <div class="info-items info-items-readonly"
+                                 th:text="${profile?.username != null and !#strings.isEmpty(profile?.username)
+                                           ? profile.username : 'No username set'}">No username set</div>
+                        </div>
+
+                        <div class="info-field">
+                            <label class="info-label">
+                                <span class="info-label-icon">✎</span>
+                                About
+                            </label>
+                            <div class="info-items info-items-readonly"
+                                 th:text="${profile?.description != null and !#strings.isEmpty(profile?.description)
+                                           ? profile.description : 'No description'}">No description</div>
+                        </div>
+
+                        <div class="info-field">
+                            <label class="info-label">
+                                <span class="info-label-icon">☺</span>
+                                Pronouns
+                            </label>
+                            <div class="info-items info-items-readonly"
+                                 th:text="${profile?.pronouns != null and !#strings.isEmpty(profile?.pronouns)
+                                           ? profile.pronouns : 'Not specified'}">Not specified</div>
+                        </div>
+
+                        <!-- Action row: Edit button (own profile) OR Add Friend button (other user) -->
+                        <div class="profile-action-row">
+
+                            <!-- ─── OWN PROFILE: Edit Profile button ─── -->
+                            <th:block th:if="${isOwnProfile == null or isOwnProfile}">
+                                <button type="button" class="edit-profile-btn"
+                                        onclick="toggleProfileEdit(true)">
+                                    <span class="btn-icon">✎</span> Edit Profile
+                                </button>
+                            </th:block>
+
+                            <!-- ─── OTHER USER: Add Friend button states ─── -->
+                            <th:block th:if="${isOwnProfile != null and !isOwnProfile}">
+                                <!-- Not connected yet -> Add Friend -->
+                                <th:block th:if="${friendStatus == 'NONE'}">
+                                    <form th:action="@{'/profile/' + ${profileUserId} + '/add-friend'}"
+                                          method="post" class="action-form">
+                                        <button type="submit" class="add-friend-btn">
+                                            <span class="btn-icon">+</span> Add Friend
+                                        </button>
+                                    </form>
+                                </th:block>
+
+                                <!-- Already sent a request -->
+                                <th:block th:if="${friendStatus == 'REQUEST_SENT'}">
+                                    <button type="button" class="add-friend-btn friend-req-sent" disabled>
+                                        Friend Request Sent
+                                    </button>
+                                    <a th:href="@{/friends}" class="cancel-hint">Go to Friends page to cancel</a>
+                                </th:block>
+
+                                <!-- They sent us one -->
+                                <th:block th:if="${friendStatus == 'REQUEST_RECEIVED'}">
+                                    <a th:href="@{/friends}" class="add-friend-btn friend-req-received">
+                                        Respond to Request
+                                    </a>
+                                </th:block>
+
+                                <!-- Already friends -->
+                                <th:block th:if="${friendStatus == 'FRIENDS'}">
+                                    <button type="button" class="add-friend-btn friend-already" disabled>
+                                        Friends
+                                    </button>
+                                </th:block>
+                            </th:block>
+                        </div>
+                    </div>
+
+                    <!-- ─── EDIT MODE (own profile only, hidden by default) ─── -->
+                    <th:block th:if="${isOwnProfile == null or isOwnProfile}">
+                        <!-- added novalidate + onsubmit hook so we can block
+                             clearing an already-set username via JS validator -->
+                        <form id="profileEdit"
+                              th:action="@{/profile/save}"
+                              method="post"
+                              class="profile-edit-mode hidden"
+                              novalidate
+                              onsubmit="return validateProfileForm();">
+
+
+                            <div class="info-field">
+                                <label class="info-label" for="usernameInput">
+                                    <span class="info-label-icon">@</span>
+                                    Username
+                                </label>
+                                <!-- data-has-username flag tells the JS validator
+                                     whether the user already has a username set. If true,
+                                     a blank submission is blocked and shows the red border. -->
+                                <input type="text" id="usernameInput" name="username"
+                                       placeholder="Choose a username"
+                                       class="info-items"
+                                       th:value="${profile?.username}"
+                                       th:attr="data-has-username=${profile?.username != null and !#strings.isEmpty(profile?.username)}">
+                                <!-- inline error slot (unique id, not a duplicate
+                                     of the input's id). Hidden until validation fails. -->
+                                <div class="field-error hidden" id="usernameErrorMsg">
+                                    Username cannot be empty once set.
+                                </div>
+                            </div>
+
+                            <div class="info-field">
+                                <label class="info-label" for="descriptionInput">
+                                    <span class="info-label-icon">✎</span>
+                                    About
+                                </label>
+                                <textarea id="descriptionInput" name="description"
+                                          placeholder="Tell others a bit about yourself..."
+                                          class="info-items info-items-textarea"
+                                          rows="3" th:text="${profile?.description}"></textarea>
+                            </div>
+
+                            <div class="info-field">
+                                <label class="info-label" for="pronounsInput">
+                                    <span class="info-label-icon">☺</span>
+                                    Pronouns
+                                </label>
+                                <input type="text" id="pronounsInput" name="pronouns"
+                                       placeholder="e.g. she/her, they/them, he/him"
+                                       class="info-items" th:value="${profile?.pronouns}">
+                            </div>
+
+                            <div class="profile-action-row edit-action-row">
+                                <button type="submit" class="save-profile-btn">
+                                    <span class="btn-icon">✓</span> Save Changes
+                                </button>
+                                <button type="button" class="cancel-edit-btn"
+                                        onclick="toggleProfileEdit(false)">
+                                    Cancel
+                                </button>
+                            </div>
+                        </form>
+                    </th:block>
+
                 </div>
             </div>
 
             <!-- Intended for display boards but is waiting to see how the boards logic change from Prab-->
             <div class="profile-middle">
+                <!-- =========================================================
+                      RECENT ACTIVITY: user's recent posts & comments.
+                      Each card shows the type, a preview, and the board it
+                      belongs to. Clicking the board name navigates there.
+                ========================================================= -->
+                <section class="profile-section recent-activity-section">
+                    <div class="profile-section-head">
+                        <h2 class="profile-section-title">Recent Activity</h2>
+                        <span class="profile-section-sub"
+                              th:text="${isOwnProfile == null or isOwnProfile}
+                                       ? 'Your latest posts and comments'
+                                       : 'Latest posts and comments'"></span>
+                    </div>
+
+                    <!-- Empty state -->
+                    <div class="activity-empty"
+                         th:if="${recentActivity == null or #lists.isEmpty(recentActivity)}">
+                        <span class="activity-empty-glyph">✨</span>
+                        <p class="activity-empty-text">No activity yet.</p>
+                    </div>
+
+                    <!-- Activity list -->
+                    <ul class="activity-list"
+                        th:if="${recentActivity != null and !#lists.isEmpty(recentActivity)}">
+                        <li class="activity-item"
+                            th:each="item : ${recentActivity}"
+                            th:classappend="${item.type == 'POST'} ? ' activity-item-post' : ' activity-item-comment'">
+
+                            <!--not banned-->
+                            <a th:if="${!item.banned}"
+                               class="activity-item-link"
+                               th:href="@{'/boards/display/' + ${item.boardId}(view='post', postId=${item.postId})}">
+
+                            <!-- Type badge -->
+                            <span class="activity-type-badge"
+                                  th:text="${item.type == 'POST'} ? 'Post' : 'Comment'">Post</span>
+
+                            <div class="activity-body">
+                                <!-- Post: show title. Comment: show "on <post title>" -->
+                                <div class="activity-headline"
+                                     th:if="${item.type == 'POST'}"
+                                     th:text="${item.title != null and !#strings.isEmpty(item.title)
+                                               ? item.title : '(untitled post)'}">Post title</div>
+
+                                <div class="activity-headline activity-headline-comment"
+                                     th:if="${item.type == 'COMMENT'}">
+                                    <span class="activity-headline-prefix"></span>
+                                    <span th:text="${item.title != null and !#strings.isEmpty(item.title)
+                            ? item.title : '(untitled post)'}">post title</span>
+                                </div>
+
+                                <!-- Content preview -->
+                                <p class="activity-preview"
+                                   th:if="${item.contentPreview != null and !#strings.isEmpty(item.contentPreview)}"
+                                   th:text="${item.contentPreview}">preview text…</p>
+
+                                <!-- Meta row: clickable board + timestamp -->
+                                <div class="activity-meta">
+                                    <span class="activity-meta-label">in</span>
+                                    <span class="activity-board-link"
+                                          th:text="${item.boardName}">Board name</span>
+                                    <span class="activity-meta-dot" aria-hidden="true">•</span>
+                                    <span class="activity-time"
+                                          th:if="${item.createdAt != null}"
+                                          th:text="${#temporals.format(item.createdAt, 'MMM d, yyyy')}">Jan 1, 2025</span>
+                                </div>
+                            </div>
+                            </a>
+                            <!-- BANNED: clickable div that shows the popup -->
+                            <div th:if="${item.banned}"
+                                 class="activity-item-link activity-item-banned"
+                                 th:data-board-name="${item.boardName}"
+                                 onclick="showBannedPopup(this.dataset.boardName)">
+
+                            <span class="activity-type-badge"
+                              th:text="${item.type == 'POST'} ? 'Post' : 'Comment'">Post</span>
+
+                                <div class="activity-body">
+                                    <div class="activity-headline"
+                                         th:if="${item.type == 'POST'}"
+                                         th:text="${item.title != null and !#strings.isEmpty(item.title)
+                           ? item.title : '(untitled post)'}">Post title</div>
+
+                                    <div class="activity-headline activity-headline-comment"
+                                         th:if="${item.type == 'COMMENT'}">
+                                        <span class="activity-headline-prefix">on</span>
+                                        <span th:text="${item.title != null and !#strings.isEmpty(item.title)
+                    ? item.title : '(untitled post)'}">post title</span>
+                                    </div>
+
+                                    <p class="activity-preview"
+                                       th:if="${item.contentPreview != null and !#strings.isEmpty(item.contentPreview)}"
+                                       th:text="${item.contentPreview}">preview text…</p>
+
+                                    <div class="activity-meta">
+                                        <span class="activity-meta-label">in</span>
+                                        <span class="activity-board-link"
+                                              th:text="${item.boardName}">Board name</span>
+                                        <span class="activity-meta-dot" aria-hidden="true">•</span>
+                                        <span class="activity-time"
+                                              th:if="${item.createdAt != null}"
+                                              th:text="${#temporals.format(item.createdAt, 'MMM d, yyyy')}">Jan 1, 2025</span>
+                                        <span class="activity-banned-tag">Banned</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </li>
+                    </ul>
+                </section>
                 <div class="boards-display-box">
                     <div class="boards-created boardItem"></div>
 
@@ -99,5 +364,52 @@
 
         <script th:src="@{/layout/js/fragments.js}"></script>
         <script th:src="@{/layout/js/userProfile.js}"></script>
+        <script>
+            // Swap between view mode and edit mode on the profile page
+            function toggleProfileEdit(enterEditMode) {
+                const view = document.getElementById('profileView');
+                const edit = document.getElementById('profileEdit');
+                if (!view || !edit) return;
+                if (enterEditMode) {
+                    view.classList.add('hidden');
+                    edit.classList.remove('hidden');
+                } else {
+                    edit.classList.add('hidden');
+                    view.classList.remove('hidden');
+                }
+            }
+            // CHANGED: Block clearing an already-set username on submit.
+            // Returns false to prevent the form from submitting, which
+            // triggers the red border + inline error message.
+            function validateProfileForm() {
+                const input = document.getElementById('usernameInput');
+                const error = document.getElementById('usernameErrorMsg');
+                if (!input || !error) return true;
+
+                const hasExisting = input.dataset.hasUsername === 'true';
+                const isBlank = input.value.trim() === '';
+
+                if (hasExisting && isBlank) {
+                    input.classList.add('input-error');
+                    error.classList.remove('hidden');
+                    input.focus();
+                    return false;
+                }
+
+                input.classList.remove('input-error');
+                error.classList.add('hidden');
+                return true;
+            }
+
+            // CHANGED: Clear the error state as soon as the user starts typing again
+            document.getElementById('usernameInput')?.addEventListener('input', function () {
+                const error = document.getElementById('usernameErrorMsg');
+                if (this.value.trim() !== '') {
+                    this.classList.remove('input-error');
+                    error?.classList.add('hidden');
+                }
+            });
+        </script>
+
     </body>
 </html>

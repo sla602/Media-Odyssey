@@ -1,0 +1,180 @@
+/* ===============================================================
+        EXPLORE BOARDS PAGE
+==================================================================*/
+
+.explore-container {
+    margin-left: 80px;
+    margin-top: 82px;
+    max-width: 1200px;
+    padding: 2rem;
+}
+
+.explore-header {
+    margin-bottom: 2rem;
+}
+
+.explore-title {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #ffffff;
+    margin-bottom: 0.5rem;
+}
+
+.explore-subtitle {
+    font-size: 1rem;
+    color: #a0a0b0;
+    line-height: 1.5;
+}
+
+/* ===============================================================
+        SEARCH BAR
+==================================================================*/
+
+.explore-search {
+    margin-bottom: 2rem;
+}
+
+.explore-search-form {
+    display: flex;
+    gap: 0.75rem;
+    max-width: 500px;
+}
+
+.explore-search-input {
+    flex: 1;
+    padding: 0.75rem 1.25rem;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(139, 92, 246, 0.3);
+    border-radius: 12px;
+    color: #e2e8f0;
+    font-size: 1rem;
+    font-family: 'Space Grotesk', sans-serif;
+    outline: none;
+    transition: all 0.3s ease;
+}
+
+.explore-search-input::placeholder {
+    color: rgba(203, 213, 225, 0.4);
+}
+
+.explore-search-input:focus {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(139, 92, 246, 0.6);
+    box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.12);
+}
+
+.explore-search-btn {
+    padding: 0.75rem 1.5rem;
+    border: none;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+    color: #ffffff;
+    font-size: 0.95rem;
+    font-weight: 600;
+    font-family: 'Space Grotesk', sans-serif;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+}
+
+.explore-search-btn:hover {
+    background: linear-gradient(135deg, #818cf8 0%, #a78bfa 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px rgba(99, 102, 241, 0.4);
+}
+
+/* ===============================================================
+        BOARD CARD GRID
+==================================================================*/
+
+.explore-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 1.25rem;
+}
+
+.explore-card {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    background: linear-gradient(145deg, #1e1e3f 0%, #2d2d5a 100%);
+    border-radius: 16px;
+    border: 1px solid rgba(99, 102, 241, 0.15);
+    padding: 1.5rem;
+    text-decoration: none;
+    color: inherit;
+    transition: all 0.3s ease;
+    min-height: 160px;
+    cursor: pointer;
+}
+
+.explore-card:hover {
+    border-color: rgba(139, 92, 246, 0.5);
+    transform: translateY(-4px);
+    box-shadow: 0 8px 25px rgba(99, 102, 241, 0.2);
+}
+
+.explore-card-body {
+    flex: 1;
+}
+
+.explore-card-name {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: #ffffff;
+    margin-bottom: 0.5rem;
+    line-height: 1.3;
+}
+
+.explore-card-desc {
+    font-size: 0.9rem;
+    color: #a0a0b0;
+    line-height: 1.5;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.explore-card-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 1rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid rgba(99, 102, 241, 0.1);
+}
+
+.explore-card-type {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    background: rgba(99, 102, 241, 0.2);
+    color: #818cf8;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    text-transform: capitalize;
+}
+
+.explore-empty {
+    text-align: center;
+    color: #6a6a7a;
+    font-size: 1rem;
+    padding: 3rem 1rem;
+    grid-column: 1 / -1;
+}
+
+/* ===============================================================
+        RESPONSIVE
+==================================================================*/
+
+@media (max-width: 1024px) {
+    .explore-container { margin-left: 200px; }
+}
+
+@media (max-width: 768px) {
+    .explore-container { margin-left: 0; padding: 1rem; }
+    .explore-title { font-size: 1.5rem; }
+    .explore-grid { grid-template-columns: 1fr; }
+    .explore-search-form { max-width: 100%; }
+}

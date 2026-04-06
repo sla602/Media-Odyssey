@@ -41,7 +41,11 @@ public class homeController {
 
         User user = currentAccountService.getCurrentAccount(authentication);
 
-        List<Boards> boards = boardsService.findBoardsByUser(user);
+        // shows only created boards by the user
+        // List<Boards> boards = boardsService.findBoardsByUser(user);
+
+        // all roltype joined boards
+        List<Boards> boards = boardsService.getJoinedBoards(user.getId());
 
         model.addAttribute("boards", boards);
 

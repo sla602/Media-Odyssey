@@ -18,6 +18,11 @@ public class UserInteraction {
     private String mediaType;       // "MOVIE", "GAME", "SONG"
     private LocalDateTime timestamp;
 
+    // Stored at like-time so the Liked Media page needs zero external API calls
+    private String title;
+    private String artist;
+    private String imageUrl;
+
     @ElementCollection
     @CollectionTable(name = "user_interaction_genres", joinColumns = @JoinColumn(name = "interaction_id"))
     @Column(name = "genre")
@@ -31,6 +36,9 @@ public class UserInteraction {
     public String getMediaType() { return mediaType; }
     public LocalDateTime getTimestamp() { return timestamp; }
     public List<String> getGenres() { return genres; }
+    public String getTitle() { return title; }
+    public String getArtist() { return artist; }
+    public String getImageUrl() { return imageUrl; }
 
     // setters
     public void setUserId(Long userId) { this.userId = userId; }
@@ -39,4 +47,7 @@ public class UserInteraction {
     public void setMediaType(String mediaType) { this.mediaType = mediaType; }
     public void setTimestamp(LocalDateTime timestamp) { this.timestamp = timestamp; }
     public void setGenres(List<String> genres) { this.genres = genres; }
+    public void setTitle(String title) { this.title = title; }
+    public void setArtist(String artist) { this.artist = artist; }
+    public void setImageUrl(String imageUrl) { this.imageUrl = imageUrl; }
 }

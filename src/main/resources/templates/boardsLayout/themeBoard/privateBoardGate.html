@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Media Odyssey — Private Board</title>
+    <link rel="stylesheet" th:href="@{/layout/css/global.css}">
+    <link rel="stylesheet" th:href="@{/layout/css/fragments.css}">
+    <link rel="stylesheet" th:href="@{/layout/css/boardPages.css}">
+    <link rel="stylesheet" th:href="@{/layout/css/userProfile.css}">
+</head>
+<body>
+<div th:replace="boardsLayout/fragments/header :: header"></div>
+<div th:replace="boardsLayout/fragments/sidebar :: sideBar"></div>
+
+<!--
+ * privateBoardGate.html
+ ** Shown to users who try to access a private board they don't belong to.
+ *  They can see that the board exists and its name, but nothing inside.
+ -->
+
+<main class="private-board-gate-container">
+    <div class="private-board-gate-card">
+        <div class="gate-icon">🔒</div>
+        <h1 class="gate-title">Private Board</h1>
+        <h2 class="gate-board-name" th:text="${board.board_name}">Board name</h2>
+        <p class="gate-message">
+            This is a private board. You need an invitation from the owner
+            or a moderator to view its posts and members.
+        </p>
+        <p class="gate-subtext">
+            If you know someone in this board, ask them to friend you and send you an invite.
+        </p>
+        <div class="gate-actions">
+            <a th:href="@{/}" class="gate-btn gate-btn-primary">Back to Home</a>
+            <a th:href="@{/explore}" class="gate-btn gate-btn-secondary">Explore Public Boards</a>
+        </div>
+    </div>
+</main>
+
+<script th:src="@{/layout/js/fragments.js}"></script>
+</body>
+</html>
