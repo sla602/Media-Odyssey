@@ -2,9 +2,10 @@ package com.mo.mediaodyssey.layout.controllers;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.mo.mediaodyssey.auth.repository.UserRepository;
 import com.mo.mediaodyssey.recommendation.UserInteractionRepository;
 import com.mo.mediaodyssey.shared.model.User;
+import com.mo.mediaodyssey.shared.services.CurrentAccountService;
+
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -26,8 +27,8 @@ public class SearchController {
 
     private final RestTemplate restTemplate;
     private final ObjectMapper objectMapper;
-    private final UserRepository userRepository;
     private final UserInteractionRepository userInteractionRepository;
+    private final CurrentAccountService currentAccountService;
 
     @Value("${tmdb.api.key}")
     private String tmdbApiKey;
@@ -41,30 +42,30 @@ public class SearchController {
     // mirrors the map in RecommendationService — TMDB genre ID -> genre name
     private static final Map<Integer, String> TMDB_GENRE_NAMES = new HashMap<>();
     static {
-        TMDB_GENRE_NAMES.put(28,    "Action");
-        TMDB_GENRE_NAMES.put(12,    "Adventure");
-        TMDB_GENRE_NAMES.put(16,    "Animation");
-        TMDB_GENRE_NAMES.put(35,    "Comedy");
-        TMDB_GENRE_NAMES.put(80,    "Crime");
-        TMDB_GENRE_NAMES.put(99,    "Documentary");
-        TMDB_GENRE_NAMES.put(18,    "Drama");
-        TMDB_GENRE_NAMES.put(14,    "Fantasy");
-        TMDB_GENRE_NAMES.put(27,    "Horror");
-        TMDB_GENRE_NAMES.put(9648,  "Mystery");
+        TMDB_GENRE_NAMES.put(28, "Action");
+        TMDB_GENRE_NAMES.put(12, "Adventure");
+        TMDB_GENRE_NAMES.put(16, "Animation");
+        TMDB_GENRE_NAMES.put(35, "Comedy");
+        TMDB_GENRE_NAMES.put(80, "Crime");
+        TMDB_GENRE_NAMES.put(99, "Documentary");
+        TMDB_GENRE_NAMES.put(18, "Drama");
+        TMDB_GENRE_NAMES.put(14, "Fantasy");
+        TMDB_GENRE_NAMES.put(27, "Horror");
+        TMDB_GENRE_NAMES.put(9648, "Mystery");
         TMDB_GENRE_NAMES.put(10749, "Romance");
-        TMDB_GENRE_NAMES.put(878,   "Science Fiction");
-        TMDB_GENRE_NAMES.put(53,    "Thriller");
+        TMDB_GENRE_NAMES.put(878, "Science Fiction");
+        TMDB_GENRE_NAMES.put(53, "Thriller");
         TMDB_GENRE_NAMES.put(10751, "Family");
-        TMDB_GENRE_NAMES.put(36,    "History");
+        TMDB_GENRE_NAMES.put(36, "History");
         TMDB_GENRE_NAMES.put(10402, "Music");
         TMDB_GENRE_NAMES.put(10752, "War");
-        TMDB_GENRE_NAMES.put(37,    "Western");
+        TMDB_GENRE_NAMES.put(37, "Western");
     }
 
-    public SearchController(UserRepository userRepository,
-                            UserInteractionRepository userInteractionRepository) {
-        this.userRepository = userRepository;
+    public SearchController(UserInteractionRepository userInteractionRepository,
+            CurrentAccountService currentAccountService) {
         this.userInteractionRepository = userInteractionRepository;
+        this.currentAccountService = currentAccountService;
         this.restTemplate = new RestTemplate();
         this.objectMapper = new ObjectMapper();
     }
@@ -72,10 +73,12 @@ public class SearchController {
     // GET /search — renders the search page
     @GetMapping("/search")
     public String searchPage(@RequestParam(required = false) String q,
-                             @RequestParam(required = false, defaultValue = "MOVIE") String type,
-                             Model model,
-                             Authentication authentication) {
-        User user = (User) authentication.getPrincipal();
+            @RequestParam(required = false, defaultValue = "MOVIE") String type,
+            Model model,
+            Authentication authentication) {
+
+        User user = currentAccountService.getCurrentAccount(authentication);
+
         model.addAttribute("user", user);
         model.addAttribute("query", q != null ? q : "");
         model.addAttribute("type", type);
@@ -90,25 +93,29 @@ public class SearchController {
             @RequestParam(defaultValue = "MOVIE") String type,
             Authentication authentication) {
 
-        User user = (User) authentication.getPrincipal();
+        User user = currentAccountService.getCurrentAccount(authentication);
 
         // load all liked media IDs for this user once — checked per result below
         Set<String> likedIds = new HashSet<>(
-            userInteractionRepository.findLikedMediaApiIdsByUserId(user.getId())
-        );
+                userInteractionRepository.findLikedMediaApiIdsByUserId(user.getId()));
 
         List<Map<String, Object>> results = new ArrayList<>();
 
         try {
             switch (type.toUpperCase()) {
-                case "MOVIE": results = searchMovies(q, likedIds); break;
-                case "GAME":  results = searchGames(q, likedIds);  break;
-                case "SONG":  results = searchSongs(q, likedIds);  break;
+                case "MOVIE":
+                    results = searchMovies(q, likedIds);
+                    break;
+                case "GAME":
+                    results = searchGames(q, likedIds);
+                    break;
+                case "SONG":
+                    results = searchSongs(q, likedIds);
+                    break;
             }
         } catch (Exception e) {
             System.err.println("Search error: " + e.getMessage());
         }
-
         return ResponseEntity.ok(results);
     }
 
@@ -136,15 +143,14 @@ public class SearchController {
 
             String mediaApiId = movie.path("id").asText();
             results.add(Map.of(
-                "mediaApiId", mediaApiId,
-                "title",      movie.path("title").asText(),
-                "artist",     "",
-                "mediaType",  "MOVIE",
-                "genre",      genre,
-                "imageUrl",   imageUrl,
-                "score",      score,
-                "userLiked",  likedIds.contains(mediaApiId)
-            ));
+                    "mediaApiId", mediaApiId,
+                    "title", movie.path("title").asText(),
+                    "artist", "",
+                    "mediaType", "MOVIE",
+                    "genre", genre,
+                    "imageUrl", imageUrl,
+                    "score", score,
+                    "userLiked", likedIds.contains(mediaApiId)));
         }
         return results;
     }
@@ -168,20 +174,20 @@ public class SearchController {
             JsonNode genres = game.path("genres");
             if (genres.isArray() && genres.size() > 0) {
                 String raw = genres.get(0).path("name").asText();
-                if (!raw.isBlank()) genre = raw.substring(0, 1).toUpperCase() + raw.substring(1);
+                if (!raw.isBlank())
+                    genre = raw.substring(0, 1).toUpperCase() + raw.substring(1);
             }
 
             String mediaApiId = game.path("id").asText();
             results.add(Map.of(
-                "mediaApiId", mediaApiId,
-                "title",      game.path("name").asText(),
-                "artist",     "",
-                "mediaType",  "GAME",
-                "genre",      genre,
-                "imageUrl",   imageUrl,
-                "score",      score,
-                "userLiked",  likedIds.contains(mediaApiId)
-            ));
+                    "mediaApiId", mediaApiId,
+                    "title", game.path("name").asText(),
+                    "artist", "",
+                    "mediaType", "GAME",
+                    "genre", genre,
+                    "imageUrl", imageUrl,
+                    "score", score,
+                    "userLiked", likedIds.contains(mediaApiId)));
         }
         return results;
     }
@@ -201,33 +207,34 @@ public class SearchController {
 
         for (JsonNode track : tracks) {
             String mediaApiId = track.path("url").asText();
-            if (mediaApiId.isBlank()) continue;
+            if (mediaApiId.isBlank())
+                continue;
 
-            String title  = track.path("name").asText();
+            String title = track.path("name").asText();
             String artist = track.path("artist").asText();
-            String genre  = resolveLastfmGenre(title, artist);
+            String genre = resolveLastfmGenre(title, artist);
 
             results.add(Map.of(
-                "mediaApiId", mediaApiId,
-                "title",      title,
-                "artist",     artist,
-                "mediaType",  "SONG",
-                "genre",      genre != null ? genre : "",
-                "imageUrl",   "",
-                "score",      0.0,
-                "userLiked",  likedIds.contains(mediaApiId)
-            ));
+                    "mediaApiId", mediaApiId,
+                    "title", title,
+                    "artist", artist,
+                    "mediaType", "SONG",
+                    "genre", genre != null ? genre : "",
+                    "imageUrl", "",
+                    "score", 0.0,
+                    "userLiked", likedIds.contains(mediaApiId)));
         }
         return results;
     }
 
-    // calls track.getTopTags and returns the first meaningful tag, or null if none found
+    // calls track.getTopTags and returns the first meaningful tag, or null if none
+    // found
     private String resolveLastfmGenre(String trackName, String artist) {
         try {
-            String encodedTrack  = URLEncoder.encode(trackName, "UTF-8");
+            String encodedTrack = URLEncoder.encode(trackName, "UTF-8");
             String encodedArtist = URLEncoder.encode(artist, "UTF-8");
             String url = "https://ws.audioscrobbler.com/2.0/?method=track.getTopTags"
-                    + "&track="  + encodedTrack
+                    + "&track=" + encodedTrack
                     + "&artist=" + encodedArtist
                     + "&api_key=" + lastfmApiKey
                     + "&format=json";

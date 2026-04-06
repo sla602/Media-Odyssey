@@ -118,7 +118,7 @@ public class BoardsController {
     /* Bring user to the page to create a board */
     @GetMapping("/create")
     public String createBoardPage(Authentication authentication, Model model, RedirectAttributes redirectAttributes) {
-        User user = (User) authentication.getPrincipal();
+        User user = currentAccountService.getCurrentAccount(authentication);
 
         // Gate: username required before creating a board
         if (!profileService.hasUsername(user.getId())) {
@@ -180,7 +180,7 @@ public class BoardsController {
         }
 
         Boards board = boardOpt.get();
-        User user = (User) authentication.getPrincipal();
+        User user = currentAccountService.getCurrentAccount(authentication);
 
         // check if banned user
         String role = getUserRole(user.getId(), id);
@@ -342,7 +342,7 @@ public class BoardsController {
     @PostMapping("/display/{boardId}/join")
     public String joinBoard(@PathVariable Long boardId, Authentication authentication,
             RedirectAttributes redirectAttributes) {
-        User user = (User) authentication.getPrincipal();
+        User user = currentAccountService.getCurrentAccount(authentication);
         if (!profileService.hasUsername(user.getId())) {
             redirectAttributes.addFlashAttribute("errorMessage",
                     "You need to set a username before joining boards.");
@@ -361,7 +361,7 @@ public class BoardsController {
     @PostMapping("/display/{boardId}/leave")
     public String leaveBoard(@PathVariable Long boardId, Authentication authentication,
             RedirectAttributes redirectAttributes) {
-        User user = (User) authentication.getPrincipal();
+        User user = currentAccountService.getCurrentAccount(authentication);
         try {
             boardsService.leaveBoard(user.getId(), boardId);
         } catch (RuntimeException e) {
@@ -378,7 +378,7 @@ public class BoardsController {
             @RequestParam String boardDescription,
             @RequestParam String boardType,
             Authentication authentication) {
-        User user = (User) authentication.getPrincipal();
+        User user = currentAccountService.getCurrentAccount(authentication);
         boardsService.editBoard(user.getId(), boardId, boardName, boardDescription, boardType);
         return "redirect:/boards/display/" + boardId + "?view=settings";
     }

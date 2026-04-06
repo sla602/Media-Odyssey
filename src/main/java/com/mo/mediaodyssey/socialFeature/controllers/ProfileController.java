@@ -4,6 +4,7 @@ import com.mo.mediaodyssey.layout.models.Profile;
 import com.mo.mediaodyssey.layout.services.AvatarService;
 import com.mo.mediaodyssey.socialFeature.services.ProfileService;
 import com.mo.mediaodyssey.shared.model.User;
+import com.mo.mediaodyssey.shared.services.CurrentAccountService;
 import com.mo.mediaodyssey.socialFeature.services.FriendshipService;
 import com.mo.mediaodyssey.socialFeature.services.FriendshipService.FriendStatus;
 import org.springframework.security.core.Authentication;
@@ -21,12 +22,14 @@ public class ProfileController {
 
     private final FriendshipService friendshipService;
     private final ProfileService profileService;
+    private final CurrentAccountService currentAccountService;
 
-    public ProfileController(FriendshipService friendshipService, ProfileService profileService) {
+    public ProfileController(FriendshipService friendshipService, ProfileService profileService,
+            CurrentAccountService currentAccountService) {
         this.friendshipService = friendshipService;
         this.profileService = profileService;
+        this.currentAccountService = currentAccountService;
     }
-
 
     // ─── Own profile page ────────────────────────────────────────────
 
@@ -35,7 +38,7 @@ public class ProfileController {
      */
     @GetMapping("/profile")
     public String viewOwnProfile(Authentication authentication, Model model) {
-        User user = (User) authentication.getPrincipal();
+        User user = currentAccountService.getCurrentAccount(authentication);
         Profile profile = profileService.getOrCreateProfile(user.getId());
 
         model.addAttribute("user", user);
@@ -53,9 +56,9 @@ public class ProfileController {
      */
     @GetMapping("/profile/{userId}")
     public String viewProfile(@PathVariable Long userId,
-                              Authentication authentication,
-                              Model model) {
-        User viewer = (User) authentication.getPrincipal();
+            Authentication authentication,
+            Model model) {
+        User viewer = currentAccountService.getCurrentAccount(authentication);
         Profile profile = profileService.getOrCreateProfile(userId);
 
         boolean isOwn = viewer.getId().equals(userId);
@@ -77,11 +80,11 @@ public class ProfileController {
      */
     @PostMapping("/profile/save")
     public String saveProfile(@RequestParam(required = false) String username,
-                              @RequestParam(required = false) String description,
-                              @RequestParam(required = false) String pronouns,
-                              Authentication authentication,
-                              RedirectAttributes redirectAttributes) {
-        User user = (User) authentication.getPrincipal();
+            @RequestParam(required = false) String description,
+            @RequestParam(required = false) String pronouns,
+            Authentication authentication,
+            RedirectAttributes redirectAttributes) {
+        User user = currentAccountService.getCurrentAccount(authentication);
         try {
             profileService.updateProfile(user.getId(), username, description, pronouns);
             redirectAttributes.addFlashAttribute("successMessage", "Profile saved.");
@@ -99,9 +102,9 @@ public class ProfileController {
      */
     @PostMapping("/profile/{targetUserId}/add-friend")
     public String addFriend(@PathVariable Long targetUserId,
-                            Authentication authentication,
-                            RedirectAttributes redirectAttributes) {
-        User viewer = (User) authentication.getPrincipal();
+            Authentication authentication,
+            RedirectAttributes redirectAttributes) {
+        User viewer = currentAccountService.getCurrentAccount(authentication);
         if (!profileService.hasUsername(viewer.getId())) {
             redirectAttributes.addFlashAttribute("errorMessage",
                     "You need to set a username before sending friend requests.");

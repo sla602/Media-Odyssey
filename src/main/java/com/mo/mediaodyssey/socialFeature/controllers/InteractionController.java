@@ -1,6 +1,7 @@
 package com.mo.mediaodyssey.socialFeature.controllers;
 
 import com.mo.mediaodyssey.shared.model.User;
+import com.mo.mediaodyssey.shared.services.CurrentAccountService;
 import com.mo.mediaodyssey.socialFeature.models.DTO.PostDTO;
 import com.mo.mediaodyssey.socialFeature.services.CommentService;
 import com.mo.mediaodyssey.socialFeature.services.ModerationService;
@@ -19,8 +20,8 @@ import java.util.List;
  * URL shapes match the originals so templates don't need updating.
  *
  * Related controllers:
- *  - ModerationController: ban / promote / ownership (mod actions)
- *  - BoardsController: board display and creation
+ * - ModerationController: ban / promote / ownership (mod actions)
+ * - BoardsController: board display and creation
  */
 @Controller
 @RequestMapping("/boards/display/{boardId}")
@@ -29,18 +30,22 @@ public class InteractionController {
     private final PostService postService;
     private final CommentService commentService;
     private final ModerationService moderationService;
+    private final CurrentAccountService currentAccountService;
 
     public InteractionController(PostService postService,
-                                 CommentService commentService, ModerationService moderationService) {
+            CommentService commentService, ModerationService moderationService,
+            CurrentAccountService currentAccountService) {
         this.postService = postService;
         this.commentService = commentService;
         this.moderationService = moderationService;
+        this.currentAccountService = currentAccountService;
     }
 
     // ─── Posts ───────────────────────────────────────────────────────
 
     /**
-     * Called by the frontend when the user clicks the POST button on boardDisplay.html.
+     * Called by the frontend when the user clicks the POST button on
+     * boardDisplay.html.
      */
     @GetMapping("/posts")
     @ResponseBody
@@ -53,30 +58,30 @@ public class InteractionController {
      */
     @PostMapping("/posts")
     public String createPost(@PathVariable Long boardId,
-                             @RequestParam String title,
-                             @RequestParam String content,
-                             Authentication authentication) {
-        User user = (User) authentication.getPrincipal();
+            @RequestParam String title,
+            @RequestParam String content,
+            Authentication authentication) {
+        User user = currentAccountService.getCurrentAccount(authentication);
         postService.createPost(user.getId(), boardId, title, content);
         return "redirect:/boards/display/" + boardId;
     }
 
     @PostMapping("/posts/{postId}/edit")
     public String editPost(@PathVariable Long boardId,
-                           @PathVariable Long postId,
-                           @RequestParam String title,
-                           @RequestParam String content,
-                           Authentication authentication) {
-        User user = (User) authentication.getPrincipal();
+            @PathVariable Long postId,
+            @RequestParam String title,
+            @RequestParam String content,
+            Authentication authentication) {
+        // User user = currentAccountService.getCurrentAccount(authentication);
         postService.updatePost(postId, title, content);
         return "redirect:/boards/display/" + boardId;
     }
 
     @PostMapping("/posts/{postId}/delete")
     public String deletePost(@PathVariable Long boardId,
-                             @PathVariable Long postId,
-                             Authentication authentication) {
-        User user = (User) authentication.getPrincipal();
+            @PathVariable Long postId,
+            Authentication authentication) {
+        User user = currentAccountService.getCurrentAccount(authentication);
         postService.deletePost(user.getId(), postId);
         return "redirect:/boards/display/" + boardId;
     }
@@ -86,21 +91,21 @@ public class InteractionController {
     /** Create a top-level comment on a post (no parent). */
     @PostMapping("/posts/{postId}/comments")
     public String createComment(@PathVariable Long boardId,
-                                @PathVariable Long postId,
-                                @RequestParam String content,
-                                Authentication authentication) {
-        User user = (User) authentication.getPrincipal();
+            @PathVariable Long postId,
+            @RequestParam String content,
+            Authentication authentication) {
+        User user = currentAccountService.getCurrentAccount(authentication);
         commentService.createComment(user.getId(), postId, content);
         return "redirect:/boards/display/" + boardId + "?view=post&postId=" + postId;
     }
 
     @PostMapping("/posts/{postId}/comments/{commentId}/edit")
     public String editComment(@PathVariable Long boardId,
-                              @PathVariable Long postId,
-                              @PathVariable Long commentId,
-                              @RequestParam String content,
-                              Authentication authentication) {
-        User user = (User) authentication.getPrincipal();
+            @PathVariable Long postId,
+            @PathVariable Long commentId,
+            @RequestParam String content,
+            Authentication authentication) {
+        // User user = currentAccountService.getCurrentAccount(authentication);
         commentService.updateCommentContent(commentId, content);
         return "redirect:/boards/display/" + boardId + "?view=post&postId=" + postId;
     }
@@ -108,19 +113,19 @@ public class InteractionController {
     /** Reply to an existing comment. */
     @PostMapping("/posts/{postId}/comments/{commentId}/reply")
     public String replyToComment(@PathVariable Long boardId,
-                                 @PathVariable Long postId,
-                                 @PathVariable Long commentId,
-                                 @RequestParam String content,
-                                 Authentication authentication) {
-        User user = (User) authentication.getPrincipal();
+            @PathVariable Long postId,
+            @PathVariable Long commentId,
+            @RequestParam String content,
+            Authentication authentication) {
+        User user = currentAccountService.getCurrentAccount(authentication);
         commentService.replyToComment(user.getId(), commentId, content);
         return "redirect:/boards/display/" + boardId + "?view=post&postId=" + postId;
     }
 
     @PostMapping("/posts/{postId}/comments/{commentId}/delete")
     public String deleteComment(@PathVariable Long boardId,
-                                @PathVariable Long postId,
-                                @PathVariable Long commentId) {
+            @PathVariable Long postId,
+            @PathVariable Long commentId) {
         commentService.softDeleteComment(commentId);
         return "redirect:/boards/display/" + boardId + "?view=post&postId=" + postId;
     }
@@ -129,23 +134,23 @@ public class InteractionController {
 
     @PostMapping("/posts/{postId}/report")
     public String reportPost(@PathVariable Long boardId,
-                             @PathVariable Long postId,
-                             @RequestParam String reason,
-                             @RequestParam Long contentAuthorId,
-                             Authentication authentication) {
-        User user = (User) authentication.getPrincipal();
+            @PathVariable Long postId,
+            @RequestParam String reason,
+            @RequestParam Long contentAuthorId,
+            Authentication authentication) {
+        User user = currentAccountService.getCurrentAccount(authentication);
         moderationService.reportPost(boardId, postId, user.getId(), contentAuthorId, reason);
         return "redirect:/boards/display/" + boardId;
     }
 
     @PostMapping("/posts/{postId}/comments/{commentId}/report")
     public String reportComment(@PathVariable Long boardId,
-                                @PathVariable Long postId,
-                                @PathVariable Long commentId,
-                                @RequestParam String reason,
-                                @RequestParam Long contentAuthorId,
-                                Authentication authentication) {
-        User user = (User) authentication.getPrincipal();
+            @PathVariable Long postId,
+            @PathVariable Long commentId,
+            @RequestParam String reason,
+            @RequestParam Long contentAuthorId,
+            Authentication authentication) {
+        User user = currentAccountService.getCurrentAccount(authentication);
         moderationService.reportComment(boardId, commentId, user.getId(), contentAuthorId, reason);
         return "redirect:/boards/display/" + boardId + "?view=post&postId=" + postId;
     }

@@ -1,10 +1,10 @@
 package com.mo.mediaodyssey.socialFeature.services;
 
 import com.mo.mediaodyssey.layout.models.Profile;
-import com.mo.mediaodyssey.shared.model.User;
 import com.mo.mediaodyssey.auth.repository.UserRepository;
 import com.mo.mediaodyssey.layout.models.BoardRole;
 import com.mo.mediaodyssey.layout.repositories.BoardRoleRepository;
+import com.mo.mediaodyssey.shared.model.User;
 import com.mo.mediaodyssey.socialFeature.models.DTO.FriendRequestDTO;
 import com.mo.mediaodyssey.socialFeature.models.Friendship;
 import com.mo.mediaodyssey.socialFeature.repositories.FriendshipRepository;
@@ -23,9 +23,8 @@ import java.util.stream.Collectors;
 /**
  * Manages friendships between users.
  *
- *
- *  - Friend suggestions are now drawn from users who share at least one
- *    Board with the current user (via BoardRoleRepository).
+ * - Friend suggestions are now drawn from users who share at least one
+ * Board with the current user (via BoardRoleRepository).
  *
  */
 @Service
@@ -34,18 +33,18 @@ public class FriendshipService {
 
     private final FriendshipRepository friendshipRepo;
     private final BoardRoleRepository boardRoleRepo;
-    private final UserRepository userRepo;
     private final ProfileService profileService;
     private final ProfileRepository profileRepo;
+    private final UserRepository userRepo;
 
     public FriendshipService(FriendshipRepository friendshipRepo,
-                             BoardRoleRepository boardRoleRepo,
-                             UserRepository userRepo, ProfileService profileService, ProfileRepository profileRepo) {
+            BoardRoleRepository boardRoleRepo, ProfileService profileService, ProfileRepository profileRepo,
+            UserRepository userRepo) {
         this.friendshipRepo = friendshipRepo;
         this.boardRoleRepo = boardRoleRepo;
-        this.userRepo = userRepo;
         this.profileService = profileService;
         this.profileRepo = profileRepo;
+        this.userRepo = userRepo;
     }
 
     /**
@@ -57,21 +56,35 @@ public class FriendshipService {
         private final Long userId;
         private final String username;
         private final FriendStatus status;
-        private final Long requestId;   // non-null only if there is a pending request
+        private final Long requestId; // non-null only if there is a pending request
 
         public FriendSearchResult(Long userId, String username,
-                                  FriendStatus status, Long requestId) {
+                FriendStatus status, Long requestId) {
             this.userId = userId;
             this.username = username;
             this.status = status;
             this.requestId = requestId;
         }
 
-        public Long getUserId()     { return userId; }
-        public String getUsername() { return username; }
-        public FriendStatus getStatus() { return status; }
-        public String getStatusName()   { return status.name(); }
-        public Long getRequestId()  { return requestId; }
+        public Long getUserId() {
+            return userId;
+        }
+
+        public String getUsername() {
+            return username;
+        }
+
+        public FriendStatus getStatus() {
+            return status;
+        }
+
+        public String getStatusName() {
+            return status.name();
+        }
+
+        public Long getRequestId() {
+            return requestId;
+        }
     }
 
     /**
@@ -81,7 +94,8 @@ public class FriendshipService {
      * Returns an empty list if the query is blank.
      */
     public List<FriendSearchResult> searchUsersByUsername(Long viewerId, String query) {
-        if (query == null || query.isBlank()) return List.of();
+        if (query == null || query.isBlank())
+            return List.of();
 
         List<Profile> matches = profileRepo.searchByUsername(query.trim(), viewerId);
 
@@ -103,6 +117,7 @@ public class FriendshipService {
         }
         return results;
     }
+
     /**
      * Returns null if the user has a username, or a redirect string if they don't.
      * Used as a guard at the top of all gated endpoints.
@@ -115,6 +130,7 @@ public class FriendshipService {
         }
         return null;
     }
+
     // Requests
 
     public void sendFriendRequest(Long fromUserId, Long toUserId) {
@@ -208,12 +224,12 @@ public class FriendshipService {
         // 3. filter out anyone we already have a friendship/request with
         List<User> suggestions = new ArrayList<>();
         for (Long candidateId : candidateIds) {
-            boolean hasRelation =
-                    friendshipRepo.existsByUserIdAndFriendId(userId, candidateId) ||
-                            friendshipRepo.existsByFriendIdAndUserId(userId, candidateId) ||
-                            friendshipRepo.existsByUserIdAndFriendId(candidateId, userId) ||
-                            friendshipRepo.existsByFriendIdAndUserId(candidateId, userId);
-            if (hasRelation) continue;
+            boolean hasRelation = friendshipRepo.existsByUserIdAndFriendId(userId, candidateId) ||
+                    friendshipRepo.existsByFriendIdAndUserId(userId, candidateId) ||
+                    friendshipRepo.existsByUserIdAndFriendId(candidateId, userId) ||
+                    friendshipRepo.existsByFriendIdAndUserId(candidateId, userId);
+            if (hasRelation)
+                continue;
 
             userRepo.findById(candidateId).ifPresent(suggestions::add);
         }
@@ -223,14 +239,18 @@ public class FriendshipService {
 
     // Status helpers (for Add Friend button state)
 
-    public enum FriendStatus { NONE, REQUEST_SENT, REQUEST_RECEIVED, FRIENDS, SELF }
+    public enum FriendStatus {
+        NONE, REQUEST_SENT, REQUEST_RECEIVED, FRIENDS, SELF
+    }
 
     public FriendStatus getStatusBetween(Long viewerId, Long profileId) {
-        if (viewerId.equals(profileId)) return FriendStatus.SELF;
+        if (viewerId.equals(profileId))
+            return FriendStatus.SELF;
 
         return friendshipRepo.findBetween(viewerId, profileId)
                 .map(f -> {
-                    if (f.isAccepted()) return FriendStatus.FRIENDS;
+                    if (f.isAccepted())
+                        return FriendStatus.FRIENDS;
                     return f.getUserId().equals(viewerId)
                             ? FriendStatus.REQUEST_SENT
                             : FriendStatus.REQUEST_RECEIVED;
