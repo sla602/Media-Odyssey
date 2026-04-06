@@ -53,11 +53,25 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     if (moviesTab) {
-        moviesTab.addEventListener('click', () => switchMediaTab(moviesTab, moviesSection)); }
+    moviesTab.addEventListener('click', () => {
+        switchMediaTab(moviesTab, moviesSection);
+        loadMovies();
+        });
+    }
+
     if (musicTab) {
-        musicTab.addEventListener('click', () => switchMediaTab(musicTab, musicSection)); } 
+        musicTab.addEventListener('click', () => {
+            switchMediaTab(musicTab, musicSection);
+            loadMusic();
+        });
+    }
+
     if (gamesTab) {
-        gamesTab.addEventListener('click', () => switchMediaTab(gamesTab, gamesSection)); }
+        gamesTab.addEventListener('click', () => {
+            switchMediaTab(gamesTab, gamesSection);
+            loadGames();
+        });
+    }
 
     // ============= Display (saved) media : fetching media to display ==================
 
@@ -77,7 +91,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         card.innerHTML = `
-            <a href="${link}">
+            <a href="${link}" class="media-link">
                 <img src="${getImage(item, type)}" alt="${getTitle(item, type)}">
                 <h4>${getTitle(item, type)}</h4>
                 ${type === 'music' ? `<p class="media-extra">${item.artist}</p>` : ''}
@@ -100,11 +114,12 @@ document.addEventListener('DOMContentLoaded', function() {
         if (type === 'music') return item.poster_path;
     }
 
-    function renderMedia(items, container, type) {
-    container.innerHTML = '';
+    function renderMedia(items, section, type) {
+        const container = section.querySelector('.media-card-display') || section;
+        container.innerHTML = '';
 
         if (!items || items.length === 0) {
-            container.innerHTML = '<p class="empty-message">Nothing here yet</p>';
+            container.innerHTML = '<p class="empty-message">Start exploring and make this journey more special!</p>';
             return;
         }
 
@@ -146,7 +161,4 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // INITIAL LOAD
     loadMovies(); // default
-    moviesTab.addEventListener('click', loadMovies);
-    musicTab.addEventListener('click', loadMusic);
-    gamesTab.addEventListener('click', loadGames);
 });

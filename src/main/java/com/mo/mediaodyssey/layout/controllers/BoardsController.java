@@ -25,7 +25,6 @@ import org.springframework.web.bind.annotation.*;
 import com.mo.mediaodyssey.shared.model.User;
 import com.mo.mediaodyssey.layout.DTO.GamesRAWG.GameResponse;
 import com.mo.mediaodyssey.layout.DTO.MoviesTMDB.MovieResponse;
-import com.mo.mediaodyssey.layout.DTO.MusicLASTFM.MusicResponse;
 import com.mo.mediaodyssey.layout.models.BoardMedia;
 import com.mo.mediaodyssey.layout.models.Boards;
 import com.mo.mediaodyssey.layout.models.MediaModels.Music;

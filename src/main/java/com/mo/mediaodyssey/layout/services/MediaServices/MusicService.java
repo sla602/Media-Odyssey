@@ -2,7 +2,6 @@ package com.mo.mediaodyssey.layout.services.MediaServices;
 
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -10,7 +9,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
-import com.mo.mediaodyssey.layout.DTO.MoviesTMDB.MovieResponse;
 import com.mo.mediaodyssey.layout.DTO.MusicLASTFM.FMimage;
 import com.mo.mediaodyssey.layout.DTO.MusicLASTFM.MusicResponse;
 import com.mo.mediaodyssey.layout.models.BoardMedia;

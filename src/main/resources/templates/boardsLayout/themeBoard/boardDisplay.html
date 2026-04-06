@@ -96,16 +96,15 @@
             <div class="board-middle">
                 <!-- Let user choose to either see the posts or the media in this board-->
 
+                <div class="middle-select">
+                    <button class="board-post active" id="postsBtn">POST</button>
+                    <button class="board-media" id="mediaBtn">MEDIA</button>
+                </div>
 
                 <!-- ================================================================
                     VIEW: POST LIST (default when currentView == 'posts')
                     ================================================================ -->
                 <th:block th:if="${currentView == 'posts'}">
-
-                    <div class="middle-select">
-                        <button class="board-post active" id="postsBtn">POST</button>
-                        <button class="board-media" id="mediaBtn">MEDIA</button>
-                    </div>
 
                 <!-- This section will be reserved for Post -->
                     <div class="board-POST-container" id="postsContainer">
@@ -205,15 +204,6 @@
                                 </th:block>
                             </div>
                         </div>
-
-                    </div>
-
-                    <!-- ============ MEDIA TAB ============ -->
-                    <div class="board-MEDIA-container" id="mediaContainer" style="display: none;">
-                        <div class="movie-card-display">
-                            <h1>movie</h1>
-                            <div class="movie-card" th:each="movie : ${movies}"></div>
-                        </div>
                     </div>
 
                 </th:block>
@@ -250,8 +240,8 @@
                             </th:block>
                             <th:block th:if="${!selectedPost.authorId.equals(currentUserId) and currentUserRole == 'MEMBER'}">
                                 <form th:action="@{/boards/display/{boardId}/posts/{postId}/report(
-        boardId=${board.id},
-        postId=${selectedPost.id})}"
+                                    boardId=${board.id},
+                                    postId=${selectedPost.id})}"
                                       method="post" class="action-form">
 
                                     <input type="hidden" name="contentAuthorId"
@@ -340,9 +330,9 @@
                                         <a href="#" class="action-btn action-reply"
                                            th:attr="onclick='toggleReply(' + ${comment.id} + ')'">Reply</a>
                                         <form th:action="@{/boards/display/{boardId}/posts/{postId}/comments/{commentId}/report(
-        boardId=${board.id},
-        postId=${selectedPost.id},
-        commentId=${comment.id})}"
+                                            boardId=${board.id},
+                                            postId=${selectedPost.id},
+                                            commentId=${comment.id})}"
                                               method="post">
 
                                             <input type="hidden" name="contentAuthorId" th:value="${comment.authorId}" />
@@ -524,7 +514,7 @@
                     <!-- ============================================================
                         Invites Tab — private boards only
                         Lists friends eligible to invite and currently pending invites.
-     ============================================================ -->
+                    ============================================================ -->
                     <th:block th:if="${modTab == 'invites'
                   and board.board_type != null
                   and board.board_type.equalsIgnoreCase('private')}">
@@ -649,14 +639,14 @@
                     </div>
                 </th:block>
 
-                    <!-- =====================================================
-                                        Media type selector 
-                    ===========================================================-->
-                    <div class="media-select">
-                        <button class="media-tab active" id="moviesTab">Movies</button>
-                        <button class="media-tab" id="gamesTab">Games</button>
-                        <button class="media-tab" id="musicTab">Music</button>
-                    </div>
+                <!-- =====================================================
+                                    Media type selector 
+                ===========================================================-->
+                <div class="media-select">
+                    <button class="media-tab active" id="moviesTab">Movies</button>
+                    <button class="media-tab" id="gamesTab">Games</button>
+                    <button class="media-tab" id="musicTab">Music</button>
+                </div>
 
                     <!-- Movies --> 
                     <div class="media-section" id="moviesSection">
@@ -672,11 +662,9 @@
                     <div class="media-section" id="musicSection" style="display:none;">
                         <p class="empty-message"></p>
                     </div>
+
                 </div>
             </div>
-
-
-
             <!-- Footer Section: in thoughts progress...-->
         </main>
 
