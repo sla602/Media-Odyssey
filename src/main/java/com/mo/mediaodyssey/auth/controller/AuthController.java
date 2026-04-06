@@ -7,6 +7,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.web.authentication.RememberMeServices;
 import org.springframework.security.web.authentication.session.SessionAuthenticationStrategy;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -15,6 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.mo.mediaodyssey.auth.dto.ResendVerifyTokenDto;
 import com.mo.mediaodyssey.auth.dto.AuthApiResponse;
+import com.mo.mediaodyssey.auth.dto.LoginDto;
 import com.mo.mediaodyssey.auth.dto.UserDto;
 import com.mo.mediaodyssey.auth.dto.VerifyTokenDto;
 import com.mo.mediaodyssey.auth.services.MOLocalAuthService;
@@ -50,6 +52,9 @@ public class AuthController {
     @Autowired
     private CurrentAccountService currentAccountService;
 
+    @Autowired
+    private RememberMeServices rememberMeServices;
+
     /**
      * Handles account login requests.
      *
@@ -64,7 +69,7 @@ public class AuthController {
      */
     @PostMapping(value = "/login", consumes = MediaType.APPLICATION_JSON_VALUE)
     @Transactional
-    public ResponseEntity<AuthApiResponse> login(@Valid @RequestBody UserDto dto, HttpServletRequest request,
+    public ResponseEntity<AuthApiResponse> login(@Valid @RequestBody LoginDto dto, HttpServletRequest request,
             HttpServletResponse response) {
         // Login the User
         Authentication authentication = authService.loginUser(dto);
@@ -75,6 +80,11 @@ public class AuthController {
         // Persist the login using the same principal refresh flow shared by both local
         // and OAuth login.
         currentAccountService.refreshPrincipal(authentication, request, response);
+
+        // Remember-me is login-only and opt-in.
+        if (dto.rememberMeRequested()) {
+            rememberMeServices.loginSuccess(request, response, authentication);
+        }
 
         // Return OK - successfully logged in
         return ResponseEntity

@@ -2,6 +2,7 @@ package com.mo.mediaodyssey.auth.config;
 
 import java.util.List;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpStatus;
@@ -17,6 +18,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.LoginUrlAuthenticationEntryPoint;
 import org.springframework.security.web.authentication.logout.HttpStatusReturningLogoutSuccessHandler;
+import org.springframework.security.web.authentication.RememberMeServices;
+import org.springframework.security.web.authentication.rememberme.TokenBasedRememberMeServices;
 import org.springframework.security.web.authentication.session.ChangeSessionIdAuthenticationStrategy;
 import org.springframework.security.web.authentication.session.CompositeSessionAuthenticationStrategy;
 import org.springframework.security.web.authentication.session.ConcurrentSessionControlAuthenticationStrategy;
@@ -25,6 +28,7 @@ import org.springframework.security.web.authentication.session.SessionAuthentica
 
 import com.mo.mediaodyssey.auth.security.MOAuthenticationProvider;
 import com.mo.mediaodyssey.auth.services.MOOAuth2UserService;
+import com.mo.mediaodyssey.auth.services.MOUserDetailsService;
 import com.mo.mediaodyssey.shared.services.CurrentAccountService;
 
 @Configuration
@@ -34,7 +38,8 @@ public class SecurityConfig {
         @Bean
         public SecurityFilterChain filterChain(HttpSecurity http, MOOAuth2UserService customOAuth2UserService,
                         CurrentAccountService currentAccountService,
-                        SessionAuthenticationStrategy sessionAuthenticationStrategy)
+                        SessionAuthenticationStrategy sessionAuthenticationStrategy,
+                        RememberMeServices rememberMeServices)
                         throws Exception {
                 http
                                 .csrf(csrf -> csrf.disable())
@@ -65,6 +70,8 @@ public class SecurityConfig {
                                 .formLogin((form) -> form.disable()) // Disable default Spring Security form login.
                                 .httpBasic((basic) -> basic.disable()) // Disable default Spring Security basic HTTP
                                                                        // authentication.
+                                .rememberMe((remember) -> remember
+                                                .rememberMeServices(rememberMeServices))
                                 .oauth2Login(oauth2 -> oauth2 // Configure Spring Security oauth client with
                                                               // customization.
                                                 .loginPage("/auth/login")
@@ -85,7 +92,7 @@ public class SecurityConfig {
                                                 .logoutUrl("/api/auth/logout")
                                                 .invalidateHttpSession(true)
                                                 .clearAuthentication(true)
-                                                .deleteCookies("JSESSIONID", "SESSION")
+                                                .deleteCookies("JSESSIONID", "SESSION", "remember-me")
                                                 .logoutSuccessHandler((request, response, authentication) -> {
                                                         if ("POST".equalsIgnoreCase(request.getMethod())) {
                                                                 new HttpStatusReturningLogoutSuccessHandler(
@@ -98,6 +105,17 @@ public class SecurityConfig {
                                                 })
                                                 .permitAll());
                 return http.build();
+        }
+
+        @Bean
+        public RememberMeServices rememberMeServices(MOUserDetailsService userDetailsService,
+                        @Value("${security.remember-me.key}") String rememberMeKey) {
+                TokenBasedRememberMeServices rememberMeServices = new TokenBasedRememberMeServices(
+                                rememberMeKey,
+                                userDetailsService::loadUserByUsername);
+                rememberMeServices.setTokenValiditySeconds(14 * 24 * 60 * 60); // 14 days
+                rememberMeServices.setParameter("remember-me");
+                return rememberMeServices;
         }
 
         @Bean

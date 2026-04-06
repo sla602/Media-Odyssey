@@ -25,6 +25,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.web.authentication.RememberMeServices;
 import org.springframework.security.web.authentication.session.SessionAuthenticationStrategy;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
@@ -34,6 +35,7 @@ import org.springframework.context.annotation.Import;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mo.mediaodyssey.auth.controller.AuthController;
 import com.mo.mediaodyssey.auth.controller.AuthExceptionHandler;
+import com.mo.mediaodyssey.auth.dto.LoginDto;
 import com.mo.mediaodyssey.auth.dto.ResendVerifyTokenDto;
 import com.mo.mediaodyssey.auth.dto.UserDto;
 import com.mo.mediaodyssey.auth.exception.InvalidVerificationTokenException;
@@ -63,11 +65,15 @@ class AuthControllerTest {
     @MockitoBean
     private CurrentAccountService currentAccountService;
 
+    @MockitoBean
+    private RememberMeServices rememberMeServices;
+
     @AfterEach
     void cleanupAuthState() {
         // Keep test credentials, auth tokens, and stubs scoped to each test case.
         SecurityContextHolder.clearContext();
-        reset(authService, verificationService, sessionAuthenticationStrategy, currentAccountService);
+        reset(authService, verificationService, sessionAuthenticationStrategy, currentAccountService,
+                rememberMeServices);
     }
 
     @Test
@@ -75,9 +81,9 @@ class AuthControllerTest {
         String email = randomEmail("login-user");
         String password = randomSecret("login-password");
         Authentication authentication = new UsernamePasswordAuthenticationToken(email, password);
-        when(authService.loginUser(any(UserDto.class))).thenReturn(authentication);
+        when(authService.loginUser(any(LoginDto.class))).thenReturn(authentication);
 
-        String payload = loginPayload(email, password);
+        String payload = loginPayload(email, password, false);
 
         mockMvc.perform(post("/api/auth/login")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -88,13 +94,33 @@ class AuthControllerTest {
 
         verify(sessionAuthenticationStrategy).onAuthentication(any(Authentication.class), any(), any());
         verify(currentAccountService).refreshPrincipal(any(Authentication.class), any(), any());
+        verifyNoInteractions(rememberMeServices);
+    }
+
+    @Test
+    void login_withRememberMeEnabled_callsRememberMeLoginSuccess() throws Exception {
+        String email = randomEmail("remember-me-user");
+        String password = randomSecret("remember-me-password");
+        Authentication authentication = new UsernamePasswordAuthenticationToken(email, password);
+        when(authService.loginUser(any(LoginDto.class))).thenReturn(authentication);
+
+        String payload = loginPayload(email, password, true);
+
+        mockMvc.perform(post("/api/auth/login")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(payload))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.status").value("AUTH_LOGIN_SUCCESS"));
+
+        verify(rememberMeServices).loginSuccess(any(), any(), any(Authentication.class));
     }
 
     @Test
     void login_withInvalidCredentials_returnsUnauthorized() throws Exception {
-        when(authService.loginUser(any(UserDto.class))).thenThrow(new BadCredentialsException("bad credentials"));
+        when(authService.loginUser(any(LoginDto.class))).thenThrow(new BadCredentialsException("bad credentials"));
 
-        String payload = loginPayload(randomEmail("invalid-login"), randomSecret("wrong-password"));
+        String payload = loginPayload(randomEmail("invalid-login"), randomSecret("wrong-password"), false);
 
         mockMvc.perform(post("/api/auth/login")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -106,7 +132,7 @@ class AuthControllerTest {
 
     @Test
     void login_withMissingFields_returnsBadRequest() throws Exception {
-        String payload = loginPayload("", "");
+        String payload = loginPayload("", "", false);
 
         mockMvc.perform(post("/api/auth/login")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -122,7 +148,7 @@ class AuthControllerTest {
     void register_withValidData_returnsSuccess() throws Exception {
         doNothing().when(authService).registerUser(any(UserDto.class));
 
-        String payload = loginPayload(randomEmail("register-user"), randomSecret("register-password"));
+        String payload = registerPayload(randomEmail("register-user"), randomSecret("register-password"));
 
         mockMvc.perform(post("/api/auth/register")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -217,7 +243,11 @@ class AuthControllerTest {
                 .andExpect(jsonPath("$.status").value("AUTH_USER_NOT_FOUND"));
     }
 
-    private String loginPayload(String email, String password) throws Exception {
+    private String loginPayload(String email, String password, boolean rememberMe) throws Exception {
+        return objectMapper.writeValueAsString(new LoginDto(email, password, rememberMe));
+    }
+
+    private String registerPayload(String email, String password) throws Exception {
         return objectMapper.writeValueAsString(new UserDto(email, password));
     }
 

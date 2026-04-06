@@ -11,6 +11,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.mo.mediaodyssey.auth.dto.LoginDto;
 import com.mo.mediaodyssey.auth.dto.UserDto;
 import com.mo.mediaodyssey.auth.repository.UserRepository;
 
@@ -30,7 +31,7 @@ public class MOLocalAuthService {
     private PasswordEncoder passwordEncoder;
 
     @Transactional
-    public Authentication loginUser(UserDto dto) {
+    public Authentication loginUser(LoginDto dto) {
         return authenticationManager
                 .authenticate(new UsernamePasswordAuthenticationToken(dto.email(), dto.password()));
     }

@@ -24,7 +24,8 @@ public class PageController {
     /**
      * Splash page for authentication. Users can choose to login or signup.
      * 
-     * @return Static page at src/main/resources/static/auth/index.html
+     * @return Redirect to / for authenticated users. Otherwise, static page at
+     *         src/main/resources/static/auth/index.html
      */
     @GetMapping("/auth")
     public String authPage(Authentication authentication) {
@@ -38,7 +39,8 @@ public class PageController {
     /**
      * Log in page for authentication.
      * 
-     * @return Static page at src/main/resources/static/auth/login/index.html
+     * @return Redirect to / for authenticated users. Otherwise, static page at
+     *         src/main/resources/static/auth/login/index.html
      */
     @GetMapping("/auth/login")
     public String loginPage(Authentication authentication) {
@@ -52,7 +54,8 @@ public class PageController {
     /**
      * Sign up page for authentication.
      * 
-     * @return Static page at src/main/resources/static/auth/signup/index.html
+     * @return Redirect to / for authenticated users. Otherwise, static page at
+     *         src/main/resources/static/auth/signup/index.html
      */
     @GetMapping("/auth/signup")
     public String registerPage(Authentication authentication) {
