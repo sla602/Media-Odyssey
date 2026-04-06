@@ -7,6 +7,7 @@ import com.mo.mediaodyssey.layout.services.BoardMediaService;
 
 import java.util.Map;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -17,11 +18,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 @RequestMapping("/api/boards")
 public class boardMediaController {
     
-    private final BoardMediaService boardMediaService;
-
-    public boardMediaController (BoardMediaService boardMediaService) {
-        this.boardMediaService = boardMediaService;
-    }
+    @Autowired
+    private BoardMediaService boardMediaService;
 
     /*
     * *** This function is used to Post request of adding media into a board. 
@@ -33,15 +31,32 @@ public class boardMediaController {
     * ** Therefore, there is no need to doublecheck mediApiId or user_id. 
     */
     @PostMapping("/{board_id}/media")
-    public ResponseEntity<?> addMediaToBoard( @PathVariable Long board_id, 
-                                            @RequestBody Map<String, Long> body){
+    public ResponseEntity<?> addMediaToBoard(@PathVariable Long board_id, 
+                                            @RequestBody Map<String, Object> body) {
+        try {
+            Long mediaApiId = null;
+            String mediaType = null;
 
-        // Get mediaApiId 
-        Long mediaApiId = body.get("mediaApiId");
+            // For movies/games
+            if (body.containsKey("mediaApiId")) {
+                mediaApiId = Long.valueOf(body.get("mediaApiId").toString());
+            }
 
-        boardMediaService.addMediaToBoard(board_id, mediaApiId);
+            // For music
+            if (body.containsKey("artist") && body.containsKey("track")) {
+                mediaType = "music";
+            }
 
-        return ResponseEntity.ok().build();
-    } 
+            boardMediaService.addMediaToBoard(board_id, mediaApiId, mediaType, body);
+
+            return ResponseEntity.ok(Map.of("status", "success", "message", "Media added to board"));
+        } catch (RuntimeException e) {
+            // Return a 400 with the error message
+            return ResponseEntity.badRequest().body(Map.of("status", "error", "message", e.getMessage()));
+        } catch (Exception e) {
+            // Catch all unexpected errors
+            return ResponseEntity.status(500).body(Map.of("status", "error", "message", "Server error"));
+        }
+    }
     
 }

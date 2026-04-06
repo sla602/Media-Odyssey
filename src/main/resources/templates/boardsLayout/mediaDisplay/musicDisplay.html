@@ -81,7 +81,8 @@
                 **   More detailed version can be found on movieDisplay.html
                 <input type="hidden" id="musicApiId" th:value="${music.artist}" />-->
                 <div class="theme-dropdown">
-                    <button class="dropdown-btn" id="dropdownBtn">
+                    <button class="dropdown-btn" id="dropdownBtn"
+                            th:data-type="music" th:data-artist="${music.artist}" th:data-track="${music.title}">
                         <span>Add to board</span>
                     </button>
 

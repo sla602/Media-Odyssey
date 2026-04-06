@@ -2,6 +2,7 @@ package com.mo.mediaodyssey.layout.services.MediaServices;
 
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -9,8 +10,10 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
+import com.mo.mediaodyssey.layout.DTO.MoviesTMDB.MovieResponse;
 import com.mo.mediaodyssey.layout.DTO.MusicLASTFM.FMimage;
 import com.mo.mediaodyssey.layout.DTO.MusicLASTFM.MusicResponse;
+import com.mo.mediaodyssey.layout.models.BoardMedia;
 import com.mo.mediaodyssey.layout.models.MediaModels.Music;
 
 @Service
@@ -34,6 +37,13 @@ public class MusicService {
                 + "&format=json";
 
         return restTemplate.getForObject(url, MusicResponse.class); 
+    }
+
+    public List<Music> getMusicByBoardMediaList(List<BoardMedia> boardMediaList) {
+        return boardMediaList.stream()
+                .filter(m -> "music".equals(m.getMediaType()))
+                .map(m -> convertToMusic(m.getArtist(), m.getTrack()))
+                .collect(Collectors.toList());
     }
 
     //Since MusicResponse DTO can get messy, create a normal model to store the data easier & cleaner

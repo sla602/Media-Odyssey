@@ -90,10 +90,12 @@
                             own created theme boards.
                             Note: They cannot add movies into other's theme boards. 
                             Future idea: Perhaps users can clone other users's theme boards? Or request the 
-                            theme board owner to add this movie in their theme board. -->
-                        <input type="hidden" id="gameApiId" th:value="${game.id}" />
+                            theme board owner to add this movie in their theme board. 
+                            <input type="hidden" id="gameApiId" th:value="${game.id}" />-->
+                        
                         <div class="theme-dropdown">
-                            <button class="dropdown-btn" id="dropdownBtn">
+                            <button class="dropdown-btn" id="dropdownBtn"
+                                th:data-type="game" th:data-id="${game.id}">
                                 <span>Add to board</span>
                             </button>
 

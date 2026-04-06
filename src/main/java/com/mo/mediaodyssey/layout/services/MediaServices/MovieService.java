@@ -65,7 +65,7 @@ public class MovieService {
             }
         }
 
-        return movies;
+        return movies; 
     }
     
     // =================== Private functions =========================================

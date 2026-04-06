@@ -107,7 +107,7 @@
                         <button class="board-media" id="mediaBtn">MEDIA</button>
                     </div>
 
-                <!-- This section will be reserved for Post (Prab) -->
+                <!-- This section will be reserved for Post -->
                     <div class="board-POST-container" id="postsContainer">
 
                         <!-- Create Post Form (below posts) -->
@@ -649,6 +649,30 @@
                     </div>
                 </th:block>
 
+                    <!-- =====================================================
+                                        Media type selector 
+                    ===========================================================-->
+                    <div class="media-select">
+                        <button class="media-tab active" id="moviesTab">Movies</button>
+                        <button class="media-tab" id="gamesTab">Games</button>
+                        <button class="media-tab" id="musicTab">Music</button>
+                    </div>
+
+                    <!-- Movies --> 
+                    <div class="media-section" id="moviesSection">
+                        <div class="media-card-display"></div>
+                    </div>
+
+                    <!-- Games -->
+                    <div class="media-section" id="gamesSection" style="display:none;">
+                        <p class="empty-message"></p>
+                    </div>
+
+                    <!-- Music -->
+                    <div class="media-section" id="musicSection" style="display:none;">
+                        <p class="empty-message"></p>
+                    </div>
+                </div>
             </div>
 
 

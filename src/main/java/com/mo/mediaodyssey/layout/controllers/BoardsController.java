@@ -12,6 +12,8 @@ import com.mo.mediaodyssey.socialFeature.repositories.CommentRepository;
 import com.mo.mediaodyssey.socialFeature.repositories.PostRepository;
 import com.mo.mediaodyssey.socialFeature.repositories.ReportRepository;
 import com.mo.mediaodyssey.socialFeature.services.*;
+import com.mo.mediaodyssey.layout.services.MediaServices.MusicService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 
 import java.util.*;
@@ -21,11 +23,15 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
 import com.mo.mediaodyssey.shared.model.User;
+import com.mo.mediaodyssey.layout.DTO.GamesRAWG.GameResponse;
 import com.mo.mediaodyssey.layout.DTO.MoviesTMDB.MovieResponse;
+import com.mo.mediaodyssey.layout.DTO.MusicLASTFM.MusicResponse;
 import com.mo.mediaodyssey.layout.models.BoardMedia;
 import com.mo.mediaodyssey.layout.models.Boards;
+import com.mo.mediaodyssey.layout.models.MediaModels.Music;
 import com.mo.mediaodyssey.layout.repositories.BoardMediaRepository;
 import com.mo.mediaodyssey.layout.services.BoardsService;
+import com.mo.mediaodyssey.layout.services.MediaServices.GameService;
 import com.mo.mediaodyssey.layout.services.MediaServices.MovieService;
 
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -53,6 +59,11 @@ public class BoardsController {
     private final ProfileRepository profileRepository;
     private final ProfileService profileService;
     private final BoardInviteService boardInviteService;
+
+    @Autowired
+    private GameService gameService; 
+    @Autowired
+    private MusicService musicService;
 
     public BoardsController (BoardsService boardsService, BoardMediaRepository boardMediaRepository, MovieService movieService, PostService postService, BoardRoleRepository boardRoleRepository, CommentService commentService, ReportRepository reportRepository, ModerationService moderationService, PostRepository postRepository, CommentRepository commentRepository,
                              ProfileRepository profileRepository, ProfileService profileService, BoardInviteService boardInviteService) {
@@ -109,9 +120,6 @@ public class BoardsController {
         }
         return result;
     }
-
-
-
 
     /* Bring user to the page to create a board */
     @GetMapping("/create")
@@ -335,7 +343,6 @@ public class BoardsController {
     }
 
 
-
     // ─── Join / Leave ────────────────────────────────────────────────
 
     @PostMapping("/display/{boardId}/join")
@@ -397,10 +404,37 @@ public class BoardsController {
    public List<MovieResponse> getBoardMovies (@PathVariable Long boardId) {
         
         List<BoardMedia> boardMediaList = boardMediaRepository.findByBoardId(boardId);
-        List<Long> mediaApiIds = boardMediaList.stream().map(BoardMedia::getMediaApiId).toList();
+        List<Long> ids = boardMediaList.stream()
+        .filter(m -> "movie".equals(m.getMediaType()))
+        .map(BoardMedia::getMediaApiId)
+        .toList();
 
-        return movieService.getMoviesByIds(mediaApiIds);
-   }
+        return movieService.getMoviesByIds(ids);
+    }
+
+    //For games 
+    @GetMapping("/display/{boardId}/games")
+    @ResponseBody
+    public List<GameResponse> getBoardGames(@PathVariable Long boardId) {
+
+        List<BoardMedia> list = boardMediaRepository.findByBoardId(boardId);
+
+        List<Long> ids = list.stream()
+            .filter(m -> "game".equals(m.getMediaType()))
+            .map(BoardMedia::getMediaApiId)
+            .toList();
+
+        return gameService.getGamesByIds(ids);
+    }
+
+    // For Music
+    @GetMapping("/display/{boardId}/music")
+    @ResponseBody
+    public List<Music> getBoardMusic(@PathVariable Long boardId) {
+
+        List<BoardMedia> list = boardMediaRepository.findByBoardId(boardId);
+
+        return musicService.getMusicByBoardMediaList(list);
+    }
    
-    
 }
