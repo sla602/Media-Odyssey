@@ -404,6 +404,39 @@ body {
     margin-top: 1.5rem;
 }
 
+/* ===== MEDIA TABS (Movies / Music / Games) ===== */
+.media-select {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.media-tab {
+    padding: 0.5rem 1.5rem;
+    background: transparent;
+    border: none;
+    color: #a0a0b0;
+    font-weight: 600;
+    cursor: pointer;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+}
+
+.media-tab:hover {
+    color: #ffffff;
+    background: rgba(99, 102, 241, 0.1);
+}
+
+.media-tab.active {
+    color: #ffffff;
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+}
+
+/* Sections */
+.media-section {
+    margin-top: 1.5rem;
+}
+
 /* ====================================
         MEDIA CARDS DISPLAY
 =========================================
