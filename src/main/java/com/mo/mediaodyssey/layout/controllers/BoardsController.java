@@ -115,7 +115,15 @@ public class BoardsController {
 
     /* Bring user to the page to create a board */
     @GetMapping("/create")
-    public String createBoardPage(Model model) {
+    public String createBoardPage(Authentication authentication, Model model, RedirectAttributes redirectAttributes) {
+        User user = (User) authentication.getPrincipal();
+
+        // Gate: username required before creating a board
+        if (!profileService.hasUsername(user.getId())) {
+            redirectAttributes.addFlashAttribute("errorMessage",
+                    "You need to set a username before creating a board.");
+            return "redirect:/profile";
+        }
         model.addAttribute("board", new Boards());
 
         return "boardsLayout/themeBoard/createBoard"; 
