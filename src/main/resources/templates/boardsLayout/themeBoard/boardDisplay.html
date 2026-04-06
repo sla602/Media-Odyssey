@@ -67,14 +67,27 @@
                 Aim for now: show movies -->
                 <div class="board-MEDIA-container" id="mediaContainer" style="display: none;">
 
-                    <!-- === Movie cards display ==== -->
-                    <div class="movie-card-display">
-                        <h1> movie </h1>
-
-                        <div class="movie-card" th:each="movie : ${movies}"></div>
+                    <!-- Media type selector -->
+                    <div class="media-select">
+                        <button class="media-tab active" id="moviesTab">Movies</button>
+                        <button class="media-tab" id="gamesTab">Games</button>
+                        <button class="media-tab" id="musicTab">Music</button>
                     </div>
 
-                    <!-- === Game cards display ==== -->
+                    <!-- Movies --> 
+                    <div class="media-section" id="moviesSection">
+                        <div class="media-card-display"></div>
+                    </div>
+
+                    <!-- Games -->
+                    <div class="media-section" id="gamesSection" style="display:none;">
+                        <p class="empty-message"></p>
+                    </div>
+
+                    <!-- Music -->
+                    <div class="media-section" id="musicSection" style="display:none;">
+                        <p class="empty-message"></p>
+                    </div>
                 </div>
             </div>
 

@@ -519,12 +519,45 @@ body {
     padding: 1rem;
 }
 
+/* ===== MEDIA TABS (Movies / Music / Games) ===== */
+.media-select {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.media-tab {
+    padding: 0.5rem 1.5rem;
+    background: transparent;
+    border: none;
+    color: #a0a0b0;
+    font-weight: 600;
+    cursor: pointer;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+}
+
+.media-tab:hover {
+    color: #ffffff;
+    background: rgba(99, 102, 241, 0.1);
+}
+
+.media-tab.active {
+    color: #ffffff;
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+}
+
+/* Sections */
+.media-section {
+    margin-top: 1rem;
+}
+
 /* ====================================
-        MOVIE CARDS DISPLAY
+        MEDIA CARDS DISPLAY
 =========================================
 */
 
-.movie-card-display {
+.media-card-display {
     display: flex;
     flex-wrap: wrap;         
     gap: 1.5rem;                
@@ -532,7 +565,7 @@ body {
 }
 
 /* Individual Movie Card */
-.movie-card {
+.media-card {
     background: linear-gradient(145deg, #1e1e3f 0%, #2d2d5a 100%);
     border-radius: 16px;
     overflow: hidden;
@@ -548,14 +581,14 @@ body {
 }
 
 /* Hover Effect */
-.movie-card:hover {
+.media-card:hover {
     transform: translateY(-6px);
     box-shadow: 0 10px 25px rgba(99, 102, 241, 0.3);
     border-color: rgba(139, 92, 246, 0.5);
 }
 
 /* Movie Image */
-.movie-card img {
+.media-card img {
     width: 100%;
     height: 270px;
     object-fit: cover;
@@ -564,7 +597,7 @@ body {
 }
 
 /* Movie Title */
-.movie-card h4 {
+.media-card h4 {
     padding: 0.75rem 1rem;
     font-size: 0.95rem;
     font-weight: 600;
@@ -573,7 +606,7 @@ body {
 }
 
 /* Remove default link styling */
-.movie-card a {
+.media-card a {
     text-decoration: none;
     color: inherit;
     display: block;
