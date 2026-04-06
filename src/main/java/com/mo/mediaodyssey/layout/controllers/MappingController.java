@@ -10,7 +10,7 @@ public class MappingController {
     /* This Controller is to navigates elements like create board icon, 
     elements in side bar, and elements view in singular board layout */
 
-    /* SIDE BAR ELEMENTS */
+    /*=================================d SIDE BAR ELEMENTS ====================================*/
 
     /* Bring user to the page specifically for social feature.
     Social feature needs to be discussed more specifically tho.*/
