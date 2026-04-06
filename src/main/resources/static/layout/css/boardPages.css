@@ -451,6 +451,7 @@ body {
 
 /* Individual Movie Card */
 .media-card {
+    position: relative;
     background: linear-gradient(145deg, #1e1e3f 0%, #2d2d5a 100%);
     border-radius: 14px;
     overflow: hidden;
@@ -463,6 +464,26 @@ body {
     border: 1px solid rgba(99, 102, 241, 0.15);
     transition: all 0.25s ease;
     cursor: pointer;
+}
+
+.remove-btn {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    background: rgba(0,0,0,0.6);
+    border: none;
+    color: white;
+    font-size: 0.9rem;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    cursor: pointer;
+    opacity: 0;
+    transition: 0.2s;
+}
+
+.media-card:hover .remove-btn {
+    opacity: 1;
 }
 
 /* Hover Effect */

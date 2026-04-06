@@ -91,15 +91,48 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         card.innerHTML = `
+            <div class="card-wrapper">
             <a href="${link}" class="media-link">
                 <img src="${getImage(item, type)}" alt="${getTitle(item, type)}">
                 <h4>${getTitle(item, type)}</h4>
                 ${type === 'music' ? `<p class="media-extra">${item.artist}</p>` : ''}
             </a>
+
+            <button class="remove-btn" data-id="${item.id}">X</button> 
+            </div>
         `;
 
         return card;
     }
+
+    // delete media from the theme board
+    document.addEventListener('click', async function(e) {
+        if (e.target.classList.contains('remove-btn')) {
+            const mediaId = e.target.dataset.id;
+            const boardId = window.location.pathname.split('/').pop();
+
+            try {
+                const res = await fetch(`/api/boards/${boardId}/media/${mediaId}`, {
+                    method: 'DELETE'
+                });
+
+                const result = await res.json();
+
+                if (res.ok) {
+                    showPopup(result.message, "success");
+
+                    // remove card from UI instantly
+                    e.target.closest('.media-card').remove();
+                } else {
+                    showPopup(result.message, "error");
+                }
+
+            } catch (err) {
+                console.error(err);
+                showPopup("Delete failed", "error");
+            }
+        }
+    });
 
     // HELPERS (normalize fields)
     function getTitle(item, type) {
