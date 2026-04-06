@@ -18,6 +18,7 @@ import com.mo.mediaodyssey.auth.dto.UserDto;
 import com.mo.mediaodyssey.auth.dto.VerifyTokenDto;
 import com.mo.mediaodyssey.auth.services.MOLocalAuthService;
 import com.mo.mediaodyssey.auth.services.EmailVerificationService;
+import com.mo.mediaodyssey.shared.model.User;
 import com.mo.mediaodyssey.shared.services.CurrentAccountService;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -85,8 +86,12 @@ public class AuthController {
         }
 
         // Return OK - successfully logged in
-        return ResponseEntity
-                .ok(AuthApiResponse.success("AUTH_LOGIN_SUCCESS", "Login successful"));
+        if (authentication.getPrincipal() instanceof User user && !user.isEmailVerified()) {
+            return ResponseEntity.ok(AuthApiResponse.success("AUTH_LOGIN_SUCCESS_UNVERIFIED",
+                    "Login successful. Please verify your email."));
+        }
+
+        return ResponseEntity.ok(AuthApiResponse.success("AUTH_LOGIN_SUCCESS", "Login successful"));
     }
 
     /**

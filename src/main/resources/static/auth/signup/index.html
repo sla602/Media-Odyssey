@@ -101,15 +101,10 @@
 
     <script>
         window.addEventListener("DOMContentLoaded", () => {
-            const { showLoadingModal, showStatusModal, showStatusModalAfterLoading, setFormSubmitting } = AuthModalFlow.create();
+            const { showLoadingModal, showStatusModal, showAuthStatusAfterLoading, setFormSubmitting } = AuthModalFlow.create();
             const signupForm = document.getElementById("signupForm");
 
             let isSubmitting = false;
-
-            function showBackendErrorOrDefault(resBody) {
-                const backendMessage = typeof resBody?.message === "string" ? resBody.message : "";
-                showStatusModalAfterLoading(backendMessage || "An unexpected error occurred. Please try again later.");
-            }
 
             signupForm.addEventListener("submit", async (e) => {
                 e.preventDefault();
@@ -145,22 +140,13 @@
 
                     const resText = await res.json();
                     const status = resText?.status;
+                    const statusRedirects = {
+                        AUTH_REGISTER_SUCCESS: "/auth/login",
+                    };
 
-                    // If successful, responds with "OK". Otherwise, attempts default behavior of redirecting (failed).
-                    if (status === "AUTH_REGISTER_SUCCESS") {
-                        // If successful signup, tell the User. Do not automatically redirect. User needs to be informed to check their email. User can choose to be redirected by closing pop up.
-                        showStatusModalAfterLoading("Account created successfully. Please check your email to verify your account.", "/auth/login");
-                    } else if (status === "AUTH_INVALID_CREDENTIALS") {
-                        showStatusModalAfterLoading("The email is already registered. Please log in.");
-                    } else if (status === "AUTH_LOCKED") {
-                        showStatusModalAfterLoading("Your account is locked. Please contact support.");
-                    } else if (status === "AUTH_BAD_REQUEST") {
-                        showStatusModalAfterLoading("There was a problem with the input submitted. Please try again.");
-                    } else {
-                        showBackendErrorOrDefault(resText);
-                    }
+                    showAuthStatusAfterLoading(status, resText, { statusRedirects });
                 } catch (error) {
-                    showStatusModalAfterLoading("An unexpected error occurred. Please try again later.");
+                    showAuthStatusAfterLoading(undefined, undefined);
                 } finally {
                     isSubmitting = false;
                     setFormSubmitting(signupForm, false);

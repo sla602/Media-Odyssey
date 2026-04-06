@@ -76,14 +76,26 @@ public class User implements UserDetails {
     private String password;
 
     /**
-     * isEnabled MO User. Used to determine if email verification has been complete.
-     * By default, false, as User needs to verify email.
+     * isEnabled MO User. Used by Spring Security account-status checks.
      * 
-     * Logic handled in MOAuthenticationProvider. Adding more in the future requires
-     * implementing its logic in MOAuthenticationProvider.
+     * By default, true, since account locking is handled separately.
+     * 
+     * Previously used for preventing log in if email is not verified. However, in
+     * some situations, the visitor is unable to do so. Instead, we will now remind
+     * visitors to verify their email when they log in, and allow them to log in
+     * even if their email is not verified. This is to ensure visitors can still log
+     * in and use the app. Email verification state is now managed below, with a
+     * separate variable isEmailVerified.
      */
     @Column(nullable = false)
-    private boolean isEnabled = false;
+    private boolean isEnabled = true;
+
+    /**
+     * Email verification state for MO User.
+     * By default, false, and flipped to true once verification succeeds.
+     */
+    @Column(nullable = false)
+    private boolean isEmailVerified = false;
 
     /**
      * isAccountNonLocked MO User. Used to determine if MO User account has been not
@@ -116,11 +128,13 @@ public class User implements UserDetails {
      * OAuth provider registration id (e.g., google, github) when authProvider is
      * OAUTH.
      */
+    @Column(nullable = true)
     private String oauthProvider;
 
     /**
      * Provider subject identifier (e.g., OpenID sub) when available.
      */
+    @Column(nullable = true)
     private String oauthProviderUserId;
 
     /*
@@ -129,6 +143,7 @@ public class User implements UserDetails {
      * Unlike custom_avatar_URL, default_avatar_URL will always have a value.
      * It is generated when the user is created,
      */
+    @Column(nullable = false)
     private String default_avatar_URL;
 
     /*
@@ -137,6 +152,7 @@ public class User implements UserDetails {
      * API DiceBear ensures the seed (use userEmail) always get the same avt. But
      * varies for each seeds.
      */
+    @Column(nullable = true)
     private String custom_avatar_URL;
 
     /*
@@ -170,7 +186,8 @@ public class User implements UserDetails {
         this.email = email;
         this.username = email;
         this.password = password;
-        this.isEnabled = false;
+        this.isEnabled = true;
+        this.isEmailVerified = false;
         this.isAccountNonLocked = true;
         this.role = "ROLE_USER";
         this.authProvider = "LOCAL";
@@ -189,13 +206,15 @@ public class User implements UserDetails {
     }
 
     // Used in DevUserService
-    public User(String email, String username, String password, boolean isEnabled, boolean isAccountNonLocked,
+    public User(String email, String username, String password, boolean isEnabled, boolean isEmailVerified,
+            boolean isAccountNonLocked,
             String role, String authProvider, String oauthProvider, String oauthProviderUserId,
             String default_avatar_URL, String custom_avatar_URL, String selected_avatar_type) {
         this.email = email;
         this.username = username;
         this.password = password;
         this.isEnabled = isEnabled;
+        this.isEmailVerified = isEmailVerified;
         this.isAccountNonLocked = isAccountNonLocked;
         this.role = role;
         this.authProvider = authProvider;
@@ -247,6 +266,14 @@ public class User implements UserDetails {
 
     public void setEnabled(boolean isEnabled) {
         this.isEnabled = isEnabled;
+    }
+
+    public boolean isEmailVerified() {
+        return isEmailVerified;
+    }
+
+    public void setEmailVerified(boolean isEmailVerified) {
+        this.isEmailVerified = isEmailVerified;
     }
 
     @Override

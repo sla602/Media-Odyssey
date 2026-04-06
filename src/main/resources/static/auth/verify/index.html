@@ -76,17 +76,12 @@
 
     <script>
         window.addEventListener("DOMContentLoaded", () => {
-            const { showLoadingModal, showStatusModalAfterLoading, setFormSubmitting } = AuthModalFlow.create();
+            const { showLoadingModal, showStatusModalAfterLoading, showAuthStatusAfterLoading, setFormSubmitting } = AuthModalFlow.create();
             const verifyForm = document.getElementById("verifyForm");
             const verifyBtn = document.getElementById("verifyBtn");
             const token = new URLSearchParams(window.location.search).get("token");
 
             let isSubmitting = false;
-
-            function showBackendErrorOrDefault(resBody) {
-                const backendMessage = typeof resBody?.message === "string" ? resBody.message : "";
-                showStatusModalAfterLoading(backendMessage || "An unexpected error occurred. Please try again later.");
-            }
 
             if (!token) {
                 verifyBtn.disabled = true;
@@ -114,20 +109,14 @@
 
                     const resText = await res.json();
                     const status = resText?.status;
+                    const statusRedirects = {
+                        AUTH_VERIFY_SUCCESS: "/auth/login",
+                        AUTH_INVALID_VERIFICATION_TOKEN: "/auth/resend",
+                    };
 
-                    if (status === "AUTH_VERIFY_SUCCESS") {
-                        showStatusModalAfterLoading("Your email has been verified successfully. You can now log in using the button below.", "/auth/login");
-                    } else if (status === "AUTH_INVALID_VERIFICATION_TOKEN") {
-                        showStatusModalAfterLoading("This verification link is invalid or expired. If you have already previously verified your email, please continue to log in. Otherwise, please request a new one.", "/auth/resend");
-                    } else if (status === "AUTH_LOCKED") {
-                        showStatusModalAfterLoading("Your account is locked. Please contact support.");
-                    } else if (status === "AUTH_BAD_REQUEST") {
-                        showStatusModalAfterLoading("There was a problem with your verification request. Please try again.");
-                    } else {
-                        showBackendErrorOrDefault(resText);
-                    }
+                    showAuthStatusAfterLoading(status, resText, { statusRedirects });
                 } catch (error) {
-                    showStatusModalAfterLoading("An unexpected error occurred. Please try again later.");
+                    showAuthStatusAfterLoading(undefined, undefined);
                 } finally {
                     isSubmitting = false;
                     setFormSubmitting(verifyForm, false);

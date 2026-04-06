@@ -38,8 +38,10 @@ import com.mo.mediaodyssey.auth.dto.LoginDto;
 import com.mo.mediaodyssey.auth.dto.ResendVerifyTokenDto;
 import com.mo.mediaodyssey.auth.dto.UserDto;
 import com.mo.mediaodyssey.auth.exception.InvalidVerificationTokenException;
+import com.mo.mediaodyssey.auth.exception.OAuthSignInRequiredException;
 import com.mo.mediaodyssey.auth.services.EmailVerificationService;
 import com.mo.mediaodyssey.auth.services.MOLocalAuthService;
+import com.mo.mediaodyssey.shared.model.User;
 import com.mo.mediaodyssey.shared.services.CurrentAccountService;
 
 @WebMvcTest(controllers = AuthController.class)
@@ -115,6 +117,47 @@ class AuthControllerTest {
 
         verify(rememberMeServices).onLoginSuccess(any(), any(), any(Authentication.class));
         verify(rememberMeServices, never()).loginFail(any(), any());
+    }
+
+    @Test
+    void login_withUnverifiedUser_returnsReminderStatus() throws Exception {
+        String email = randomEmail("unverified-user");
+        String password = randomSecret("unverified-password");
+        User unverifiedPrincipal = new User(email, password);
+        unverifiedPrincipal.setEmailVerified(false);
+        Authentication authentication = new UsernamePasswordAuthenticationToken(unverifiedPrincipal, password,
+                unverifiedPrincipal.getAuthorities());
+        when(authService.loginUser(any(LoginDto.class))).thenReturn(authentication);
+
+        String payload = loginPayload(email, password, false);
+
+        mockMvc.perform(post("/api/auth/login")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(payload))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.status").value("AUTH_LOGIN_SUCCESS_UNVERIFIED"));
+
+        verify(sessionAuthenticationStrategy).onAuthentication(any(Authentication.class), any(), any());
+        verify(currentAccountService).refreshPrincipal(any(Authentication.class), any(), any());
+        verify(rememberMeServices).loginFail(any(), any());
+    }
+
+    @Test
+    void login_withOauthOnlyAccount_returnsOauthStatus() throws Exception {
+        when(authService.loginUser(any(LoginDto.class)))
+                .thenThrow(new OAuthSignInRequiredException("oauth sign-in required"));
+
+        String payload = loginPayload(randomEmail("oauth-only-user"), randomSecret("unused-password"), false);
+
+        mockMvc.perform(post("/api/auth/login")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(payload))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.success").value(false))
+                .andExpect(jsonPath("$.status").value("AUTH_OAUTH_SIGN_IN_REQUIRED"));
+
+        verifyNoInteractions(sessionAuthenticationStrategy, rememberMeServices);
     }
 
     @Test

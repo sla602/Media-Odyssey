@@ -55,6 +55,7 @@ public class MOOAuth2UserService implements OAuth2UserService<OAuth2UserRequest,
         // Password must remain non-null for the existing users table schema.
         User user = new User(email, passwordEncoder.encode(UUID.randomUUID().toString()));
         user.setEnabled(true);
+        user.setEmailVerified(true);
         user.setRole("ROLE_USER");
         user.setAuthProvider("OAUTH");
         user.setOauthProvider(registrationId);

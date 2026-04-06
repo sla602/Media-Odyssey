@@ -28,6 +28,10 @@ public class EmailService {
     }
 
     public void sendEmail(@NotBlank String to, @NotBlank String subject, @NotBlank String message) {
+        sendHtmlEmail(to, subject, "<p>" + escapeHtml(message) + "</p>");
+    }
+
+    public void sendHtmlEmail(@NotBlank String to, @NotBlank String subject, @NotBlank String htmlMessage) {
         try {
             // Silently prevent sending to common test email addresses, such as email
             // addresses containing "example" or "test".
@@ -38,7 +42,7 @@ public class EmailService {
                         .from(from)
                         .to(to)
                         .subject(subject)
-                        .html("<p>" + message + "</p>")
+                        .html(htmlMessage)
                         .build();
 
                 resend.emails().send(params);
@@ -46,5 +50,14 @@ public class EmailService {
         } catch (Exception e) {
             throw new DisabledException("Unable to send email");
         }
+    }
+
+    private String escapeHtml(String value) {
+        return value
+                .replace("&", "&amp;")
+                .replace("<", "&lt;")
+                .replace(">", "&gt;")
+                .replace("\"", "&quot;")
+                .replace("'", "&#39;");
     }
 }

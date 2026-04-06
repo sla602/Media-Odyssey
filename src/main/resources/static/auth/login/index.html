@@ -102,7 +102,7 @@
 
     <script>
         window.addEventListener("DOMContentLoaded", () => {
-            const { showLoadingModal, showStatusModalAfterLoading, setFormSubmitting } = AuthModalFlow.create();
+            const { showLoadingModal, showStatusModalAfterLoading, showAuthStatusAfterLoading, setFormSubmitting } = AuthModalFlow.create();
             const searchParams = new URLSearchParams(window.location.search);
             const loginForm = document.getElementById("loginForm");
 
@@ -110,11 +110,6 @@
 
             if (searchParams.get("oauthError") === "true") {
                 showStatusModalAfterLoading("OAuth sign-in failed. If you previously registered with email/password, please log in with email/password instead.");
-            }
-
-            function showBackendErrorOrDefault(resBody) {
-                const backendMessage = typeof resBody?.message === "string" ? resBody.message : "";
-                showStatusModalAfterLoading(backendMessage || "An unexpected error occurred. Please try again later.");
             }
 
             loginForm.addEventListener("submit", async (e) => {
@@ -148,25 +143,18 @@
 
                     const resText = await res.json();
                     const status = resText?.status;
+                    const statusRedirects = {
+                        AUTH_LOGIN_SUCCESS_UNVERIFIED: "/",
+                    };
 
                     // If successful, responds with "OK". Otherwise, attempts default behavior of redirecting (failed).
                     if (status === "AUTH_LOGIN_SUCCESS") {
-                        // If successful login, tell the User. Also automatically redirect shortly. User can choose to skip the delay by closing pop up.
-                        showStatusModalAfterLoading("Login successful.", "/");
-                        setTimeout(() => window.location.replace("/"), 500);
-                    } else if (status === "AUTH_DISABLED") {
-                        showStatusModalAfterLoading("You have not completed email verification for your account. Please check your email and follow the link.");
-                    } else if (status === "AUTH_INVALID_CREDENTIALS" || status === "AUTH_USER_NOT_FOUND") {
-                        showStatusModalAfterLoading("The email and/or password provided is incorrect. Please try again.");
-                    } else if (status === "AUTH_LOCKED") {
-                        showStatusModalAfterLoading("Your account is locked. Please contact support.");
-                    } else if (status === "AUTH_BAD_REQUEST") {
-                        showStatusModalAfterLoading("There was a problem with the input submitted. Please try again.");
+                        showStatusModalAfterLoading("✓", "/", { redirectOnShown: true, useCheckmarkStyle: true });
                     } else {
-                        showBackendErrorOrDefault(resText);
+                        showAuthStatusAfterLoading(status, resText, { statusRedirects });
                     }
                 } catch (error) {
-                    showStatusModalAfterLoading("An unexpected error occurred. Please try again later.");
+                    showAuthStatusAfterLoading(undefined, undefined);
                 } finally {
                     isSubmitting = false;
                     setFormSubmitting(loginForm, false);

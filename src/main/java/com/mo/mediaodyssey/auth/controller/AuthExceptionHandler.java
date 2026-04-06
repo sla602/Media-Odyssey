@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import com.mo.mediaodyssey.auth.dto.AuthApiResponse;
 import com.mo.mediaodyssey.auth.exception.InvalidVerificationTokenException;
+import com.mo.mediaodyssey.auth.exception.OAuthSignInRequiredException;
 import com.mo.mediaodyssey.auth.exception.UserAlreadyVerifiedException;
 import com.mo.mediaodyssey.dev.controller.DevAccountController;
 
@@ -22,6 +23,14 @@ import com.mo.mediaodyssey.dev.controller.DevAccountController;
 public class AuthExceptionHandler {
 
         // Debugging assisted by AI.
+
+        @ExceptionHandler(OAuthSignInRequiredException.class)
+        public ResponseEntity<AuthApiResponse> handleOauthSignInRequired() {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .body(AuthApiResponse.error("AUTH_OAUTH_SIGN_IN_REQUIRED",
+                                                "This account uses OAuth sign-in. Please continue via OAuth provider."));
+        }
 
         @ExceptionHandler(BadCredentialsException.class)
         public ResponseEntity<AuthApiResponse> handleBadCredentials() {
@@ -36,7 +45,7 @@ public class AuthExceptionHandler {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN)
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .body(AuthApiResponse.error("AUTH_DISABLED",
-                                                "User is disabled. Please complete verification."));
+                                                "User is disabled. Please contact support."));
         }
 
         @ExceptionHandler(LockedException.class)
