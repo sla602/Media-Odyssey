@@ -17,28 +17,4 @@ public interface UserRepository extends JpaRepository<User, Long> {
     Optional<User> findByEmail(String email);
     boolean existsByEmail(String email);
 
-
-    @Query("""
-        SELECT u
-        FROM User u
-        WHERE u.id <> :userId
-          AND u.id NOT IN (
-              SELECT f.friendId
-              FROM Friendship f
-              WHERE f.userId = :userId AND f.accepted = true
-              UNION
-              SELECT f.userId
-              FROM Friendship f
-              WHERE f.friendId = :userId AND f.accepted = true
-          )
-          AND u.id IN (
-              SELECT ssr.userId
-              FROM SocialSpaceRole ssr
-              WHERE ssr.socialSpaceId IN :socialSpaceIds
-          )
-    """)
-    List<User> findUsersInSocialSpacesExcludingFriends(
-            @Param("userId") Long userId,
-            @Param("communityIds") List<Integer> communityIds
-    );
 }
