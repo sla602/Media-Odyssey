@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Media Odyssey-Friends</title>
+    <link rel="stylesheet" th:href="@{/layout/css/global.css}">
+    <link rel="stylesheet" th:href="@{/layout/css/fragments.css}">
+    <link rel="stylesheet" th:href="@{/layout/css/boardPages.css}">
+    <link rel="stylesheet" th:href="@{/layout/css/userProfile.css}">
+    <link rel="stylesheet" th:href="@{/layout/css/socialFeatures/friends.css}">
+</head>
+<body>
+<!-- header (logo, sidebar toggle, search, user avatar) -->
+<div th:replace="boardsLayout/fragments/header :: header"></div>
+
+<!-- collapsible sidebar -->
+<div th:replace="boardsLayout/fragments/sidebar :: sideBar"></div>
+
+<!--
+ * friends.html
+ ** Four sections:
+ *    1) Friends             — current accepted friends (Remove action)
+ *    2) Friend Requests     — INCOMING, not yet accepted (Accept / Reject)
+ *    3) Suggested Friends   — people who share a Board with this user (Add)
+ *    4) Pending Requests    — OUTGOING, not yet accepted (Cancel)
+ -->
+
+<main class="friends-container">
+
+    <!-- Flash messages (reuse existing message styling if present) -->
+    <div th:if="${successMessage}" class="flash-message flash-success" th:text="${successMessage}"></div>
+    <div th:if="${errorMessage}"   class="flash-message flash-error"   th:text="${errorMessage}"></div>
+
+    <h1 class="friends-page-title">Friends</h1>
+    <!-- =====================================================
+     USERNAME SEARCH BAR
+     Lets the user look up other users by username and
+     act on the result (add / accept / cancel / view).
+     ===================================================== -->
+    <section class="friend-search-section">
+        <form th:action="@{/friends}" method="get" class="friend-search-form">
+            <input type="text"
+                   name="search"
+                   class="friend-search-input"
+                   placeholder="Search users by username..."
+                   th:value="${searchQuery}"
+                   autocomplete="off">
+            <button type="submit" class="friend-search-btn">Search</button>
+            <a th:if="${searchQuery != null and !#strings.isEmpty(searchQuery)}"
+               th:href="@{/friends}"
+               class="friend-search-clear">Clear</a>
+        </form>
+
+        <!-- Results only render when a search was actually performed -->
+        <div th:if="${searchQuery != null and !#strings.isEmpty(searchQuery)}"
+             class="friend-search-results">
+
+            <div class="friends-panel-head">
+                <h2 class="section-title">Search Results</h2>
+                <span class="friends-count" th:text="${#lists.size(searchResults)}">0</span>
+            </div>
+
+            <!-- No matches -->
+            <div th:if="${#lists.isEmpty(searchResults)}" class="empty-message">
+                No users found matching "<span th:text="${searchQuery}">query</span>".
+            </div>
+
+            <!-- Results list -->
+            <div th:each="result : ${searchResults}" class="member-card friend-card">
+                <div class="member-info">
+                    <div class="friend-text">
+                        <a th:href="@{'/profile/' + ${result.userId}}"
+                           class="member-name friend-name-link"
+                           th:text="${result.username}">username</a>
+                    </div>
+                </div>
+                <div class="member-actions">
+
+                    <!-- NONE: can send a request -->
+                    <form th:if="${result.statusName == 'NONE'}"
+                          th:action="@{'/friends/add/' + ${result.userId}}"
+                          method="post" class="action-form">
+                        <button type="submit" class="action-btn action-add">Add Friend</button>
+                    </form>
+
+                    <!-- REQUEST_SENT: show cancel -->
+                    <form th:if="${result.statusName == 'REQUEST_SENT'}"
+                          th:action="@{'/friends/requests/' + ${result.requestId} + '/cancel'}"
+                          method="post" class="action-form">
+                        <button type="submit" class="action-btn action-cancel">Cancel Request</button>
+                    </form>
+
+                    <!-- REQUEST_RECEIVED: accept/reject -->
+                    <th:block th:if="${result.statusName == 'REQUEST_RECEIVED'}">
+                        <form th:action="@{'/friends/requests/' + ${result.requestId} + '/accept'}"
+                              method="post" class="action-form">
+                            <button type="submit" class="action-btn action-accept">Accept</button>
+                        </form>
+                        <form th:action="@{'/friends/requests/' + ${result.requestId} + '/reject'}"
+                              method="post" class="action-form">
+                            <button type="submit" class="action-btn action-reject">Reject</button>
+                        </form>
+                    </th:block>
+
+                    <!-- FRIENDS: just a label -->
+                    <span th:if="${result.statusName == 'FRIENDS'}"
+                          class="action-btn action-already-friends">Friends</span>
+                </div>
+            </div>
+        </div>
+    </section>
+    <!-- Grid of 4 columns / panels -->
+    <div class="friends-grid">
+
+
+        <!-- ======================================================
+             1) FRIENDS
+             ====================================================== -->
+        <section class="friends-panel">
+            <div class="friends-panel-head">
+                <h2 class="section-title">Friends</h2>
+                <span class="friends-count" th:text="${#lists.size(friends)}">0</span>
+            </div>
+
+            <div th:if="${#lists.isEmpty(friends)}" class="empty-message">
+                No friends yet.
+            </div>
+
+            <div th:each="friend : ${friends}" class="member-card friend-card">
+                <div class="member-info">
+                    <div class="friend-text">
+                        <a th:href="@{'/profile/' + ${friend.id}}"
+                           class="member-name friend-name-link"
+                           th:text="${usernames[friend.id]}">friend name</a>
+                    </div>
+                </div>
+                <div class="member-actions">
+                    <form th:action="@{'/friends/' + ${friend.id} + '/remove'}"
+                          method="post" class="action-form">
+                        <button type="submit"
+                                class="action-btn action-unfriend"
+                                onclick="return confirm('Remove this friend?')">
+                            Remove
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </section>
+
+        <!-- ======================================================
+             2) INCOMING FRIEND REQUESTS
+             ====================================================== -->
+        <section class="friends-panel">
+            <div class="friends-panel-head">
+                <h2 class="section-title">Friend Requests</h2>
+                <span class="friends-count" th:text="${#lists.size(incomingRequests)}">0</span>
+            </div>
+
+            <div th:if="${#lists.isEmpty(incomingRequests)}" class="empty-message">
+                No pending requests.
+            </div>
+
+            <div th:each="req : ${incomingRequests}" class="member-card friend-card">
+                <div class="member-info">
+                    <div class="friend-text">
+                        <a th:href="@{'/profile/' + ${req.otherUserId}}"
+                           class="member-name friend-name-link"
+                           th:text="${usernames[req.otherUserId]}">requester</a>
+                        <span class="friend-sub">wants to be friends</span>
+                    </div>
+                </div>
+                <div class="member-actions">
+                    <form th:action="@{'/friends/requests/' + ${req.requestId} + '/accept'}"
+                          method="post" class="action-form">
+                        <button type="submit" class="action-btn action-accept">Accept</button>
+                    </form>
+                    <form th:action="@{'/friends/requests/' + ${req.requestId} + '/reject'}"
+                          method="post" class="action-form">
+                        <button type="submit" class="action-btn action-reject">Reject</button>
+                    </form>
+                </div>
+            </div>
+        </section>
+
+        <!-- ======================================================
+             3) SUGGESTED FRIENDS (shared-board)
+             ====================================================== -->
+        <section class="friends-panel">
+            <div class="friends-panel-head">
+                <h2 class="section-title">Suggested Friends</h2>
+                <span class="friends-count" th:text="${#lists.size(suggestedFriends)}">0</span>
+            </div>
+            <p class="panel-subtitle">People you share a board with.</p>
+
+            <div th:if="${#lists.isEmpty(suggestedFriends)}" class="empty-message">
+                No suggestions right now. Join more boards to meet people.
+            </div>
+
+            <div th:each="sug : ${suggestedFriends}" class="member-card friend-card">
+                <div class="member-info">
+                    <div class="friend-text">
+                        <a th:href="@{'/profile/' + ${sug.id}}"
+                           class="member-name friend-name-link"
+                           th:text="${usernames[sug.id]}">suggested user</a>
+                        <span class="friend-sub">shares a board with you</span>
+                    </div>
+                </div>
+                <div class="member-actions">
+                    <form th:action="@{'/friends/add/' + ${sug.id}}"
+                          method="post" class="action-form">
+                        <button type="submit" class="action-btn action-add">Add Friend</button>
+                    </form>
+                </div>
+            </div>
+        </section>
+
+        <!-- ======================================================
+             4) PENDING (OUTGOING) REQUESTS — you can CANCEL here
+             ====================================================== -->
+        <section class="friends-panel">
+            <div class="friends-panel-head">
+                <h2 class="section-title">Pending Requests</h2>
+                <span class="friends-count" th:text="${#lists.size(pendingRequests)}">0</span>
+            </div>
+            <p class="panel-subtitle">Requests you've sent that haven't been answered.</p>
+
+            <div th:if="${#lists.isEmpty(pendingRequests)}" class="empty-message">
+                No outgoing requests.
+            </div>
+
+            <div th:each="pend : ${pendingRequests}" class="member-card friend-card">
+                <div class="member-info">
+                    <div class="friend-text">
+                        <a th:href="@{'/profile/' + ${pend.otherUserId}}"
+                           class="member-name friend-name-link"
+                           th:text="${usernames[pend.otherUserId]}">recipient</a>
+                        <span class="friend-sub">request sent</span>
+                    </div>
+                </div>
+                <div class="member-actions">
+                    <form th:action="@{'/friends/requests/' + ${pend.requestId} + '/cancel'}"
+                          method="post" class="action-form">
+                        <button type="submit"
+                                class="action-btn action-cancel"
+                                onclick="return confirm('Cancel this friend request?')">
+                            Cancel
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </section>
+        <!-- 5) Board Invites panel — private-board invitations
+     addressed to this user. Accept = join as MEMBER. -->
+        <section class="friends-panel">
+            <div class="friends-panel-head">
+                <h2 class="section-title">Board Invites</h2>
+                <span class="friends-count" th:text="${#lists.size(boardInvites)}">0</span>
+            </div>
+            <p class="panel-subtitle">Private boards you've been invited to join.</p>
+
+            <div th:if="${#lists.isEmpty(boardInvites)}" class="empty-message">
+                No pending invites.
+            </div>
+
+            <div th:each="inv : ${boardInvites}" class="member-card friend-card">
+                <div class="member-info">
+                    <div class="friend-text">
+                <span class="member-name"
+                      th:text="${inviteBoardNames[inv.boardId] != null
+                                ? inviteBoardNames[inv.boardId]
+                                : 'Board #' + inv.boardId}">Board name</span>
+                        <span class="friend-sub">
+                    invited by
+                    <span th:text="${usernames[inv.inviterUserId]}">username</span>
+                </span>
+                    </div>
+                </div>
+                <div class="member-actions">
+                    <form th:action="@{'/invites/' + ${inv.id} + '/accept'}"
+                          method="post" class="action-form">
+                        <button type="submit" class="action-btn action-accept">Accept</button>
+                    </form>
+                    <form th:action="@{'/invites/' + ${inv.id} + '/decline'}"
+                          method="post" class="action-form">
+                        <button type="submit" class="action-btn action-reject">Decline</button>
+                    </form>
+                </div>
+            </div>
+        </section>
+
+    </div>
+</main>
+
+<script th:src="@{/layout/js/fragments.js}"></script>
+</body>
+</html>

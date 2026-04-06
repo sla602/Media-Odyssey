@@ -1,16 +1,46 @@
+
+.hidden {
+    display: none !important;
+}
+
+/* User info box (let user chooses their username, gender, description of themselves) */
+
 .profile-header {
+    position: relative;
     display: flex;
     flex-direction: row;
+    flex-wrap: wrap;
     align-items: flex-start;
+    gap: 3.5rem;
 
-    gap: 4rem;
+    margin: 100px auto 0 auto;
+    padding: 2.5rem 2.5rem 2.5rem 2rem;
+    max-width: 1100px;
 
-    margin: 100px auto 0 auto; 
-    padding: 2rem;
-    max-width: 1000px; 
+    background:
+            radial-gradient(circle at 0% 0%, rgba(139, 92, 246, 0.12) 0%, transparent 45%),
+            radial-gradient(circle at 100% 100%, rgba(99, 102, 241, 0.08) 0%, transparent 45%),
+            linear-gradient(145deg, rgba(30, 30, 63, 0.45) 0%, rgba(20, 20, 40, 0.55) 100%);
+    border: 1px solid rgba(139, 92, 246, 0.18);
+    border-radius: 20px;
 
-    background: rgba(255, 255, 255, 0.02);
-    border-radius: 16px;
+    box-shadow:
+            0 10px 40px rgba(0, 0, 0, 0.35),
+            inset 0 1px 0 rgba(255, 255, 255, 0.04);
+    overflow: visible;
+}
+
+/* subtle top-border accent line */
+.profile-header::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg,
+    transparent 0%,
+    rgba(139, 92, 246, 0.6) 35%,
+    rgba(99, 102, 241, 0.6) 65%,
+    transparent 100%);
 }
 
 .avatar-container{
@@ -45,7 +75,7 @@
 
 .avatar-selection-box {
     position: absolute;
-    top: 180px; 
+    top: 180px;
     left: 50%;
     transform: translateX(-50%);
 
@@ -118,35 +148,889 @@
     display: none;
 }
 
-/* User info box (let user chooses their username, gender, description of themselves) */ 
+/* User info box (let user chooses their username, gender, description of themselves) */
 
 .user-info-box {
     display: flex;
     flex-direction: column;
-    gap: 1rem;
-
+    gap: 1.1rem;
     flex: 1; /* take remaining space */
-    max-width: 400px;
+    max-width: 480px;
+    padding-right: 1rem;
+}
+
+.info-field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+}
+
+.info-label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #a0a0b0;
+    padding-left: 0.15rem;
+}
+
+.info-label-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    border-radius: 6px;
+
+    background: rgba(139, 92, 246, 0.18);
+    color: #c4b5fd;
+    border: 1px solid rgba(139, 92, 246, 0.3);
+
+    font-size: 0.75rem;
+    font-weight: 700;
+    line-height: 1;
 }
 
 .info-items {
-    padding: 0.6rem 1rem;
-    border-radius: 8px;
-    border: 1px solid rgba(139, 92, 246, 0.3);
+    padding: 0.75rem 1rem;
+    border-radius: 10px;
+    border: 1px solid rgba(139, 92, 246, 0.22);
 
-    background: rgba(255, 255, 255, 0.05);
+    background: rgba(255, 255, 255, 0.04);
     color: #e2e8f0;
 
-    font-family: 'Space Grotesk';
+    font-family: 'Space Grotesk', sans-serif;
     font-size: 0.95rem;
 
     outline: none;
-    transition: all 0.3s ease;
+    transition: all 0.25s ease;
+    width: 100%;
+}
+
+.info-items::placeholder {
+    color: rgba(203, 213, 225, 0.4);
+    font-style: italic;
+}
+
+.info-items:hover:not(:focus):not(.info-items-readonly) {
+    background: rgba(255, 255, 255, 0.06);
+    border-color: rgba(139, 92, 246, 0.4);
 }
 
 .info-items:focus {
+    background: rgba(255, 255, 255, 0.07);
     border-color: rgba(139, 92, 246, 0.7);
-    box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.2);
+    box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.15);
+}
+
+.info-items-textarea {
+    resize: vertical;
+    min-height: 80px;
+    line-height: 1.5;
+    font-family: 'Space Grotesk', sans-serif;
+}
+
+/* Read-only info items (when viewing someone else's profile) */
+.info-items-readonly {
+    background: rgba(255, 255, 255, 0.03);
+    border-style: dashed;
+    color: #cbd5e1;
+    cursor: default;
+}
+
+/* =============================================
+   VIEW / EDIT MODE TOGGLE
+   ============================================= */
+
+.profile-view-mode,
+.profile-edit-mode {
+    display: flex;
+    flex-direction: column;
+    gap: 1.1rem;
+}
+
+.profile-action-row {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+}
+
+.edit-action-row {
+    flex-direction: row;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.btn-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px; height: 20px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.2);
+    font-size: 0.75rem;
+    font-weight: 700;
+    line-height: 1;
+}
+
+/* =============================================
+   EDIT PROFILE BUTTON (on the read-only view)
+   ============================================= */
+
+.edit-profile-btn {
+    align-self: flex-start;
+    padding: 0.75rem 1.3rem;
+    border: 1px solid rgba(139, 92, 246, 0.4);
+    border-radius: 10px;
+
+    background: rgba(139, 92, 246, 0.15);
+    color: #c4b5fd;
+
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 600;
+    letter-spacing: 0.2px;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+
+    cursor: pointer;
+    transition: all 0.25s ease;
+}
+
+.edit-profile-btn:hover {
+    background: rgba(139, 92, 246, 0.28);
+    color: #e0d7ff;
+    border-color: rgba(139, 92, 246, 0.7);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 14px rgba(139, 92, 246, 0.25);
+}
+
+/* =============================================
+   CANCEL EDIT BUTTON
+   ============================================= */
+
+.cancel-edit-btn {
+    padding: 0.85rem 1.2rem;
+    border: 1px solid rgba(148, 163, 184, 0.25);
+    border-radius: 12px;
+
+    background: transparent;
+    color: #cbd5e1;
+
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 600;
+
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.cancel-edit-btn:hover {
+    background: rgba(148, 163, 184, 0.1);
+    color: #e2e8f0;
+    border-color: rgba(148, 163, 184, 0.4);
+}
+
+/* =============================================
+   SAVE PROFILE BUTTON
+   ============================================= */
+
+.save-profile-btn {
+    flex: 1;
+    margin-top: 0.75rem;
+    padding: 0.85rem 1.4rem;
+    border: none;
+    border-radius: 12px;
+
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+    color: #ffffff;
+
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 0.95rem;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+
+    cursor: pointer;
+    transition: all 0.25s ease;
+    box-shadow:
+            0 4px 18px rgba(99, 102, 241, 0.4),
+            inset 0 1px 0 rgba(255, 255, 255, 0.18);
+}
+
+.save-profile-btn:hover {
+    background: linear-gradient(135deg, #818cf8 0%, #a78bfa 100%);
+    transform: translateY(-2px);
+    box-shadow:
+            0 8px 24px rgba(99, 102, 241, 0.5),
+            inset 0 1px 0 rgba(255, 255, 255, 0.22);
+}
+
+.save-profile-btn:active {
+    transform: translateY(0);
+}
+
+/* =============================================
+   ADD FRIEND BUTTON (+ its state variants)
+   ============================================= */
+
+.friend-action-row {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    margin-top: 0.5rem;
+}
+
+.add-friend-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.7rem 1.2rem;
+    border: 1px solid rgba(139, 92, 246, 0.4);
+    border-radius: 10px;
+
+    background: rgba(139, 92, 246, 0.18);
+    color: #c4b5fd;
+
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 0.95rem;
+    font-weight: 600;
+    text-align: center;
+    text-decoration: none;
+
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.add-friend-btn:hover {
+    background: rgba(139, 92, 246, 0.32);
+    color: #e0d7ff;
+    border-color: rgba(139, 92, 246, 0.7);
+    transform: translateY(-1px);
+}
+
+/* State: request already sent */
+.friend-req-sent {
+    background: rgba(148, 163, 184, 0.12);
+    color: #cbd5e1;
+    border-color: rgba(148, 163, 184, 0.3);
+    cursor: default;
+}
+.friend-req-sent:hover {
+    background: rgba(148, 163, 184, 0.12);
+    color: #cbd5e1;
+    border-color: rgba(148, 163, 184, 0.3);
+    transform: none;
+}
+
+/* State: they sent us one */
+.friend-req-received {
+    background: rgba(251, 191, 36, 0.15);
+    color: #fde68a;
+    border-color: rgba(251, 191, 36, 0.35);
+}
+.friend-req-received:hover {
+    background: rgba(251, 191, 36, 0.28);
+    color: #fef3c7;
+    border-color: rgba(251, 191, 36, 0.6);
+}
+
+/* State: already friends */
+.friend-already {
+    background: rgba(52, 211, 153, 0.15);
+    color: #a7f3d0;
+    border-color: rgba(52, 211, 153, 0.35);
+    cursor: default;
+}
+.friend-already:hover {
+    background: rgba(52, 211, 153, 0.15);
+    color: #a7f3d0;
+    border-color: rgba(52, 211, 153, 0.35);
+    transform: none;
+}
+
+.cancel-hint {
+    font-size: 0.75rem;
+    color: #94a3b8;
+    text-decoration: none;
+}
+.cancel-hint:hover {
+    color: #c4b5fd;
+    text-decoration: underline;
+}
+
+/* =============================================
+   FLASH MESSAGES (inside .profile-header)
+   Takes up a full row above the avatar + info box
+   by claiming 100% flex-basis.
+   ============================================= */
+
+.profile-header > .flash-message {
+    flex: 1 0 100%;
+    margin: 0 0 0.5rem 0;
+    padding: 0.85rem 1.2rem;
+    border-radius: 12px;
+    font-size: 0.92rem;
+    font-weight: 500;
+    font-family: 'Space Grotesk', sans-serif;
+    text-align: center;
+    animation: flashSlideIn 0.3s ease;
+}
+
+.profile-header > .flash-success {
+    color: #a7f3d0;
+    background: linear-gradient(145deg,
+    rgba(16, 185, 129, 0.15) 0%,
+    rgba(5, 150, 105, 0.1) 100%);
+    border: 1px solid rgba(16, 185, 129, 0.4);
+    box-shadow: 0 4px 16px -6px rgba(16, 185, 129, 0.25);
+}
+
+.profile-header > .flash-error {
+    color: #fca5a5;
+    background: linear-gradient(145deg,
+    rgba(239, 68, 68, 0.15) 0%,
+    rgba(220, 38, 38, 0.1) 100%);
+    border: 1px solid rgba(239, 68, 68, 0.4);
+    box-shadow: 0 4px 16px -6px rgba(239, 68, 68, 0.25);
+}
+
+@keyframes flashSlideIn {
+    from { opacity: 0; transform: translateY(-8px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+/* =============================================
+   PROFILE BOARDS SECTIONS (created / joined)
+   ============================================= */
+
+.profile-middle {
+    max-width: 1100px;
+    margin: 2rem auto 0 auto;
+    padding: 0 0.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+}
+
+.profile-section {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.profile-section-head {
+    display: flex;
+    align-items: baseline;
+    gap: 0.85rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid rgba(139, 92, 246, 0.15);
+}
+
+.profile-section-title {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #ffffff;
+    margin: 0;
+    letter-spacing: 0.2px;
+}
+
+.profile-section-sub {
+    font-size: 0.8rem;
+    color: #94a3b8;
+    font-style: italic;
+}
+
+.profile-boards-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 1rem;
+}
+
+.profile-board-placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+
+    padding: 2rem 1rem;
+    min-height: 140px;
+
+    background:
+            linear-gradient(145deg, rgba(30, 30, 63, 0.35) 0%, rgba(45, 45, 90, 0.25) 100%);
+    border: 1px dashed rgba(139, 92, 246, 0.3);
+    border-radius: 14px;
+
+    transition: all 0.25s ease;
+}
+
+.profile-board-placeholder:hover {
+    border-color: rgba(139, 92, 246, 0.55);
+    background:
+            linear-gradient(145deg, rgba(40, 40, 80, 0.45) 0%, rgba(55, 55, 110, 0.35) 100%);
+    transform: translateY(-2px);
+}
+
+.placeholder-glyph {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+
+    background: rgba(139, 92, 246, 0.15);
+    color: #c4b5fd;
+    border: 1px solid rgba(139, 92, 246, 0.3);
+
+    font-size: 1.4rem;
+    font-weight: 300;
+}
+
+.placeholder-text {
+    font-size: 0.85rem;
+    color: #a0a0b0;
+    text-align: center;
+    margin: 0;
+    line-height: 1.4;
+}
+
+/* =============================================
+   RECENT ACTIVITY SECTION
+   Shows a user's most recent posts and comments,
+   each linked back to the board it belongs to.
+   ============================================= */
+
+.recent-activity-section {
+    /* uses .profile-section base layout */
+}
+
+.activity-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.85rem;
+}
+
+.activity-item {
+    list-style: none;
+}
+
+/* The clickable card itself */
+.activity-item-link {
+    display: flex;
+    gap: 1rem;
+    align-items: flex-start;
+
+    padding: 1rem 1.1rem;
+    border-radius: 14px;
+
+    background: linear-gradient(145deg,
+    rgba(30, 30, 63, 0.45) 0%,
+    rgba(45, 45, 90, 0.32) 100%);
+    border: 1px solid rgba(139, 92, 246, 0.18);
+
+    text-decoration: none;
+    color: inherit;
+    cursor: pointer;
+
+    transition: transform 0.2s ease, border-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+}
+
+.activity-item-link:hover {
+    transform: translateY(-2px);
+    border-color: rgba(139, 92, 246, 0.4);
+    background: linear-gradient(145deg,
+    rgba(40, 40, 80, 0.55) 0%,
+    rgba(55, 55, 110, 0.4) 100%);
+    box-shadow: 0 6px 20px -8px rgba(139, 92, 246, 0.35);
+}
+
+.activity-item-link:focus-visible {
+    outline: 2px solid rgba(139, 92, 246, 0.7);
+    outline-offset: 2px;
+}
+
+.activity-item-link:hover .activity-headline {
+    color: #e0d4ff;
+}
+
+.activity-item-post .activity-item-link {
+    border-left: 3px solid rgba(139, 92, 246, 0.75);
+}
+
+.activity-item-comment .activity-item-link {
+    border-left: 3px solid rgba(96, 165, 250, 0.75);
+}
+
+/* Small pill showing POST or COMMENT */
+.activity-type-badge {
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+
+    padding: 0.3rem 0.65rem;
+    border-radius: 999px;
+
+    background: rgba(139, 92, 246, 0.18);
+    color: #c4b5fd;
+    border: 1px solid rgba(139, 92, 246, 0.35);
+    min-width: 68px;
+}
+
+.activity-body {
+    flex: 1;
+    min-width: 0; /* allow text truncation inside flex */
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+}
+
+.activity-item-comment .activity-type-badge {
+    background: rgba(96, 165, 250, 0.15);
+    color: #93c5fd;
+    border-color: rgba(96, 165, 250, 0.35);
+}
+
+
+.activity-headline {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 0.98rem;
+    font-weight: 600;
+    color: #ffffff;
+    line-height: 1.35;
+
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+}
+
+.activity-headline-comment {
+    color: #e2e8f0;
+    font-weight: 500;
+}
+
+.activity-headline-prefix {
+    color: #94a3b8;
+    font-weight: 400;
+    font-style: italic;
+    margin-right: 0.3rem;
+}
+
+.activity-preview {
+    margin: 0;
+    font-size: 0.86rem;
+    color: #a5b4c8;
+    line-height: 1.5;
+
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+}
+
+.activity-meta {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+
+    margin-top: 0.25rem;
+    font-size: 0.78rem;
+    color: #8b93a7;
+
+    border: none;
+    background: none;
+}
+
+.activity-meta-label {
+    font-style: italic;
+    border: none;
+    background: none;
+}
+
+.activity-meta-dot {
+    color: #5b6478;
+    border: none;
+    background: none;
+}
+.activity-time {
+    color: #8b93a7;
+    border: none;
+    background: none;
+}
+
+.activity-board-link {
+    display: inline-block;
+    font-weight: 600;
+    color: #c4b5fd;
+    text-decoration: none;
+    padding: 0.12rem 0.5rem;
+    border-radius: 6px;
+    background: rgba(139, 92, 246, 0.1);
+    border: 1px solid rgba(139, 92, 246, 0.25);
+    transition: all 0.18s ease;
+}
+
+.activity-board-link:hover {
+    color: #ffffff;
+    background: rgba(139, 92, 246, 0.25);
+    border-color: rgba(139, 92, 246, 0.5);
+}
+
+
+/* Empty state */
+.activity-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.6rem;
+
+    padding: 2rem 1rem;
+    border-radius: 14px;
+
+    background: linear-gradient(145deg,
+    rgba(30, 30, 63, 0.35) 0%,
+    rgba(45, 45, 90, 0.25) 100%);
+    border: 1px dashed rgba(139, 92, 246, 0.3);
+}
+
+.activity-empty-glyph {
+    font-size: 1.6rem;
+    opacity: 0.8;
+}
+
+.activity-empty-text {
+    margin: 0;
+    font-size: 0.9rem;
+    color: #a0a0b0;
+}
+
+/* Banned activity item — visually dimmed */
+.activity-item-banned {
+    cursor: not-allowed;
+    opacity: 0.75;
+}
+
+.activity-item-banned:hover {
+    transform: none;
+    border-color: rgba(239, 68, 68, 0.45);
+    background: linear-gradient(145deg,
+    rgba(60, 20, 30, 0.4) 0%,
+    rgba(45, 20, 35, 0.3) 100%);
+    box-shadow: 0 6px 20px -8px rgba(239, 68, 68, 0.35);
+}
+
+.activity-banned-tag {
+    margin-left: auto;
+    padding: 0.15rem 0.55rem;
+    border-radius: 999px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: #fca5a5;
+    background: rgba(239, 68, 68, 0.15);
+    border: 1px solid rgba(239, 68, 68, 0.4);
+    letter-spacing: 0.04em;
+}
+
+/* =============================================
+   BANNED POPUP
+   ============================================= */
+
+.banned-popup-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(5, 5, 15, 0.75);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    animation: fadeIn 0.2s ease;
+}
+
+.banned-popup-overlay.hidden {
+    display: none;
+}
+
+.banned-popup {
+    max-width: 420px;
+    width: calc(100% - 2rem);
+    padding: 2rem 1.75rem 1.5rem;
+    border-radius: 18px;
+    text-align: center;
+
+    background: linear-gradient(145deg,
+    rgba(35, 20, 45, 0.98) 0%,
+    rgba(25, 15, 40, 0.98) 100%);
+    border: 1px solid rgba(239, 68, 68, 0.35);
+    box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.7),
+    0 0 40px -10px rgba(239, 68, 68, 0.3);
+
+    animation: popupRise 0.25s ease;
+}
+
+.banned-popup-icon {
+    font-size: 2.75rem;
+    margin-bottom: 0.5rem;
+}
+
+.banned-popup-title {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 1.35rem;
+    font-weight: 700;
+    color: #ffffff;
+    margin: 0 0 0.75rem 0;
+}
+
+.banned-popup-text {
+    font-size: 0.92rem;
+    color: #c4b5cf;
+    line-height: 1.55;
+    margin: 0 0 1.5rem 0;
+}
+
+.banned-popup-text strong {
+    color: #fca5a5;
+    font-weight: 600;
+}
+
+.banned-popup-btn {
+    padding: 0.7rem 2.25rem;
+    border-radius: 10px;
+    border: 1px solid rgba(139, 92, 246, 0.5);
+    background: rgba(139, 92, 246, 0.2);
+    color: #ffffff;
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 0.92rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.18s ease;
+}
+
+.banned-popup-btn:hover {
+    background: rgba(139, 92, 246, 0.35);
+    border-color: rgba(139, 92, 246, 0.75);
+    transform: translateY(-1px);
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes popupRise {
+    from { opacity: 0; transform: translateY(20px) scale(0.96); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* =============================================
+   FORM VALIDATION — INPUT ERROR STATE
+   Red border + glow on inputs that fail client-side
+   validation (e.g. trying to clear an existing username).
+   ============================================= */
+
+.info-items.input-error {
+    border-color: rgba(239, 68, 68, 0.75) !important;
+    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.15);
+    background: rgba(239, 68, 68, 0.05);
+}
+
+.info-items.input-error:focus {
+    border-color: rgba(239, 68, 68, 0.9) !important;
+    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.25);
+    outline: none;
+}
+
+/* Inline error message shown below the input */
+.field-error {
+    margin-top: 0.4rem;
+    font-size: 0.8rem;
+    color: #fca5a5;
+    font-style: italic;
+    padding-left: 0.2rem;
+    line-height: 1.4;
+}
+
+.field-error.hidden {
+    display: none;
+}
+
+/* =============================================
+   FLASH MESSAGES
+   Success / error banners at the top of main content.
+   (Also used on friends.html — shared via userProfile.css
+   since friends.html already imports it.)
+   ============================================= */
+
+.flash-message {
+    max-width: 900px;
+    margin: 1rem auto;
+    padding: 0.85rem 1.2rem;
+    border-radius: 10px;
+    font-size: 0.92rem;
+    font-weight: 500;
+    font-family: 'Space Grotesk', sans-serif;
+    text-align: center;
+    animation: flashSlideIn 0.3s ease;
+}
+
+.flash-success {
+    color: #a7f3d0;
+    background: linear-gradient(145deg,
+    rgba(16, 185, 129, 0.15) 0%,
+    rgba(5, 150, 105, 0.1) 100%);
+    border: 1px solid rgba(16, 185, 129, 0.4);
+    box-shadow: 0 4px 16px -6px rgba(16, 185, 129, 0.25);
+}
+
+.flash-error {
+    color: #fca5a5;
+    background: linear-gradient(145deg,
+    rgba(239, 68, 68, 0.15) 0%,
+    rgba(220, 38, 38, 0.1) 100%);
+    border: 1px solid rgba(239, 68, 68, 0.4);
+    box-shadow: 0 4px 16px -6px rgba(239, 68, 68, 0.25);
+}
+
+
+@keyframes flashSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-8px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 /*
@@ -165,6 +1049,11 @@
     .user-info-box {
         width: 100%;
         max-width: 500px;
+    }
+
+    .profile-middle {
+        margin: 1.5rem auto 0 auto;
+        padding: 0 1rem;
     }
 }
 
@@ -187,7 +1076,7 @@
 
     .avatar-selection-box {
         width: 216px;
-        top: 140px; 
+        top: 140px;
         padding: 0.8rem;
     }
 
@@ -209,4 +1098,28 @@
         font-size: 0.9rem;
         padding: 0.5rem 0.8rem;
     }
+
+    .save-profile-btn,
+    .add-friend-btn {
+        font-size: 0.9rem;
+        padding: 0.6rem 1rem;
+    }
+
+    .flash-message {
+        margin-top: 80px;
+    }
+
+    .profile-middle {
+        padding: 0 0.5rem;
+        gap: 1.5rem;
+    }
+
+    .profile-section-title {
+        font-size: 1.1rem;
+    }
+
+    .profile-boards-grid {
+        grid-template-columns: 1fr;
+    }
 }
+

@@ -38,8 +38,12 @@ public class homeController {
 
         User user = (User) authentication.getPrincipal();
 
-        List<Boards> boards = boardsService.findBoardsByUser(user);
+        //shows only created boards by the user
+//       List<Boards> boards = boardsService.findBoardsByUser(user);
 
+        //all roltype joined boards
+        List<Boards> boards = boardsService.getJoinedBoards(user.getId());
+        
         model.addAttribute("boards", boards);
 
         return "boardsLayout/homePage";

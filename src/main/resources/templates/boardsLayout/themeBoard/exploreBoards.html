@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Explore Boards</title>
+    <link rel="stylesheet" th:href="@{/layout/css/homePage.css}">
+    <link rel="stylesheet" th:href="@{/layout/css/fragments.css}">
+    <link rel="stylesheet" th:href="@{/layout/css/exploreBoards.css}">
+</head>
+<body>
+
+<div th:replace="boardsLayout/fragments/header :: header"></div>
+<div th:replace="boardsLayout/fragments/sidebar :: sideBar"></div>
+
+<div class="explore-container">
+
+    <div class="explore-header">
+        <h1 class="explore-title">Explore Boards</h1>
+        <p class="explore-subtitle">Discover new communities and join the conversation</p>
+    </div>
+
+    <!-- Search -->
+    <div class="explore-search">
+        <form th:action="@{/explore}" method="get" class="explore-search-form">
+            <input type="text" name="search" class="explore-search-input"
+                   placeholder="Search boards..." th:value="${search}"/>
+            <button type="submit" class="explore-search-btn">Search</button>
+        </form>
+    </div>
+
+    <!-- Board Grid -->
+    <div class="explore-grid">
+
+        <div th:if="${#lists.isEmpty(boards)}">
+            <p class="explore-empty">No boards found.</p>
+        </div>
+
+        <a th:each="board : ${boards}"
+           th:href="@{/boards/display/{id}(id=${board.id})}"
+           class="explore-card">
+
+            <div class="explore-card-body">
+                <h3 class="explore-card-name" th:text="${board.board_name}"></h3>
+                <p class="explore-card-desc" th:text="${board.board_description} ?: 'No description'"></p>
+            </div>
+
+            <div class="explore-card-footer">
+                <span class="explore-card-type" th:text="${board.board_type}"></span>
+            </div>
+        </a>
+
+    </div>
+</div>
+
+<script th:src="@{/layout/js/fragments.js}"></script>
+
+</body>
+</html>
