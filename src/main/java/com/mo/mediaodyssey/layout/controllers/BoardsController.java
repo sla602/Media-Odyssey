@@ -12,6 +12,8 @@ import com.mo.mediaodyssey.socialFeature.repositories.CommentRepository;
 import com.mo.mediaodyssey.socialFeature.repositories.PostRepository;
 import com.mo.mediaodyssey.socialFeature.repositories.ReportRepository;
 import com.mo.mediaodyssey.socialFeature.services.*;
+import com.mo.mediaodyssey.layout.services.MediaServices.MusicService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 
 import java.util.*;
@@ -21,11 +23,15 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
 import com.mo.mediaodyssey.shared.model.User;
+import com.mo.mediaodyssey.layout.DTO.BoardMediaDTO;
+import com.mo.mediaodyssey.layout.DTO.GamesRAWG.GameResponse;
 import com.mo.mediaodyssey.layout.DTO.MoviesTMDB.MovieResponse;
 import com.mo.mediaodyssey.layout.models.BoardMedia;
 import com.mo.mediaodyssey.layout.models.Boards;
+import com.mo.mediaodyssey.layout.models.MediaModels.Music;
 import com.mo.mediaodyssey.layout.repositories.BoardMediaRepository;
 import com.mo.mediaodyssey.layout.services.BoardsService;
+import com.mo.mediaodyssey.layout.services.MediaServices.GameService;
 import com.mo.mediaodyssey.layout.services.MediaServices.MovieService;
 import com.mo.mediaodyssey.shared.services.CurrentAccountService;
 
@@ -36,42 +42,53 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 public class BoardsController {
     /* boards controller is a mapping controller for board related htmls */
 
-    private final CurrentAccountService currentAccountService;
-    private final PostService postService;
-    private final BoardRoleRepository boardRoleRepository;
-    private final CommentService commentService;
-    private final ReportRepository reportRepository;
-    private final ModerationService moderationService;
-    private final PostRepository postRepository;
-    private final CommentRepository commentRepository;
-    private final ProfileRepository profileRepository;
-    private final ProfileService profileService;
-    private final BoardInviteService boardInviteService;
-    private final BoardsService boardsService;
-    private final BoardMediaRepository boardMediaRepository;
-    private final MovieService movieService;
+    @Autowired
+    private CurrentAccountService currentAccountService;
 
-    public BoardsController(BoardsService boardsService, BoardMediaRepository boardMediaRepository,
-            MovieService movieService, PostService postService, BoardRoleRepository boardRoleRepository,
-            CommentService commentService, ReportRepository reportRepository, ModerationService moderationService,
-            PostRepository postRepository, CommentRepository commentRepository,
-            ProfileRepository profileRepository, ProfileService profileService, BoardInviteService boardInviteService,
-            CurrentAccountService currentAccountService) {
-        this.boardsService = boardsService;
-        this.boardMediaRepository = boardMediaRepository;
-        this.movieService = movieService;
-        this.postService = postService;
-        this.boardRoleRepository = boardRoleRepository;
-        this.commentService = commentService;
-        this.reportRepository = reportRepository;
-        this.moderationService = moderationService;
-        this.postRepository = postRepository;
-        this.commentRepository = commentRepository;
-        this.profileRepository = profileRepository;
-        this.profileService = profileService;
-        this.boardInviteService = boardInviteService;
-        this.currentAccountService = currentAccountService;
-    }
+    @Autowired
+    private PostService postService;
+
+    @Autowired
+    private BoardRoleRepository boardRoleRepository;
+
+    @Autowired
+    private CommentService commentService;
+
+    @Autowired
+    private ReportRepository reportRepository;
+
+    @Autowired
+    private ModerationService moderationService;
+
+    @Autowired
+    private PostRepository postRepository;
+
+    @Autowired
+    private CommentRepository commentRepository;
+
+    @Autowired
+    private ProfileRepository profileRepository;
+
+    @Autowired
+    private ProfileService profileService;
+
+    @Autowired
+    private BoardInviteService boardInviteService;
+
+    @Autowired
+    private BoardsService boardsService;
+
+    @Autowired
+    private BoardMediaRepository boardMediaRepository;
+
+    @Autowired
+    private MovieService movieService;
+
+    @Autowired
+    private GameService gameService;
+
+    @Autowired
+    private MusicService musicService;
 
     // ─── Helper ──────────────────────────────────────────────────────
 
@@ -398,12 +415,96 @@ public class BoardsController {
      */
     @GetMapping("/display/{boardId}/movies")
     @ResponseBody
-    public List<MovieResponse> getBoardMovies(@PathVariable Long boardId) {
+    public List<BoardMediaDTO> getBoardMovies(@PathVariable Long boardId) {
 
-        List<BoardMedia> boardMediaList = boardMediaRepository.findByBoardId(boardId);
-        List<Long> mediaApiIds = boardMediaList.stream().map(BoardMedia::getMediaApiId).toList();
+        List<BoardMedia> list = boardMediaRepository.findByBoardId(boardId);
+        List<BoardMediaDTO> result = new ArrayList<>();
 
-        return movieService.getMoviesByIds(mediaApiIds);
+        for (BoardMedia m : list) {
+            if (!"movie".equals(m.getMediaType()))
+                continue;
+
+            MovieResponse movie = movieService.getMovieById(m.getMediaApiId());
+            if (movie == null)
+                continue;
+
+            BoardMediaDTO dto = new BoardMediaDTO();
+            dto.setId(m.getId());
+            dto.setMediaApiId(m.getMediaApiId());
+            dto.setMediaType("movie");
+
+            dto.setTitle(movie.getTitle());
+            dto.setPoster_path(movie.getPoster_path());
+
+            result.add(dto);
+        }
+
+        return result;
     }
 
+    // For games
+    @GetMapping("/display/{boardId}/games")
+    @ResponseBody
+    public List<BoardMediaDTO> getBoardGames(@PathVariable Long boardId) {
+
+        List<BoardMedia> list = boardMediaRepository.findByBoardId(boardId);
+        List<BoardMediaDTO> result = new ArrayList<>();
+
+        for (BoardMedia m : list) {
+            if (!"game".equals(m.getMediaType()))
+                continue;
+
+            GameResponse game = gameService.getGameById(m.getMediaApiId());
+            if (game == null)
+                continue; // ✅ safety
+
+            BoardMediaDTO dto = new BoardMediaDTO();
+            dto.setId(m.getId());
+            dto.setMediaApiId(m.getMediaApiId());
+            dto.setMediaType("game");
+
+            dto.setTitle(game.getTitle());
+
+            dto.setPoster_path(game.getPoster_path());
+
+            result.add(dto);
+        }
+
+        return result;
+    }
+
+    // For Music
+    @GetMapping("/display/{boardId}/music")
+    @ResponseBody
+    public List<BoardMediaDTO> getBoardMusic(@PathVariable Long boardId) {
+
+        List<BoardMedia> list = boardMediaRepository.findByBoardId(boardId);
+        List<BoardMediaDTO> result = new ArrayList<>();
+
+        for (BoardMedia m : list) {
+            if (!"music".equals(m.getMediaType()))
+                continue;
+
+            BoardMediaDTO dto = new BoardMediaDTO();
+            dto.setId(m.getId());
+            dto.setMediaType("music");
+
+            dto.setTitle(m.getTrack());
+            dto.setArtist(m.getArtist());
+
+            // convert from Last.fm API response
+            Music musicInfo = musicService.convertToMusic(m.getArtist(), m.getTrack());
+            String poster = null;
+
+            if (musicInfo != null && musicInfo.getPoster_path() != null) {
+                poster = musicInfo.getPoster_path();
+            }
+
+            dto.setPoster_path(poster != null ? poster : "Could not get image of this song :(");
+            System.out.println("Music DTO poster: " + dto.getPoster_path());
+
+            result.add(dto);
+        }
+        return result;
+    }
 }

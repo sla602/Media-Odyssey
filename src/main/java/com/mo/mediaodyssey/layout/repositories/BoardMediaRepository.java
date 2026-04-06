@@ -8,10 +8,15 @@ import org.springframework.stereotype.Repository;
 import com.mo.mediaodyssey.layout.models.BoardMedia;
 
 @Repository
-public interface BoardMediaRepository extends JpaRepository<BoardMedia, Long>{
+public interface BoardMediaRepository extends JpaRepository<BoardMedia, Long> {
 
-    List<BoardMedia> findByBoardId (Long id);
+    List<BoardMedia> findByBoardId(Long boardId);
 
-    boolean existsByBoardIdAndMediaApiId (Long board_id, Long mediaApiId);
-    
+    // movie & game
+    boolean existsByBoardIdAndMediaTypeAndMediaApiId(Long boardId, String mediaType, Long mediaApiId);
+
+    // music
+    boolean existsByBoardIdAndMediaTypeAndArtistAndTrack(Long boardId, String mediaType, String artist, String track);
+
+    boolean existsByBoardIdAndMediaApiId(Long boardId, Long mediaApiId);
 }

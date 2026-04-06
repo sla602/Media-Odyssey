@@ -64,7 +64,12 @@ function renderSearchCards(items) {
                 : `<div class="rec-img rec-img-placeholder">No Image</div>`;
 
         const mediaType   = item.mediaType.toLowerCase();
-        const destination = `/mediaView/${mediaType}/${item.mediaApiId}`;
+        let destination; 
+        if (item.mediaType === 'SONG') {
+          destination = `/mediaView/song/${encodeURIComponent(item.artist)}/${encodeURIComponent(item.title)}`; 
+        } else { 
+          destination = `/mediaView/${mediaType}/${item.mediaApiId}`;
+        }
         card.href = "javascript:void(0)";
         card.addEventListener("click", async (e) => {
             if (e.target.closest(".rec-btn")) return;

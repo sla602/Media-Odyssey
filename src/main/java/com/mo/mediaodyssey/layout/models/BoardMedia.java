@@ -1,5 +1,6 @@
 package com.mo.mediaodyssey.layout.models;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -18,25 +19,28 @@ public class BoardMedia {
     @JoinColumn(name="board_id", nullable = false) 
     private Boards board; 
 
-    // Store the Media in Boards Model: (Only movie media is available to store for now...)
+    // Store the Media in Boards Model:
     private Long mediaApiId;
-    private String media_type; 
+    @Column(name="media_type")
+    private String mediaType;
+    private String artist; 
+    private String track; 
+
     private String media_title; 
     private String media_poster_path; 
-    private String media_genres;
 
     public BoardMedia (){}
-
-    public BoardMedia(Long id, Boards board, Long mediaApiId, String media_type, String media_title, String media_poster_path, String media_genres){
-        this.id = id; 
-        this.board = board; 
-        this.mediaApiId = mediaApiId; 
-        this.media_type = media_type; 
-        this.media_title = media_title; 
-        this.media_poster_path = media_poster_path; 
-        this.media_genres = media_genres;
+    public BoardMedia(Long id, Boards board, Long mediaApiId, String mediaType, String artist, String track,
+            String media_title, String media_poster_path) {
+        this.id = id;
+        this.board = board;
+        this.mediaApiId = mediaApiId;
+        this.mediaType = mediaType;
+        this.artist = artist;
+        this.track = track;
+        this.media_title = media_title;
+        this.media_poster_path = media_poster_path;
     }
-
     public Long getId() {
         return id;
     }
@@ -60,15 +64,6 @@ public class BoardMedia {
     public void setMediaApiId(Long mediaApiId) {
         this.mediaApiId = mediaApiId;
     }
-
-    public String getMedia_type() {
-        return media_type;
-    }
-
-    public void setMedia_type(String media_type) {
-        this.media_type = media_type;
-    }
-
     public String getMedia_title() {
         return media_title;
     }
@@ -85,12 +80,28 @@ public class BoardMedia {
         this.media_poster_path = media_poster_path;
     }
 
-    public String getMedia_genres() {
-        return media_genres;
+    public String getArtist() {
+        return artist;
     }
 
-    public void setMedia_genres(String media_genres) {
-        this.media_genres = media_genres;
+    public void setArtist(String artist) {
+        this.artist = artist;
+    }
+
+    public String getTrack() {
+        return track;
+    }
+
+    public void setTrack(String track) {
+        this.track = track;
+    }
+
+    public String getMediaType() {
+        return mediaType;
+    }
+
+    public void setMediaType(String mediaType) {
+        this.mediaType = mediaType;
     } 
 
     

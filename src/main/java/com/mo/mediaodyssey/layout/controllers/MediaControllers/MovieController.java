@@ -2,6 +2,7 @@ package com.mo.mediaodyssey.layout.controllers.MediaControllers;
 
 import java.util.List;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -19,19 +20,17 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 @Controller
-@RequestMapping("/mediaView")
+@RequestMapping("/mediaView/movie")
 public class MovieController {
 
-    private final MovieService movieService;
-    private final BoardsService boardsService;
-    private final CurrentAccountService currentAccountService;
+    @Autowired
+    private MovieService movieService;
 
-    public MovieController(MovieService movieService, BoardsService boardsService,
-            CurrentAccountService currentAccountService) {
-        this.movieService = movieService;
-        this.boardsService = boardsService;
-        this.currentAccountService = currentAccountService;
-    }
+    @Autowired
+    private BoardsService boardsService;
+
+    @Autowired
+    private CurrentAccountService currentAccountService;
 
     /*
      * *** This function will fetch the movie's id from homePage.js (mediaApiId)
@@ -43,17 +42,17 @@ public class MovieController {
      * ** This way, their boards will be displayed in the drop down box in the page.
      * ** => Allow users to add media into their created theme-boards.
      */
-    @GetMapping("/movie/{id}")
+    @GetMapping("/{id}")
     public String getMovie(@PathVariable Long id,
             Model model, RedirectAttributes redirectAttributes, Authentication authentication) {
 
         try {
             // Get the movie (1 object)
-            MovieResponse movie = movieService.getMovieById(id);
+            MovieResponse movie = movieService.getMovieWithProviders(id);
 
             // Identify the User in order to get all their boards
             User user = currentAccountService.getCurrentAccount(authentication);
-            // Use user to find all the boards that htis user created
+            // Use user to find all the boards that this user created
             List<Boards> boards = boardsService.findBoardsByUser(user);
 
             model.addAttribute("movie", movie);
@@ -62,22 +61,11 @@ public class MovieController {
             return "boardsLayout/mediaDisplay/movieDisplay";
 
         } catch (Exception e) {
+            e.printStackTrace();
             redirectAttributes.addFlashAttribute("errorMessage",
                     "Unable to load this movie. Please try again later.");
             return "redirect:/";
         }
-    }
-
-    @GetMapping("/game/{id}")
-    public String navToGame(@PathVariable Long id, RedirectAttributes redirectAttributes) {
-        redirectAttributes.addFlashAttribute("errorMessage", "Coming soon :)");
-        return "redirect:/";
-    }
-
-    @GetMapping("/music/{id}")
-    public String navToMusic(@PathVariable Long id, RedirectAttributes redirectAttributes) {
-        redirectAttributes.addFlashAttribute("errorMessage", "Coming soon :)");
-        return "redirect:/";
     }
 
 }

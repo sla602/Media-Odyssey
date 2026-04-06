@@ -1,12 +1,12 @@
 package com.mo.mediaodyssey.layout.DTO.MoviesTMDB;
 
-public class Genres {
+public class TMDBGenres {
     private Long id; 
     private String name; 
 
-    public Genres() {}
+    public TMDBGenres() {}
     
-    public Genres (Long id, String name) {
+    public TMDBGenres (Long id, String name) {
         this.id = id; 
         this.name = name; 
     }
