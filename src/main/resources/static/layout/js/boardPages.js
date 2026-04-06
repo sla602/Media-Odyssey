@@ -87,7 +87,7 @@ document.addEventListener('DOMContentLoaded', function() {
         } else if (type === 'game') {
             link = `/mediaView/game/${item.mediaApiId}`;
         } else if (type === 'music') {
-            link = `/mediaView/music?artist=${encodeURIComponent(item.artist)}&track=${encodeURIComponent(item.title)}`;
+            link = `/mediaView/song/${encodeURIComponent(item.artist)}/${encodeURIComponent(item.title)}`;
         }
 
         card.innerHTML = `
