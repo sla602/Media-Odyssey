@@ -90,7 +90,7 @@ public class FriendshipController {
      *   3) Suggested friends (people in the same boards as the user)
      *   4) Pending (outgoing) requests — user can cancel these
      */
-    @GetMapping("/friends")
+    @GetMapping("/friendsTab")
     public String viewFriendsPage(@RequestParam(value = "search", required = false) String search, Authentication authentication, Model model, RedirectAttributes redirectAttributes) {
         User user = (User) authentication.getPrincipal();
         Long userId = user.getId();
