@@ -75,7 +75,7 @@ class MediaRankingServiceTest {
     // Empty DB → should return an empty list without errors
     @Test
     void getTop10_noInteractions_returnsEmptyList() {
-        when(userInteractionRepository.findTop10ByScore())
+        when(userInteractionRepository.findTop10ByScoreWithCounts())
                 .thenReturn(Collections.emptyList());
 
         List<RankedMediaResponse> result = rankingService.getTop10();
@@ -84,28 +84,29 @@ class MediaRankingServiceTest {
         assertThat(result).isEmpty();
     }
 
-    // getTop10() must call findTop10ByScore(), not the category-filtered version
+    // getTop10() must call findTop10ByScoreWithCounts(), not the category-filtered version
     @Test
     void getTop10_callsCorrectRepositoryMethod() {
-        when(userInteractionRepository.findTop10ByScore())
+        when(userInteractionRepository.findTop10ByScoreWithCounts())
                 .thenReturn(Collections.emptyList());
 
         rankingService.getTop10();
 
-        verify(userInteractionRepository, times(1)).findTop10ByScore();
-        verify(userInteractionRepository, never()).findTop10ByScoreAndMediaType(any());
+        verify(userInteractionRepository, times(1)).findTop10ByScoreWithCounts();
+        verify(userInteractionRepository, never()).findTop10ByScoreWithCountsAndMediaType(any());
     }
 
     // Result count must equal the number of rows returned by the repository —
     // fails if enrichScoreRows silently drops or duplicates entries
     @Test
     void getTop10_resultSizeMatchesRepositoryRowCount() {
+        // Row format: [mediaApiId, mediaType, totalScore, likeCount, viewCount]
         List<Object[]> fakeRows = Arrays.asList(
-                new Object[]{"11", "UNKNOWN", 130L},
-                new Object[]{"22", "UNKNOWN",  95L},
-                new Object[]{"33", "UNKNOWN",  50L}
+                new Object[]{"11", "UNKNOWN", 130L, 5L, 80L},
+                new Object[]{"22", "UNKNOWN",  95L, 3L, 65L},
+                new Object[]{"33", "UNKNOWN",  50L, 1L, 40L}
         );
-        when(userInteractionRepository.findTop10ByScore()).thenReturn(fakeRows);
+        when(userInteractionRepository.findTop10ByScoreWithCounts()).thenReturn(fakeRows);
 
         List<RankedMediaResponse> result = rankingService.getTop10();
 
@@ -118,31 +119,31 @@ class MediaRankingServiceTest {
     // "movies" input should be normalised to "MOVIE" before hitting the repository
     @Test
     void getTop10ByMediaType_movie_callsRepositoryWithNormalizedType() {
-        when(userInteractionRepository.findTop10ByScoreAndMediaType("MOVIE"))
+        when(userInteractionRepository.findTop10ByScoreWithCountsAndMediaType("MOVIE"))
                 .thenReturn(Collections.emptyList());
 
         rankingService.getTop10ByMediaType("movies");
 
         verify(userInteractionRepository, times(1))
-                .findTop10ByScoreAndMediaType("MOVIE");
+                .findTop10ByScoreWithCountsAndMediaType("MOVIE");
     }
 
     // "MUSIC" should be normalised to "SONG" (the DB canonical value)
     @Test
     void getTop10ByMediaType_music_normalizesToSong() {
-        when(userInteractionRepository.findTop10ByScoreAndMediaType("SONG"))
+        when(userInteractionRepository.findTop10ByScoreWithCountsAndMediaType("SONG"))
                 .thenReturn(Collections.emptyList());
 
         rankingService.getTop10ByMediaType("MUSIC");
 
         verify(userInteractionRepository, times(1))
-                .findTop10ByScoreAndMediaType("SONG");
+                .findTop10ByScoreWithCountsAndMediaType("SONG");
     }
 
     // Unknown category → repository returns nothing → result should be empty
     @Test
     void getTop10ByMediaType_unknownCategory_returnsEmptyList() {
-        when(userInteractionRepository.findTop10ByScoreAndMediaType("PODCAST"))
+        when(userInteractionRepository.findTop10ByScoreWithCountsAndMediaType("PODCAST"))
                 .thenReturn(Collections.emptyList());
 
         List<RankedMediaResponse> result = rankingService.getTop10ByMediaType("PODCAST");
@@ -156,9 +157,10 @@ class MediaRankingServiceTest {
     // fails if enrichScoreRows replaces or drops the id
     @Test
     void getTop10_fallbackEntry_preservesMediaApiId() {
-        Object[] row = new Object[]{"abc-123", "UNKNOWN", 20L};
+        // Row format: [mediaApiId, mediaType, totalScore, likeCount, viewCount]
+        Object[] row = new Object[]{"abc-123", "UNKNOWN", 20L, 1L, 10L};
         List<Object[]> fakeRows = Collections.singletonList(row);
-        when(userInteractionRepository.findTop10ByScore()).thenReturn(fakeRows);
+        when(userInteractionRepository.findTop10ByScoreWithCounts()).thenReturn(fakeRows);
 
         List<RankedMediaResponse> result = rankingService.getTop10();
 
@@ -168,52 +170,20 @@ class MediaRankingServiceTest {
         // Must use "Unknown" as fallback title — fails if null or empty is returned
         assertThat(result.get(0).getTitle()).isEqualTo("Unknown");
     }
+
+    // Likes and views counts must be correctly passed through to the DTO
+    @Test
+    void getTop10_fallbackEntry_preservesLikesAndViews() {
+        // Row format: [mediaApiId, mediaType, totalScore, likeCount, viewCount]
+        Object[] row = new Object[]{"xyz-456", "UNKNOWN", 35L, 3L, 5L};
+        List<Object[]> fakeRows = Collections.singletonList(row);
+        when(userInteractionRepository.findTop10ByScoreWithCounts()).thenReturn(fakeRows);
+
+        List<RankedMediaResponse> result = rankingService.getTop10();
+
+        assertThat(result).hasSize(1);
+        // likes and views must be preserved from row[3] and row[4]
+        assertThat(result.get(0).getLikes()).isEqualTo(3L);
+        assertThat(result.get(0).getViews()).isEqualTo(5L);
+    }
 }
-    // score=0 must map to exactly 1.0 (minimum floor) —
-    // fails if toDisplayRating() returns 0.0 or removes the floor
-//     @Test
-//     void getTop10_zeroScore_displayRatingIsMinimum() {
-//         Object[] row = new Object[]{"zero-score", "UNKNOWN", 0L};
-//         List<Object[]> fakeRows = Collections.singletonList(row);
-//         when(userInteractionRepository.findTop10ByScore()).thenReturn(fakeRows);
-
-//         List<RankedMediaResponse> result = rankingService.getTop10();
-
-//         assertThat(result).hasSize(1);
-//         // score=0 must produce exactly 1.0 — fails if floor is removed
-//         assertThat(result.get(0).getDisplayRating()).isEqualTo(1.0);
-//     }
-
-//     // Very high score must cap at exactly 5.0 —
-//     // fails if toDisplayRating() returns a value above 5.0
-//     @Test
-//     void getTop10_veryHighScore_displayRatingCapsAt5() {
-//         Object[] row = new Object[]{"high-score", "UNKNOWN", 999999L};
-//         List<Object[]> fakeRows = Collections.singletonList(row);
-//         when(userInteractionRepository.findTop10ByScore()).thenReturn(fakeRows);
-
-//         List<RankedMediaResponse> result = rankingService.getTop10();
-
-//         assertThat(result).hasSize(1);
-//         // No matter how high the score, rating must not exceed 5.0
-//         assertThat(result.get(0).getDisplayRating()).isEqualTo(5.0);
-//     }
-
-//     // Higher score must produce a higher or equal display rating —
-//     // fails if toDisplayRating() is not monotonically non-decreasing
-//     @Test
-//     void getTop10_higherScore_producesHigherOrEqualDisplayRating() {
-//         Object[] lowRow  = new Object[]{"low",  "UNKNOWN",  10L};
-//         Object[] highRow = new Object[]{"high", "UNKNOWN", 130L};
-//         List<Object[]> fakeRows = Arrays.asList(lowRow, highRow);
-//         when(userInteractionRepository.findTop10ByScore()).thenReturn(fakeRows);
-
-//         List<RankedMediaResponse> result = rankingService.getTop10();
-
-//         double lowRating  = result.get(0).getDisplayRating();  // score=10
-//         double highRating = result.get(1).getDisplayRating();  // score=130
-
-//         // Higher score must yield higher or equal rating — fails if order is inverted
-//         assertThat(highRating).isGreaterThanOrEqualTo(lowRating);
-//     }
-// }
