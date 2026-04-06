@@ -23,10 +23,10 @@ import java.util.stream.Collectors;
 /**
  * Manages friendships between users.
  *
- * Migrated from SocialSpace -> Board:
+ *
  *  - Friend suggestions are now drawn from users who share at least one
  *    Board with the current user (via BoardRoleRepository).
- *  - SocialService dependency removed.
+ *
  */
 @Service
 @Transactional

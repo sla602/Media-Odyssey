@@ -6,11 +6,7 @@ import java.time.Instant;
 
 
 @Entity
-@Table(name="post",
-indexes = {
-        @Index(name = "idx_post_board_id", columnList = "board_id"),
-        @Index(name = "idx_post_author", columnList = "author_id")
-})
+@Table(name="post")
 public class Post {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

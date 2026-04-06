@@ -12,7 +12,7 @@ import java.time.Instant;
                 @Index(name="idx_comment_post", columnList = "post_id"),
                 @Index(name = "idx_comment_author", columnList = "author_id"),
                 @Index(name = "idx_comment_parent", columnList = "parent_id")
-        })
+        }) 
 public class Comment {
 
     @Id
