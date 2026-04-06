@@ -1,8 +1,10 @@
 package com.mo.mediaodyssey.auth.controller;
 
+import com.mo.mediaodyssey.shared.services.CurrentAccountService;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -14,6 +16,9 @@ import com.mo.mediaodyssey.shared.model.User;
 public class PageController {
 
     @Autowired
+    private CurrentAccountService currentAccountService;
+
+    @Autowired
     private UserRepository userRepository;
 
     /**
@@ -22,8 +27,12 @@ public class PageController {
      * @return Static page at src/main/resources/static/auth/index.html
      */
     @GetMapping("/auth")
-    public String authPage() {
-        return "forward:/auth/index.html";
+    public String authPage(Authentication authentication) {
+        if (currentAccountService.isAuthenticated(authentication)) {
+            return "redirect:/";
+        } else {
+            return "forward:/auth/index.html";
+        }
     }
 
     /**
@@ -32,8 +41,12 @@ public class PageController {
      * @return Static page at src/main/resources/static/auth/login/index.html
      */
     @GetMapping("/auth/login")
-    public String loginPage() {
-        return "forward:/auth/login/index.html";
+    public String loginPage(Authentication authentication) {
+        if (currentAccountService.isAuthenticated(authentication)) {
+            return "redirect:/";
+        } else {
+            return "forward:/auth/login/index.html";
+        }
     }
 
     /**
@@ -42,8 +55,12 @@ public class PageController {
      * @return Static page at src/main/resources/static/auth/signup/index.html
      */
     @GetMapping("/auth/signup")
-    public String registerPage() {
-        return "forward:/auth/signup/index.html";
+    public String registerPage(Authentication authentication) {
+        if (currentAccountService.isAuthenticated(authentication)) {
+            return "redirect:/";
+        } else {
+            return "forward:/auth/signup/index.html";
+        }
     }
 
     /**

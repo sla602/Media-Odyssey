@@ -57,28 +57,34 @@ public class CurrentAccountService {
         new HttpSessionSecurityContextRepository().saveContext(refreshedContext, request, response);
     }
 
-    private User resolveCurrentAccount(Authentication authentication) {
+    public boolean isAuthenticated(Authentication authentication) {
         if (authentication == null) {
+            return false;
+        } else if (authentication instanceof AnonymousAuthenticationToken) {
+            return false;
+        } else {
+            return authentication.isAuthenticated();
+        }
+    }
+
+    private User resolveCurrentAccount(Authentication authentication) {
+        if (!isAuthenticated(authentication)) {
             throw new AuthenticationCredentialsNotFoundException(
                     "Current visitor has not authenticated with a valid account.");
-        }
+        } else {
+            Object principal = authentication.getPrincipal();
 
-        if (authentication instanceof AnonymousAuthenticationToken) {
+            if (principal instanceof User user) {
+                return user;
+            }
+
+            if (principal instanceof MOOAuth2UserPrincipal oauthPrincipal) {
+                return oauthPrincipal.getUser();
+            }
+
             throw new AuthenticationCredentialsNotFoundException(
-                    "Current visitor has not authenticated with a valid account.");
+                    "Current principal cannot be mapped to a valid account.");
+
         }
-
-        Object principal = authentication.getPrincipal();
-
-        if (principal instanceof User user) {
-            return user;
-        }
-
-        if (principal instanceof MOOAuth2UserPrincipal oauthPrincipal) {
-            return oauthPrincipal.getUser();
-        }
-
-        throw new AuthenticationCredentialsNotFoundException(
-                "Current principal cannot be mapped to a valid account.");
     }
 }

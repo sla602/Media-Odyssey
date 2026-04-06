@@ -35,6 +35,8 @@ public class MOAuthenticationProvider implements AuthenticationProvider {
 
         UserDetails user = userDetailsService.loadUserByUsername(email);
         if (user instanceof User moUser && moUser.isOauthAccount()) {
+            // TODO: Make an exception specific to OAuth accounts to advise users to log in
+            // using OAuth instead of password.
             throw new BadCredentialsException("This account uses OAuth sign-in.");
         }
 
