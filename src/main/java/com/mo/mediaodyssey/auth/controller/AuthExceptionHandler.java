@@ -9,6 +9,7 @@ import org.springframework.security.authentication.LockedException;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.validation.BindException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
@@ -70,7 +71,7 @@ public class AuthExceptionHandler {
         }
 
         @ExceptionHandler({ MethodArgumentNotValidException.class, BindException.class,
-                        IllegalArgumentException.class })
+                        IllegalArgumentException.class, MissingServletRequestParameterException.class })
         public ResponseEntity<AuthApiResponse> handleBadRequest() {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                                 .contentType(MediaType.APPLICATION_JSON)

@@ -8,9 +8,7 @@ import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -178,12 +176,13 @@ class AuthControllerTest {
     }
 
     @Test
-    void verify_withValidToken_redirectsToAuthLogin() throws Exception {
+    void verify_withValidToken_returnsSuccess() throws Exception {
         doNothing().when(verificationService).verifyUser(any());
 
-        mockMvc.perform(get("/api/auth/verify").param("token", randomSecret("verify-token")))
-                .andExpect(status().isFound())
-                .andExpect(header().string("Location", "/auth/login"));
+        mockMvc.perform(post("/api/auth/verify").param("token", randomSecret("verify-token")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.status").value("AUTH_VERIFY_SUCCESS"));
 
         verify(verificationService).verifyUser(any());
     }
@@ -194,10 +193,20 @@ class AuthControllerTest {
                 .when(verificationService)
                 .verifyUser(any());
 
-        mockMvc.perform(get("/api/auth/verify").param("token", randomSecret("invalid-token")))
+        mockMvc.perform(post("/api/auth/verify").param("token", randomSecret("invalid-token")))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.success").value(false))
                 .andExpect(jsonPath("$.status").value("AUTH_INVALID_VERIFICATION_TOKEN"));
+    }
+
+    @Test
+    void verify_withoutToken_returnsBadRequest() throws Exception {
+        mockMvc.perform(post("/api/auth/verify"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.success").value(false))
+                .andExpect(jsonPath("$.status").value("AUTH_BAD_REQUEST"));
+
+        verifyNoInteractions(verificationService);
     }
 
     @Test

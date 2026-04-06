@@ -32,7 +32,7 @@ public class EmailVerificationService {
     @Value("${spring.application.name:App}")
     private String appName;
 
-    @Value("${email.verifytoken.expiry-in-minutes:}")
+    @Value("${email.verifytoken.expiry-in-minutes:60}")
     private int tokenExpiryInMinutes;
 
     @Autowired
@@ -56,7 +56,7 @@ public class EmailVerificationService {
                 .toUriString();
         String to = user.getEmail();
         String subject = "Confirm Registration to " + this.appName;
-        String message = "Confirm registration by clicking this link: " + baseUrl + "/api/auth/verify?token=" + token;
+        String message = "Confirm registration by clicking this link: " + baseUrl + "/auth/verify?token=" + token;
 
         // Send verification token email
         emailService.sendEmail(to, subject, message);

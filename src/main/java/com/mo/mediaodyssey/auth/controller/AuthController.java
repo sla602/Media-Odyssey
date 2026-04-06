@@ -1,9 +1,6 @@
 package com.mo.mediaodyssey.auth.controller;
 
-import java.net.URI;
-
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -27,7 +24,6 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 
-import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 
@@ -113,27 +109,24 @@ public class AuthController {
     }
 
     /**
-     * Handles email verification requests.
+     * Handles completing email verification requests.
      *
      * @param token The verification token.
-     * @return Upon successful verification, the user is redirected to the login
-     *         page. Otherwise, the error status and message is returned.
+     * @return The verification response containing success status and message.
      *         Authentication exceptions are handled by AuthExceptionHandler.
      */
-    @GetMapping(value = "/verify")
+    @PostMapping(value = "/verify", produces = MediaType.APPLICATION_JSON_VALUE)
     @Transactional
-    public ResponseEntity<Void> verify(@Valid @RequestParam("token") String token) {
+    public ResponseEntity<AuthApiResponse> verify(@Valid @RequestParam("token") String token) {
         VerifyTokenDto dto = new VerifyTokenDto(token);
         verificationService.verifyUser(dto);
 
-        return ResponseEntity
-                .status(HttpStatus.FOUND)
-                .location(URI.create("/auth/login"))
-                .build();
+        return ResponseEntity.ok(
+                AuthApiResponse.success("AUTH_VERIFY_SUCCESS", "Email verified successfully. You can now log in."));
     }
 
     /**
-     * Handles verification token resend requests.
+     * Handles resending email verification token requests.
      *
      * @param dto The resend request data containing user details.
      * @return The resend response containing success status and message. Otherwise,

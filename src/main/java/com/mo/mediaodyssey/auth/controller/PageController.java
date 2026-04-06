@@ -85,6 +85,16 @@ public class PageController {
     }
 
     /**
+     * Complete email verification token page for authentication.
+     * 
+     * @return Static page at src/main/resources/static/auth/verify/index.html
+     */
+    @GetMapping("/auth/verify")
+    public String verifyPage() {
+        return "forward:/auth/verify/index.html";
+    }
+
+    /**
      * Resend email verification token page for authentication.
      * 
      * @return Static page at src/main/resources/static/auth/resend/index.html
