@@ -41,7 +41,7 @@ public class DevFileController {
     @PostMapping(value = "/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<DevFileApiResponse> uploadFile(@RequestParam("file") MultipartFile file) {
         try {
-            if (!devMode.toLowerCase().equals("TRUE".toLowerCase())) {
+            if (!isDevModeEnabled()) {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN)
                         .contentType(MediaType.APPLICATION_JSON)
                         .body(DevFileApiResponse.error("DEV_FILE_DISABLED",
@@ -63,7 +63,7 @@ public class DevFileController {
     @DeleteMapping(value = "/delete")
     public ResponseEntity<DevFileApiResponse> deleteFile(@RequestParam("key") String key) {
         try {
-            if (!devMode.equalsIgnoreCase("TRUE")) {
+            if (!isDevModeEnabled()) {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN)
                         .contentType(MediaType.APPLICATION_JSON)
                         .body(DevFileApiResponse.error("DEV_FILE_DISABLED",
@@ -82,7 +82,7 @@ public class DevFileController {
 
     @GetMapping(value = "/get")
     public ResponseEntity<DevFileApiResponse> getFileRedirect(@RequestParam("key") String key) {
-        if (!devMode.equalsIgnoreCase("TRUE")) {
+        if (!isDevModeEnabled()) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
                     .contentType(MediaType.APPLICATION_JSON)
                     .body(DevFileApiResponse.error("DEV_FILE_DISABLED",
@@ -96,5 +96,9 @@ public class DevFileController {
                     .header("Location", redirectUrl)
                     .build();
         }
+    }
+
+    private boolean isDevModeEnabled() {
+        return "TRUE".equalsIgnoreCase(devMode);
     }
 }

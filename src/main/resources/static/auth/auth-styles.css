@@ -24,6 +24,10 @@
   backdrop-filter: blur(4px);
 }
 
+.auth-panel {
+  max-width: 520px;
+}
+
 .mo-btn {
   background-color: #29779b;
   border-radius: 100px;

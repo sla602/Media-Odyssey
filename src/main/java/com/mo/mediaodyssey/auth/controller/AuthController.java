@@ -13,11 +13,14 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.mo.mediaodyssey.auth.dto.ResendVerifyTokenDto;
 import com.mo.mediaodyssey.auth.dto.AuthApiResponse;
+import com.mo.mediaodyssey.auth.dto.ForgotPasswordDto;
 import com.mo.mediaodyssey.auth.dto.LoginDto;
+import com.mo.mediaodyssey.auth.dto.ResetPasswordDto;
 import com.mo.mediaodyssey.auth.dto.UserDto;
 import com.mo.mediaodyssey.auth.dto.VerifyTokenDto;
 import com.mo.mediaodyssey.auth.services.MOLocalAuthService;
 import com.mo.mediaodyssey.auth.services.EmailVerificationService;
+import com.mo.mediaodyssey.auth.services.PasswordResetService;
 import com.mo.mediaodyssey.shared.model.User;
 import com.mo.mediaodyssey.shared.services.CurrentAccountService;
 
@@ -35,7 +38,6 @@ public class AuthController {
     // Inspired by:
     // https://www.baeldung.com/spring-security-authentication-provider
     // https://www.djamware.com/post/secure-your-restful-api-with-spring-boot-35-jwt-and-mongodb
-    // Debugging assisted by AI.
 
     @Autowired
     private MOLocalAuthService authService;
@@ -51,6 +53,9 @@ public class AuthController {
 
     @Autowired
     private TokenBasedRememberMeServices rememberMeServices;
+
+    @Autowired
+    private PasswordResetService passwordResetService;
 
     /**
      * Handles account login requests.
@@ -145,5 +150,36 @@ public class AuthController {
 
         // Return OK - successfully resent
         return ResponseEntity.ok(AuthApiResponse.success("AUTH_RESEND_SUCCESS", "Verification email resent"));
+    }
+
+    /**
+     * Handles password reset request submissions.
+     *
+     * @param dto The request data containing user email.
+     * @return Generic response to avoid leaking account existence. For eligible
+     *         local accounts, a reset email is sent.
+     */
+    @PostMapping(value = "/password/forgot", consumes = MediaType.APPLICATION_JSON_VALUE)
+    @Transactional
+    public ResponseEntity<AuthApiResponse> forgotPassword(@Valid @RequestBody ForgotPasswordDto dto) {
+        passwordResetService.requestPasswordReset(dto);
+
+        return ResponseEntity.ok(AuthApiResponse.success("AUTH_PASSWORD_RESET_EMAIL_SENT",
+                "If an eligible account exists, a password reset link has been sent."));
+    }
+
+    /**
+     * Handles password reset completion submissions.
+     *
+     * @param dto The reset data containing token and new password.
+     * @return Successful reset response when token is valid and not expired.
+     */
+    @PostMapping(value = "/password/reset", consumes = MediaType.APPLICATION_JSON_VALUE)
+    @Transactional
+    public ResponseEntity<AuthApiResponse> resetPassword(@Valid @RequestBody ResetPasswordDto dto) {
+        passwordResetService.resetPassword(dto);
+
+        return ResponseEntity.ok(AuthApiResponse.success("AUTH_PASSWORD_RESET_SUCCESS",
+                "Password reset successful. You can now log in with your new password."));
     }
 }

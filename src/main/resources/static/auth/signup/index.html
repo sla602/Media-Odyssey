@@ -17,7 +17,7 @@
         <p class="mo-subtitle lead fw-bold text-light text-center mb-4">Your journey starts here!</p>
     </header>
     <main class="container px-3 px-lg-4 d-flex align-items-center justify-content-center py-2">
-        <section class="card auth-card border-0 shadow-lg w-100" style="max-width: 520px;">
+        <section class="card auth-card auth-panel border-0 shadow-lg w-100">
             <div class="card-body p-4 p-md-5">
                 <h3 class="mo-copy text-center text-light fw-bold mb-3">Start your journey now!</h3>
                 <form id="signupForm" class="needs-validation" novalidate>
@@ -38,15 +38,17 @@
                     </div>
 
                     <div class="row g-2">
-                        <div class="col-6 d-grid gap-2">
+                        <div class="col-12 col-md-6 d-grid gap-2">
                             <button type="submit" class="btn mo-btn btn-lg fw-semibold text-white">Sign Up</button>
                         </div>
-                        <div class="col-6 d-grid gap-2">
+                        <div class="col-12 col-md-6 d-grid gap-2">
                             <a href="/auth/login" class="btn mo-btn btn-lg fw-semibold text-white">Already have an
                                 account? Log In</a>
                         </div>
-                        <div class="col-6"></div>
-                        <div class="col-6 text-center">
+                        <div class="col-12 col-md-6 text-center">
+                            <a href="/auth/forgot" class="text-white text-decoration-none d-inline-block">Forgot password?</a>
+                        </div>
+                        <div class="col-12 col-md-6 text-center">
                             <a href="/auth/resend" class="text-white text-decoration-none d-inline-block">Resend verification</a>
                         </div>
                     </div>

@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Media Odyssey - Re-send email verification</title>
+    <title>Media Odyssey - Reset password</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet"
         integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
     <link rel="stylesheet" href="/auth/auth-styles.css">
@@ -19,20 +19,24 @@
     <main class="container px-3 px-lg-4 d-flex align-items-center justify-content-center py-2">
         <section class="card auth-card auth-panel border-0 shadow-lg w-100">
             <div class="card-body p-4 p-md-5">
-                <h3 class="mo-copy text-center text-light fw-bold mb-3">Start your journey now!</h3>
-                <form id="resendForm" class="needs-validation" novalidate>
+                <h3 class="mo-copy text-center text-light fw-bold mb-3">Set your new password</h3>
+                <form id="resetPasswordForm" class="needs-validation" novalidate>
                     <div class="mb-3">
-                        <input type="email" class="form-control form-control-lg bg-light text-dark border-secondary"
-                            id="email" name="email" autocomplete="email" required placeholder="example@email.com">
+                        <input type="password" class="form-control form-control-lg bg-light text-dark border-secondary"
+                            id="newPassword" name="newPassword" autocomplete="new-password" required placeholder="New password">
+                    </div>
+
+                    <div class="mb-3">
+                        <input type="password" class="form-control form-control-lg bg-light text-dark border-secondary"
+                            id="confirmPassword" name="confirmPassword" autocomplete="new-password" required placeholder="Confirm new password">
                     </div>
 
                     <div class="row g-2">
                         <div class="col-12 col-md-6 d-grid gap-2">
-                            <button type="submit" class="btn mo-btn btn-lg fw-semibold text-white">Re-send</button>
+                            <button id="resetButton" type="submit" class="btn mo-btn btn-lg fw-semibold text-white">Reset password</button>
                         </div>
                         <div class="col-12 col-md-6 d-grid gap-2">
-                            <a href="/auth/login" class="btn mo-btn btn-lg fw-semibold text-white">Already have an
-                                account? Log In</a>
+                            <a href="/auth/login" class="btn mo-btn btn-lg fw-semibold text-white">Back to Login</a>
                         </div>
                     </div>
                 </form>
@@ -76,30 +80,45 @@
 
     <script>
         window.addEventListener("DOMContentLoaded", () => {
-            const { showLoadingModal, showAuthStatusAfterLoading, setFormSubmitting } = AuthModalFlow.create();
-            const resendForm = document.getElementById("resendForm");
+            const { showLoadingModal, showStatusModal, showStatusModalAfterLoading, showAuthStatusAfterLoading, setFormSubmitting } = AuthModalFlow.create();
+            const resetPasswordForm = document.getElementById("resetPasswordForm");
+            const resetButton = document.getElementById("resetButton");
+            const token = new URLSearchParams(window.location.search).get("token");
 
             let isSubmitting = false;
 
-            resendForm.addEventListener("submit", async (e) => {
+            if (!token) {
+                resetButton.disabled = true;
+                resetPasswordForm.setAttribute("aria-busy", "false");
+                showStatusModalAfterLoading("This reset link is missing a token. Please request a new reset link.", "/auth/forgot");
+                return;
+            }
+
+            resetPasswordForm.addEventListener("submit", async (e) => {
                 e.preventDefault();
 
                 if (isSubmitting) {
                     return;
                 }
 
+                const newPassword = document.getElementById("newPassword").value;
+                const confirmPassword = document.getElementById("confirmPassword").value;
+
+                if (newPassword !== confirmPassword) {
+                    showStatusModal("Passwords do not match.");
+                    return;
+                }
+
                 isSubmitting = true;
-                setFormSubmitting(resendForm, true);
+                setFormSubmitting(resetPasswordForm, true);
                 showLoadingModal();
                 try {
-
-                    const email = document.getElementById("email").value.trim();
-
                     const payload = {
-                        email: email,
+                        token: token,
+                        newPassword: newPassword,
                     };
 
-                    const res = await fetch("/api/auth/resend", {
+                    const res = await fetch("/api/auth/password/reset", {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
                         credentials: "include",
@@ -109,7 +128,9 @@
                     const resText = await res.json();
                     const status = resText?.status;
                     const statusRedirects = {
-                        AUTH_RESEND_SUCCESS: "/auth/login",
+                        AUTH_PASSWORD_RESET_SUCCESS: "/auth/login",
+                        AUTH_INVALID_PASSWORD_RESET_TOKEN: "/auth/forgot",
+                        AUTH_PASSWORD_RESET_OAUTH_NOT_ALLOWED: "/auth/login",
                     };
 
                     showAuthStatusAfterLoading(status, resText, { statusRedirects });
@@ -117,7 +138,7 @@
                     showAuthStatusAfterLoading(undefined, undefined);
                 } finally {
                     isSubmitting = false;
-                    setFormSubmitting(resendForm, false);
+                    setFormSubmitting(resetPasswordForm, false);
                 }
             });
         });

@@ -20,7 +20,7 @@ import com.mo.mediaodyssey.auth.services.MOUserDetailsService;
 @Component
 public class MOAuthenticationProvider implements AuthenticationProvider {
 
-    // Inspiried by:
+    // Inspired by:
     // https://www.baeldung.com/spring-security-authentication-provider
 
     @Autowired

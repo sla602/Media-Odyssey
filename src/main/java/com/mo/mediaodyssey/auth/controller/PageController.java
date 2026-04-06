@@ -105,6 +105,31 @@ public class PageController {
     }
 
     /**
+     * Forgot password page for authentication.
+     *
+     * @return Redirect to / for authenticated users. Otherwise, static page at
+     *         src/main/resources/static/auth/forgot/index.html
+     */
+    @GetMapping("/auth/forgot")
+    public String forgotPasswordPage(Authentication authentication) {
+        if (currentAccountService.isAuthenticated(authentication)) {
+            return "redirect:/";
+        } else {
+            return "forward:/auth/forgot/index.html";
+        }
+    }
+
+    /**
+     * Password reset completion page for authentication.
+     *
+     * @return Static page at src/main/resources/static/auth/reset/index.html
+     */
+    @GetMapping("/auth/reset")
+    public String resetPasswordPage() {
+        return "forward:/auth/reset/index.html";
+    }
+
+    /**
      * Display a list of all Users
      * 
      * @return Thymeleaf template at src/main/resources/templates/usersAD.html

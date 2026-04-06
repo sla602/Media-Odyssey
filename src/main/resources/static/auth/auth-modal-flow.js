@@ -7,6 +7,9 @@ window.AuthModalFlow = (() => {
         AUTH_REGISTER_SUCCESS: "Account created successfully. Please check your email to verify your account.",
         AUTH_RESEND_SUCCESS: "Successfully re-sent email verification link. Please check your email to verify your account.",
         AUTH_VERIFY_SUCCESS: "Your email has been verified successfully. You can now log in using the button below.",
+        AUTH_PASSWORD_RESET_EMAIL_SENT: "If an eligible account exists, a password reset link has been sent. Please check your email.",
+        AUTH_PASSWORD_RESET_SUCCESS: "Your password has been reset successfully. Please log in with your new password.",
+        AUTH_INVALID_PASSWORD_RESET_TOKEN: "This password reset link is invalid or expired. Please request a new reset link.",
         AUTH_OAUTH_SIGN_IN_REQUIRED: "This account was created with an OAuth provider. Please continue via OAuth provider.",
         AUTH_INVALID_CREDENTIALS: "The email and/or password provided is incorrect. Please try again.",
         AUTH_USER_NOT_FOUND: "The email and/or password provided is incorrect. Please try again.",
@@ -141,7 +144,10 @@ window.AuthModalFlow = (() => {
                 statusMessages = {},
             } = {}
         ) {
-            const message = resolveAuthStatusMessage(status, fallbackMessage, statusMessages);
+            const apiMessage = typeof resBody?.message === "string" && resBody.message.length > 0
+                ? resBody.message
+                : fallbackMessage;
+            const message = resolveAuthStatusMessage(status, apiMessage, statusMessages);
             const resolvedRedirect = typeof status === "string" && Object.prototype.hasOwnProperty.call(statusRedirects, status)
                 ? statusRedirects[status]
                 : redirectUrl;

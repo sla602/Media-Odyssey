@@ -1,8 +1,11 @@
 package com.mo.mediaodyssey.auth;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -64,6 +67,23 @@ class EmailVerificationServiceTest {
     @Test
     void createVerification_sendsStyledHtmlEmailWithTokenizedVerificationLink() {
         User user = new User("user@mediaodyssey.example", "encoded-password");
+
+        when(emailService.buildAuthActionEmailHtml(
+                anyString(),
+                anyString(),
+                anyString(),
+                anyString(),
+                anyString(),
+                anyString(),
+                anyInt(),
+                anyString()))
+                .thenAnswer(invocation -> {
+                    String actionUrl = invocation.getArgument(5, String.class);
+                    Integer expiryMinutes = invocation.getArgument(6, Integer.class);
+                    return "<h1>MEDIA ODYSSEY</h1>"
+                            + "<a href=\"" + actionUrl + "\">Verify Email</a>"
+                            + "<p>This link expires in " + expiryMinutes + " minutes.</p>";
+                });
 
         emailVerificationService.createVerification(user);
 

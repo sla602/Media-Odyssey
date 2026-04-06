@@ -14,15 +14,15 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import com.mo.mediaodyssey.auth.dto.AuthApiResponse;
+import com.mo.mediaodyssey.auth.exception.InvalidPasswordResetTokenException;
 import com.mo.mediaodyssey.auth.exception.InvalidVerificationTokenException;
 import com.mo.mediaodyssey.auth.exception.OAuthSignInRequiredException;
+import com.mo.mediaodyssey.auth.exception.PasswordResetNotAllowedException;
 import com.mo.mediaodyssey.auth.exception.UserAlreadyVerifiedException;
 import com.mo.mediaodyssey.dev.controller.DevAccountController;
 
 @RestControllerAdvice(basePackageClasses = { AuthController.class, DevAccountController.class })
 public class AuthExceptionHandler {
-
-        // Debugging assisted by AI.
 
         @ExceptionHandler(OAuthSignInRequiredException.class)
         public ResponseEntity<AuthApiResponse> handleOauthSignInRequired() {
@@ -77,6 +77,22 @@ public class AuthExceptionHandler {
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .body(AuthApiResponse.error("AUTH_INVALID_VERIFICATION_TOKEN",
                                                 "Verification token is invalid. If you have previously followed this link to verify, please continue to log in. Please try again."));
+        }
+
+        @ExceptionHandler(InvalidPasswordResetTokenException.class)
+        public ResponseEntity<AuthApiResponse> handleInvalidPasswordResetToken() {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .body(AuthApiResponse.error("AUTH_INVALID_PASSWORD_RESET_TOKEN",
+                                                "Password reset token is invalid or expired. Please request a new reset link."));
+        }
+
+        @ExceptionHandler(PasswordResetNotAllowedException.class)
+        public ResponseEntity<AuthApiResponse> handlePasswordResetNotAllowed() {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .body(AuthApiResponse.error("AUTH_PASSWORD_RESET_OAUTH_NOT_ALLOWED",
+                                                "Password reset is not available for OAuth accounts. Please sign in with your OAuth provider."));
         }
 
         @ExceptionHandler({ MethodArgumentNotValidException.class, BindException.class,

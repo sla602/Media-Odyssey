@@ -36,11 +36,16 @@ import com.mo.mediaodyssey.auth.controller.AuthController;
 import com.mo.mediaodyssey.auth.controller.AuthExceptionHandler;
 import com.mo.mediaodyssey.auth.dto.LoginDto;
 import com.mo.mediaodyssey.auth.dto.ResendVerifyTokenDto;
+import com.mo.mediaodyssey.auth.dto.ResetPasswordDto;
+import com.mo.mediaodyssey.auth.dto.ForgotPasswordDto;
+import com.mo.mediaodyssey.auth.exception.InvalidPasswordResetTokenException;
 import com.mo.mediaodyssey.auth.dto.UserDto;
 import com.mo.mediaodyssey.auth.exception.InvalidVerificationTokenException;
 import com.mo.mediaodyssey.auth.exception.OAuthSignInRequiredException;
+import com.mo.mediaodyssey.auth.exception.PasswordResetNotAllowedException;
 import com.mo.mediaodyssey.auth.services.EmailVerificationService;
 import com.mo.mediaodyssey.auth.services.MOLocalAuthService;
+import com.mo.mediaodyssey.auth.services.PasswordResetService;
 import com.mo.mediaodyssey.shared.model.User;
 import com.mo.mediaodyssey.shared.services.CurrentAccountService;
 
@@ -69,12 +74,15 @@ class AuthControllerTest {
     @MockitoBean
     private TokenBasedRememberMeServices rememberMeServices;
 
+    @MockitoBean
+    private PasswordResetService passwordResetService;
+
     @AfterEach
     void cleanupAuthState() {
         // Keep test credentials, auth tokens, and stubs scoped to each test case.
         SecurityContextHolder.clearContext();
         reset(authService, verificationService, sessionAuthenticationStrategy, currentAccountService,
-                rememberMeServices);
+                rememberMeServices, passwordResetService);
     }
 
     @Test
@@ -298,6 +306,98 @@ class AuthControllerTest {
                 .andExpect(jsonPath("$.status").value("AUTH_USER_NOT_FOUND"));
     }
 
+    @Test
+    void forgotPassword_withValidEmail_returnsSuccess() throws Exception {
+        doNothing().when(passwordResetService).requestPasswordReset(any(ForgotPasswordDto.class));
+
+        String payload = forgotPasswordPayload(randomEmail("forgot-user"));
+
+        mockMvc.perform(post("/api/auth/password/forgot")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(payload))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.status").value("AUTH_PASSWORD_RESET_EMAIL_SENT"));
+
+        verify(passwordResetService).requestPasswordReset(any(ForgotPasswordDto.class));
+    }
+
+    @Test
+    void forgotPassword_withOauthAccount_returnsBadRequest() throws Exception {
+        doThrow(new PasswordResetNotAllowedException("oauth reset not allowed"))
+                .when(passwordResetService)
+                .requestPasswordReset(any(ForgotPasswordDto.class));
+
+        String payload = forgotPasswordPayload(randomEmail("oauth-forgot-user"));
+
+        mockMvc.perform(post("/api/auth/password/forgot")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(payload))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.success").value(false))
+                .andExpect(jsonPath("$.status").value("AUTH_PASSWORD_RESET_OAUTH_NOT_ALLOWED"));
+    }
+
+    @Test
+    void forgotPassword_withMissingEmail_returnsBadRequest() throws Exception {
+        String payload = forgotPasswordPayload("");
+
+        mockMvc.perform(post("/api/auth/password/forgot")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(payload))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.success").value(false))
+                .andExpect(jsonPath("$.status").value("AUTH_BAD_REQUEST"));
+
+        verifyNoInteractions(passwordResetService);
+    }
+
+    @Test
+    void resetPassword_withValidToken_returnsSuccess() throws Exception {
+        doNothing().when(passwordResetService).resetPassword(any(ResetPasswordDto.class));
+
+        String payload = resetPasswordPayload(randomSecret("reset-token"), randomSecret("new-password"));
+
+        mockMvc.perform(post("/api/auth/password/reset")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(payload))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.status").value("AUTH_PASSWORD_RESET_SUCCESS"));
+
+        verify(passwordResetService).resetPassword(any(ResetPasswordDto.class));
+    }
+
+    @Test
+    void resetPassword_withInvalidToken_returnsBadRequest() throws Exception {
+        doThrow(new InvalidPasswordResetTokenException("invalid reset token"))
+                .when(passwordResetService)
+                .resetPassword(any(ResetPasswordDto.class));
+
+        String payload = resetPasswordPayload(randomSecret("invalid-reset-token"), randomSecret("new-password"));
+
+        mockMvc.perform(post("/api/auth/password/reset")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(payload))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.success").value(false))
+                .andExpect(jsonPath("$.status").value("AUTH_INVALID_PASSWORD_RESET_TOKEN"));
+    }
+
+    @Test
+    void resetPassword_withMissingFields_returnsBadRequest() throws Exception {
+        String payload = resetPasswordPayload("", "");
+
+        mockMvc.perform(post("/api/auth/password/reset")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(payload))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.success").value(false))
+                .andExpect(jsonPath("$.status").value("AUTH_BAD_REQUEST"));
+
+        verifyNoInteractions(passwordResetService);
+    }
+
     private String loginPayload(String email, String password, boolean rememberMe) throws Exception {
         return objectMapper.writeValueAsString(new LoginDto(email, password, rememberMe));
     }
@@ -308,6 +408,14 @@ class AuthControllerTest {
 
     private String resendPayload(String email) throws Exception {
         return objectMapper.writeValueAsString(new ResendVerifyTokenDto(email));
+    }
+
+    private String forgotPasswordPayload(String email) throws Exception {
+        return objectMapper.writeValueAsString(new ForgotPasswordDto(email));
+    }
+
+    private String resetPasswordPayload(String token, String newPassword) throws Exception {
+        return objectMapper.writeValueAsString(new ResetPasswordDto(token, newPassword));
     }
 
     private String randomEmail(String prefix) {

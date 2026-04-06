@@ -24,7 +24,7 @@ public class DevUserService {
 
     public void developmentalAccountCreation(UserDto dto, String role) {
         // Check if a User with this email address already exist.
-        Boolean userExists = userRepository.existsByEmail(dto.email());
+        boolean userExists = userRepository.existsByEmail(dto.email());
 
         if (userExists) {
             throw new BadCredentialsException("User with email address " + dto.email() + " already exists.");
@@ -43,11 +43,11 @@ public class DevUserService {
 
     @Transactional
     public void createAdminAccount(UserDto dto) {
-        this.developmentalAccountCreation(dto, "ROLE_ADMIN");
+        developmentalAccountCreation(dto, "ROLE_ADMIN");
     }
 
     @Transactional
     public void createUserAccount(UserDto dto) {
-        this.developmentalAccountCreation(dto, "ROLE_USER");
+        developmentalAccountCreation(dto, "ROLE_USER");
     }
 }
