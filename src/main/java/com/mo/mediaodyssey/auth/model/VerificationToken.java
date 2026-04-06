@@ -20,6 +20,7 @@ import jakarta.persistence.GenerationType;
 @Table(name = "verification_tokens")
 public class VerificationToken implements Serializable {
     // Inspired by: https://www.baeldung.com/registration-verify-user-by-email
+    // Debugging assisted by AI.
 
     private static final long serialVersionUID = 1L;
 

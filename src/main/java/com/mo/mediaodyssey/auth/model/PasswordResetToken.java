@@ -36,6 +36,7 @@ public class PasswordResetToken implements Serializable {
     @Column(nullable = false)
     private Date expiryDate;
 
+    @Column(nullable = false)
     private Date calculateExpiryDate(int expiryTimeInMinutes) {
         Calendar cal = Calendar.getInstance();
         cal.add(Calendar.MINUTE, expiryTimeInMinutes);

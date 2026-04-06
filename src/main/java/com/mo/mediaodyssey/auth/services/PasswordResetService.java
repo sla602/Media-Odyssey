@@ -1,6 +1,5 @@
 package com.mo.mediaodyssey.auth.services;
 
-import java.util.Locale;
 import java.security.Principal;
 import java.util.Date;
 import java.util.Optional;
@@ -150,17 +149,7 @@ public class PasswordResetService {
     }
 
     private PasswordResetNotAllowedException buildOauthResetNotAllowed(User user) {
-        String provider = user.getOauthProvider();
-
-        if (provider == null || provider.isBlank()) {
-            return new PasswordResetNotAllowedException(
-                    "Password reset is not available for OAuth accounts. Please sign in with your OAuth provider.");
-        }
-
-        String providerLabel = provider.substring(0, 1).toUpperCase(Locale.ROOT)
-            + provider.substring(1).toLowerCase(Locale.ROOT);
         return new PasswordResetNotAllowedException(
-                "Password reset is not available for this account because it uses " + providerLabel
-                        + " sign-in. Please continue with " + providerLabel + ".");
+                "Password reset is not available for OAuth accounts. Please sign in with your OAuth provider.");
     }
 }

@@ -38,6 +38,7 @@ public class AuthController {
     // Inspired by:
     // https://www.baeldung.com/spring-security-authentication-provider
     // https://www.djamware.com/post/secure-your-restful-api-with-spring-boot-35-jwt-and-mongodb
+    // Debugging assisted by AI.
 
     @Autowired
     private MOLocalAuthService authService;
