@@ -220,8 +220,8 @@ async function prefetchRecommendations(mediaType) {
 
 function renderCards(items) {
     const cardsEl = document.getElementById("recCards");
-
-    items.sort(() => Math.random() - 0.5);
+    
+    items.sort(() => Math.random() - 0.5); // shuffle
     items.forEach(item => {
         const card = document.createElement("a");
         card.className = "rec-card";

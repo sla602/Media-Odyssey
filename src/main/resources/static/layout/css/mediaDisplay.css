@@ -12,7 +12,7 @@ body {
   color: #fff;
 }
 
-.movie-container {
+.media-container {
   max-width: 1000px;
   margin: 0 auto;
   background: rgba(255, 255, 255, 0.05);
@@ -22,8 +22,12 @@ body {
   border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-/* Top Section: Poster + Info */
-.movie-header {
+/* Main content */
+/* ==========================================================================
+*               MEDIA HEADER
+*              POSTER + INFO
+==========================================================================*/
+.media-header {
   display: flex;
   gap: 30px;
   margin-bottom: 25px;
@@ -47,8 +51,8 @@ body {
   display: block;
 }
 
-/* Movie Info (Right of Poster) */
-.movie-info {
+/* Media Info (Right of Poster) */
+.media-info {
   flex: 1;
   display: flex;
   flex-direction: column;
@@ -56,7 +60,7 @@ body {
   padding-top: 10px;
 }
 
-.movie-title {
+.media-title {
   font-size: 2.2rem;
   font-weight: 700;
   color: #fff;
@@ -109,15 +113,19 @@ body {
   fill: #888;
 }
 
-/* Middle Section: Overview + Actions */
-.movie-middle {
+/* ==========================================================================
+*               MEDIA MIDDLE
+*              OVERVIEW + ACTIONS (LIKES, RATES, ADD TO BOARD)
+==========================================================================*/
+
+.media-middle {
   display: flex;
   gap: 25px;
   margin-bottom: 25px;
 }
 
 /* Overview Box */
-.movie-overview {
+.media-overview {
   flex: 1;
   background: rgba(255, 255, 255, 0.08);
   border-radius: 15px;
@@ -318,7 +326,11 @@ body {
   fill: #888;
 }
 
-/* Bottom Section: Streaming Platforms */
+/* ==========================================================================
+*               MEDIA FOOTER
+*              PLATFORMS + EXTRA INFOS 
+==========================================================================*/
+
 .streaming-section {
   margin-top: 10px;
 }
