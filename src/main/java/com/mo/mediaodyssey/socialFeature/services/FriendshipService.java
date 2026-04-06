@@ -1,6 +1,7 @@
 package com.mo.mediaodyssey.socialFeature.services;
 
 import com.mo.mediaodyssey.layout.models.Profile;
+import com.mo.mediaodyssey.recommendation.UserInteractionRepository;
 import com.mo.mediaodyssey.shared.model.User;
 import com.mo.mediaodyssey.auth.repository.UserRepository;
 import com.mo.mediaodyssey.layout.models.BoardRole;
@@ -37,15 +38,17 @@ public class FriendshipService {
     private final UserRepository userRepo;
     private final ProfileService profileService;
     private final ProfileRepository profileRepo;
+    private final UserInteractionRepository interactionRepo;
 
     public FriendshipService(FriendshipRepository friendshipRepo,
                              BoardRoleRepository boardRoleRepo,
-                             UserRepository userRepo, ProfileService profileService, ProfileRepository profileRepo) {
+                             UserRepository userRepo, ProfileService profileService, ProfileRepository profileRepo, UserInteractionRepository interactionRepo) {
         this.friendshipRepo = friendshipRepo;
         this.boardRoleRepo = boardRoleRepo;
         this.userRepo = userRepo;
         this.profileService = profileService;
         this.profileRepo = profileRepo;
+        this.interactionRepo = interactionRepo;
     }
 
     /**
