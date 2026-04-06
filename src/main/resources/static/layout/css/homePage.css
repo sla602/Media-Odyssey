@@ -452,3 +452,15 @@ when the js runs. Testing are required to see how it works.*/
     font-size: 0.8rem;
   }
 }
+
+.rec-card.song-card {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    min-height: unset;
+    height: auto;
+}
+
+.rec-cards {
+    align-items: flex-start;
+}
