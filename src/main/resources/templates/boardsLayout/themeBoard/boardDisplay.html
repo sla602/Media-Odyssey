@@ -404,6 +404,16 @@
                            class="mod-sub-tab" th:classappend="${modTab == 'members'} ? ' mod-sub-active' : ''">
                             Members
                         </a>
+                        <!-- Invites sub-tab — only shown for private boards. Owners and
+     moderators can invite friends who aren't already in the board. -->
+                        <a th:if="${board.board_type != null and board.board_type.equalsIgnoreCase('private')}"
+                           th:href="@{/boards/display/{id}(id=${board.id}, view='moderation', modTab='invites')}"
+                           class="mod-sub-tab" th:classappend="${modTab == 'invites'} ? ' mod-sub-active' : ''">
+                            Invites
+                            <span th:if="${pendingInvites != null and !#lists.isEmpty(pendingInvites)}"
+                                  class="report-badge" th:text="${#lists.size(pendingInvites)}"></span>
+                        </a>
+
                         <a th:if="${currentUserRole == 'OWNER'}"
                            th:href="@{/boards/display/{id}(id=${board.id}, view='moderation', modTab='ownership')}"
                            class="mod-sub-tab mod-sub-owner" th:classappend="${modTab == 'ownership'} ? ' mod-sub-active' : ''">
@@ -507,6 +517,74 @@
                                         </form>
                                     </th:block>
                                 </th:block>
+                            </div>
+                        </div>
+                    </th:block>
+
+                    <!-- ============================================================
+                        Invites Tab — private boards only
+                        Lists friends eligible to invite and currently pending invites.
+     ============================================================ -->
+                    <th:block th:if="${modTab == 'invites'
+                  and board.board_type != null
+                  and board.board_type.equalsIgnoreCase('private')}">
+
+                        <!-- Invitable friends section -->
+                        <div class="invite-subsection">
+                            <h3 class="invite-subheading">Invite a Friend</h3>
+                            <p class="panel-subtitle">Only friends who aren't already in this board are shown.</p>
+
+                            <div th:if="${invitableFriends == null or #lists.isEmpty(invitableFriends)}"
+                                 class="empty-message">
+                                No invitable friends right now. Either you have no friends yet,
+                                or all your friends are already in this board.
+                            </div>
+
+                            <div th:each="friend : ${invitableFriends}" class="member-card">
+                                <div class="member-info">
+                <span class="member-name"
+                      th:text="${userDisplayNames != null and userDisplayNames[friend.id] != null
+                                ? userDisplayNames[friend.id]
+                                : 'User #' + friend.id}">friend</span>
+                                </div>
+                                <div class="member-actions">
+                                    <form th:action="@{'/boards/display/' + ${board.id} + '/invite'}"
+                                          method="post" class="action-form">
+                                        <input type="hidden" name="inviteeUserId" th:value="${friend.id}">
+                                        <button type="submit" class="action-btn action-add">Invite</button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Pending invites section -->
+                        <div class="invite-subsection invite-subsection-pending">
+                            <h3 class="invite-subheading">Pending Invites</h3>
+
+                            <div th:if="${pendingInvites == null or #lists.isEmpty(pendingInvites)}"
+                                 class="empty-message">
+                                No pending invites.
+                            </div>
+
+                            <div th:each="inv : ${pendingInvites}" class="member-card">
+                                <div class="member-info">
+                <span class="member-name"
+                      th:text="${userDisplayNames != null and userDisplayNames[inv.inviteeUserId] != null
+                                ? userDisplayNames[inv.inviteeUserId]
+                                : 'User #' + inv.inviteeUserId}">invitee</span>
+                                    <span class="friend-sub">
+                    invited by
+                    <span th:text="${userDisplayNames != null and userDisplayNames[inv.inviterUserId] != null
+                                    ? userDisplayNames[inv.inviterUserId]
+                                    : 'User #' + inv.inviterUserId}">inviter</span>
+                </span>
+                                </div>
+                                <div class="member-actions">
+                                    <form th:action="@{'/boards/display/' + ${board.id} + '/invite/' + ${inv.id} + '/cancel'}"
+                                          method="post" class="action-form">
+                                        <button type="submit" class="action-btn action-cancel">Cancel</button>
+                                    </form>
+                                </div>
                             </div>
                         </div>
                     </th:block>

@@ -37,6 +37,7 @@ public class FriendshipService {
     private final UserRepository userRepo;
     private final ProfileService profileService;
     private final ProfileRepository profileRepo;
+
     public FriendshipService(FriendshipRepository friendshipRepo,
                              BoardRoleRepository boardRoleRepo,
                              UserRepository userRepo, ProfileService profileService, ProfileRepository profileRepo) {

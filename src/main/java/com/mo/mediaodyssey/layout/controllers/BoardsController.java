@@ -2,6 +2,7 @@ package com.mo.mediaodyssey.layout.controllers;
 
 import com.mo.mediaodyssey.layout.models.BoardRole;
 import com.mo.mediaodyssey.layout.repositories.BoardRoleRepository;
+import com.mo.mediaodyssey.socialFeature.models.BoardInvite;
 import com.mo.mediaodyssey.socialFeature.repositories.ProfileRepository;
 import com.mo.mediaodyssey.socialFeature.models.DTO.CommentDTO;
 import com.mo.mediaodyssey.socialFeature.models.DTO.PostDTO;
@@ -10,10 +11,7 @@ import com.mo.mediaodyssey.socialFeature.models.Report;
 import com.mo.mediaodyssey.socialFeature.repositories.CommentRepository;
 import com.mo.mediaodyssey.socialFeature.repositories.PostRepository;
 import com.mo.mediaodyssey.socialFeature.repositories.ReportRepository;
-import com.mo.mediaodyssey.socialFeature.services.CommentService;
-import com.mo.mediaodyssey.socialFeature.services.ModerationService;
-import com.mo.mediaodyssey.socialFeature.services.PostService;
-import com.mo.mediaodyssey.socialFeature.services.ProfileService;
+import com.mo.mediaodyssey.socialFeature.services.*;
 import org.springframework.security.core.Authentication;
 
 import java.util.*;
@@ -54,9 +52,10 @@ public class BoardsController {
     private final CommentRepository commentRepository;
     private final ProfileRepository profileRepository;
     private final ProfileService profileService;
+    private final BoardInviteService boardInviteService;
 
     public BoardsController (BoardsService boardsService, BoardMediaRepository boardMediaRepository, MovieService movieService, PostService postService, BoardRoleRepository boardRoleRepository, CommentService commentService, ReportRepository reportRepository, ModerationService moderationService, PostRepository postRepository, CommentRepository commentRepository,
-                             ProfileRepository profileRepository, ProfileService profileService) {
+                             ProfileRepository profileRepository, ProfileService profileService, BoardInviteService boardInviteService) {
         this.boardsService = boardsService; 
         this.boardMediaRepository = boardMediaRepository;
         this.movieService = movieService;
@@ -69,6 +68,7 @@ public class BoardsController {
         this.commentRepository = commentRepository;
         this.profileRepository = profileRepository;
         this.profileService = profileService;
+        this.boardInviteService = boardInviteService;
     }
 
 
@@ -176,6 +176,16 @@ public class BoardsController {
         }
 
         boolean isMember = !"NONE".equals(role) && !"LEFT".equals(role) && !"BANNED".equals(role);
+
+
+        // ADDED: Private-board gate. Non-members of a private board get a
+// "this is private, you need an invitation" page instead of the board.
+        if ("private".equalsIgnoreCase(board.getBoard_type()) && !isMember) {
+            model.addAttribute("board", board);
+            model.addAttribute("currentUserId", user.getId());
+            return "boardsLayout/themeBoard/privateBoardGate";
+        }
+
         Long reportCount = reportRepository.countByBoardIdAndResolvedFalse(id);
 
         model.addAttribute("board", board);
@@ -186,13 +196,13 @@ public class BoardsController {
         model.addAttribute("currentView", view);
         model.addAttribute("modTab", modTab);
 
+
         // Defaults
         model.addAttribute("selectedPost", null);
         model.addAttribute("comments", Collections.emptyList());
         model.addAttribute("posts", Collections.emptyList());
         model.addAttribute("reports", Collections.emptyList());
         model.addAttribute("members", Collections.emptyList());
-
 
         Set<Long> userIdsToResolve = new HashSet<>();
 
@@ -235,6 +245,30 @@ public class BoardsController {
 
                         for (BoardRole member : ownershipMembers) {
                             userIdsToResolve.add(member.getUserId());
+                        }
+                        break;
+                    case "invites":
+                        // Only meaningful for private boards; the tab link is hidden
+                        // otherwise, but guard here too for direct URL hits.
+                        // Loads invitable friends + pending invites in one place
+                        // (no more duplicate blocks scattered around the method).
+                        if ("private".equalsIgnoreCase(board.getBoard_type())) {
+                            List<User> invitable =
+                                    boardInviteService.getInvitableFriends(user.getId(), id);
+                            List<BoardInvite> pending =
+                                    boardInviteService.getInvitesForBoard(id);
+
+                            model.addAttribute("invitableFriends", invitable);
+                            model.addAttribute("pendingInvites", pending);
+
+                            // Feed ids into userIdsToResolve so buildUserDisplayNames
+                            // at the bottom of this method populates userDisplayNames
+                            // for both invitable friends and pending invite rows.
+                            for (User f : invitable) userIdsToResolve.add(f.getId());
+                            for (BoardInvite inv : pending) {
+                                userIdsToResolve.add(inv.getInviteeUserId());
+                                userIdsToResolve.add(inv.getInviterUserId());
+                            }
                         }
                         break;
                     default:

@@ -253,6 +253,44 @@
                 </div>
             </div>
         </section>
+        <!-- 5) Board Invites panel — private-board invitations
+     addressed to this user. Accept = join as MEMBER. -->
+        <section class="friends-panel">
+            <div class="friends-panel-head">
+                <h2 class="section-title">Board Invites</h2>
+                <span class="friends-count" th:text="${#lists.size(boardInvites)}">0</span>
+            </div>
+            <p class="panel-subtitle">Private boards you've been invited to join.</p>
+
+            <div th:if="${#lists.isEmpty(boardInvites)}" class="empty-message">
+                No pending invites.
+            </div>
+
+            <div th:each="inv : ${boardInvites}" class="member-card friend-card">
+                <div class="member-info">
+                    <div class="friend-text">
+                <span class="member-name"
+                      th:text="${inviteBoardNames[inv.boardId] != null
+                                ? inviteBoardNames[inv.boardId]
+                                : 'Board #' + inv.boardId}">Board name</span>
+                        <span class="friend-sub">
+                    invited by
+                    <span th:text="${usernames[inv.inviterUserId]}">username</span>
+                </span>
+                    </div>
+                </div>
+                <div class="member-actions">
+                    <form th:action="@{'/invites/' + ${inv.id} + '/accept'}"
+                          method="post" class="action-form">
+                        <button type="submit" class="action-btn action-accept">Accept</button>
+                    </form>
+                    <form th:action="@{'/invites/' + ${inv.id} + '/decline'}"
+                          method="post" class="action-form">
+                        <button type="submit" class="action-btn action-reject">Decline</button>
+                    </form>
+                </div>
+            </div>
+        </section>
 
     </div>
 </main>

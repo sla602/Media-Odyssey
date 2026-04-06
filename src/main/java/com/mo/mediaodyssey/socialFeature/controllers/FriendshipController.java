@@ -1,8 +1,11 @@
 package com.mo.mediaodyssey.socialFeature.controllers;
 
+import com.mo.mediaodyssey.layout.repositories.BoardsRepository;
+import com.mo.mediaodyssey.socialFeature.models.BoardInvite;
 import com.mo.mediaodyssey.socialFeature.repositories.ProfileRepository;
 import com.mo.mediaodyssey.shared.model.User;
 import com.mo.mediaodyssey.socialFeature.models.DTO.FriendRequestDTO;
+import com.mo.mediaodyssey.socialFeature.services.BoardInviteService;
 import com.mo.mediaodyssey.socialFeature.services.FriendshipService;
 import com.mo.mediaodyssey.socialFeature.services.ProfileService;
 import org.springframework.security.core.Authentication;
@@ -25,12 +28,16 @@ public class FriendshipController {
     private final FriendshipService friendshipService;
     private final ProfileRepository profileRepo;
     private final ProfileService profileService;
+    private final BoardInviteService boardInviteService;
+    private final BoardsRepository boardsRepo;
 
     public FriendshipController(FriendshipService friendshipService,
-                                ProfileRepository profileRepo, ProfileService profileService) {
+                                ProfileRepository profileRepo, ProfileService profileService, BoardInviteService boardInviteService, BoardsRepository boardsRepo) {
         this.friendshipService = friendshipService;
         this.profileRepo = profileRepo;
         this.profileService = profileService;
+        this.boardInviteService = boardInviteService;
+        this.boardsRepo = boardsRepo;
     }
 
     // ─── Helpers ─────────────────────────────────────────────────────
@@ -105,6 +112,9 @@ public class FriendshipController {
         List<FriendshipService.FriendSearchResult> searchResults =
                 friendshipService.searchUsersByUsername(userId, search);
 
+        // Pending board invites addressed to this user
+        List<BoardInvite> boardInvites = boardInviteService.getInvitesForUser(userId);
+
         // Collect every user id we'll display so we can batch-load usernames.
         Set<Long> idsToResolve = new HashSet<>();
         friends.forEach(f -> idsToResolve.add(f.getId()));
@@ -112,6 +122,16 @@ public class FriendshipController {
         incoming.forEach(r -> idsToResolve.add(r.getOtherUserId()));
         pending.forEach(r -> idsToResolve.add(r.getOtherUserId()));
 
+        Map<Long, String> inviteBoardNames = new HashMap<>();
+        for (BoardInvite inv : boardInvites) {
+            boardsRepo.findById(inv.getBoardId()).ifPresent(b ->
+                    inviteBoardNames.put(inv.getBoardId(), b.getBoard_name()));
+            idsToResolve.add(inv.getInviterUserId());
+        }
+
+
+        // Single username map covering friends, suggested, incoming,
+        // pending, and invite-inviters.
         Map<Long, String> usernames = buildUsernameMap(idsToResolve);
 
         model.addAttribute("user", user);
@@ -123,6 +143,8 @@ public class FriendshipController {
         model.addAttribute("usernames", usernames);
         model.addAttribute("searchQuery", search);
         model.addAttribute("searchResults", searchResults);
+        model.addAttribute("boardInvites", boardInvites);
+        model.addAttribute("inviteBoardNames", inviteBoardNames);
 
         return "friends-view/friends";
     }
