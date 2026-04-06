@@ -542,6 +542,24 @@
     border-bottom: 1px solid rgba(139, 92, 246, 0.15);
 }
 
+
+/* Yellow hint shown in a profile-section-head when the owner of the profile
+   hasn't set a username yet  */
+.profile-section-username-hint {
+    display: block;
+    margin: 0.5rem auto 0;
+    padding: 0.5rem 0.9rem;
+    text-align: center;
+    font-size: 0.8rem;
+    font-weight: 600;
+    font-style: italic;
+    letter-spacing: 0.1px;
+    color: #facc15; /* amber-400 */
+    background-color: rgba(250, 204, 21, 0.12);
+    border: 1px solid rgba(250, 204, 21, 0.6);
+    border-radius: 8px;
+}
+
 .profile-section-title {
     font-family: 'Space Grotesk', sans-serif;
     font-size: 1.25rem;

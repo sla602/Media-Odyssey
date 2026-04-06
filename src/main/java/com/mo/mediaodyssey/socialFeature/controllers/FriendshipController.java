@@ -105,9 +105,14 @@ public class FriendshipController {
 
         List<User> friends = friendshipService.getFriends(userId);
         List<FriendRequestDTO> incoming = friendshipService.getIncomingRequests(userId);
-        List<User> suggested = friendshipService.getSuggestedFriends(userId);
         List<FriendRequestDTO> pending = friendshipService.getOutgoingRequests(userId);
 
+
+        // CHANGED: suggested friends now come back as SuggestedFriend DTOs
+        // carrying flags for each signal (shared board / movie / game / song)
+        // so the template can filter them client-side.
+        List<FriendshipService.SuggestedFriend> suggested =
+                friendshipService.getSuggestedFriendsMedia(userId);
         // Search results (empty list if no query)
         List<FriendshipService.FriendSearchResult> searchResults =
                 friendshipService.searchUsersByUsername(userId, search);
@@ -118,7 +123,7 @@ public class FriendshipController {
         // Collect every user id we'll display so we can batch-load usernames.
         Set<Long> idsToResolve = new HashSet<>();
         friends.forEach(f -> idsToResolve.add(f.getId()));
-        suggested.forEach(s -> idsToResolve.add(s.getId()));
+        suggested.forEach(s -> idsToResolve.add(s.getUserId()));
         incoming.forEach(r -> idsToResolve.add(r.getOtherUserId()));
         pending.forEach(r -> idsToResolve.add(r.getOtherUserId()));
 
@@ -128,6 +133,7 @@ public class FriendshipController {
                     inviteBoardNames.put(inv.getBoardId(), b.getBoard_name()));
             idsToResolve.add(inv.getInviterUserId());
         }
+
 
 
         // Single username map covering friends, suggested, incoming,
