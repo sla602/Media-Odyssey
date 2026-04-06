@@ -177,6 +177,105 @@
     border: 1px solid rgba(248, 113, 113, 0.3);
 }
 
+/* =============================================
+   FRIEND SEARCH BAR
+   ============================================= */
+
+.friend-search-section {
+    max-width: 1100px;
+    margin: 0 auto 2rem auto;
+    padding: 0 0.5rem;
+}
+
+.friend-search-form {
+    display: flex;
+    gap: 0.6rem;
+    align-items: center;
+    margin-bottom: 1.25rem;
+}
+
+.friend-search-input {
+    flex: 1;
+    padding: 0.75rem 1rem;
+    border-radius: 10px;
+
+    background: rgba(20, 20, 40, 0.5);
+    border: 1px solid rgba(139, 92, 246, 0.3);
+    color: #e2e8f0;
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 0.95rem;
+
+    transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+    outline: none;
+}
+
+.friend-search-input::placeholder {
+    color: rgba(203, 213, 225, 0.45);
+    font-style: italic;
+}
+
+.friend-search-input:focus {
+    border-color: rgba(139, 92, 246, 0.7);
+    background: rgba(25, 25, 50, 0.7);
+    box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.15);
+}
+
+.friend-search-btn {
+    padding: 0.75rem 1.4rem;
+    border-radius: 10px;
+    border: 1px solid rgba(139, 92, 246, 0.5);
+    background: rgba(139, 92, 246, 0.2);
+    color: #ffffff;
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.18s ease;
+}
+
+.friend-search-btn:hover {
+    background: rgba(139, 92, 246, 0.35);
+    border-color: rgba(139, 92, 246, 0.75);
+    transform: translateY(-1px);
+}
+
+.friend-search-clear {
+    padding: 0.75rem 1rem;
+    border-radius: 10px;
+    color: #a0a0b0;
+    text-decoration: none;
+    font-size: 0.85rem;
+    border: 1px solid rgba(139, 92, 246, 0.15);
+    transition: all 0.18s ease;
+}
+
+.friend-search-clear:hover {
+    color: #ffffff;
+    border-color: rgba(139, 92, 246, 0.4);
+}
+
+/* Search results panel */
+.friend-search-results {
+    background: linear-gradient(145deg,
+    rgba(30, 30, 63, 0.35) 0%,
+    rgba(20, 20, 40, 0.45) 100%);
+    border: 1px solid rgba(139, 92, 246, 0.18);
+    border-radius: 14px;
+    padding: 1.25rem 1.4rem;
+}
+
+.action-already-friends {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    background: rgba(139, 92, 246, 0.15);
+    border: 1px solid rgba(139, 92, 246, 0.35);
+    color: #c4b5fd;
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
 /* ===============================================================
    RESPONSIVE
 ================================================================== */

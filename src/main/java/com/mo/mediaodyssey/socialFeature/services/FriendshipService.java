@@ -1,5 +1,6 @@
 package com.mo.mediaodyssey.socialFeature.services;
 
+import com.mo.mediaodyssey.layout.models.Profile;
 import com.mo.mediaodyssey.shared.model.User;
 import com.mo.mediaodyssey.auth.repository.UserRepository;
 import com.mo.mediaodyssey.layout.models.BoardRole;
@@ -7,8 +8,10 @@ import com.mo.mediaodyssey.layout.repositories.BoardRoleRepository;
 import com.mo.mediaodyssey.socialFeature.models.DTO.FriendRequestDTO;
 import com.mo.mediaodyssey.socialFeature.models.Friendship;
 import com.mo.mediaodyssey.socialFeature.repositories.FriendshipRepository;
+import com.mo.mediaodyssey.socialFeature.repositories.ProfileRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -32,15 +35,85 @@ public class FriendshipService {
     private final FriendshipRepository friendshipRepo;
     private final BoardRoleRepository boardRoleRepo;
     private final UserRepository userRepo;
-
+    private final ProfileService profileService;
+    private final ProfileRepository profileRepo;
     public FriendshipService(FriendshipRepository friendshipRepo,
                              BoardRoleRepository boardRoleRepo,
-                             UserRepository userRepo) {
+                             UserRepository userRepo, ProfileService profileService, ProfileRepository profileRepo) {
         this.friendshipRepo = friendshipRepo;
         this.boardRoleRepo = boardRoleRepo;
         this.userRepo = userRepo;
+        this.profileService = profileService;
+        this.profileRepo = profileRepo;
     }
 
+    /**
+     * A single search result for the friend search bar on friends.html.
+     * Pairs a user id / username with the viewer's current friend status
+     * toward that user, so the template can render the right action button.
+     */
+    public static class FriendSearchResult {
+        private final Long userId;
+        private final String username;
+        private final FriendStatus status;
+        private final Long requestId;   // non-null only if there is a pending request
+
+        public FriendSearchResult(Long userId, String username,
+                                  FriendStatus status, Long requestId) {
+            this.userId = userId;
+            this.username = username;
+            this.status = status;
+            this.requestId = requestId;
+        }
+
+        public Long getUserId()     { return userId; }
+        public String getUsername() { return username; }
+        public FriendStatus getStatus() { return status; }
+        public String getStatusName()   { return status.name(); }
+        public Long getRequestId()  { return requestId; }
+    }
+
+    /**
+     * Search for users by username and annotate each with the viewer's
+     * current friend status. Used by the search bar on friends.html.
+     *
+     * Returns an empty list if the query is blank.
+     */
+    public List<FriendSearchResult> searchUsersByUsername(Long viewerId, String query) {
+        if (query == null || query.isBlank()) return List.of();
+
+        List<Profile> matches = profileRepo.searchByUsername(query.trim(), viewerId);
+
+        List<FriendSearchResult> results = new ArrayList<>();
+        for (Profile p : matches) {
+            Long otherId = p.getUserId();
+            FriendStatus status = getStatusBetween(viewerId, otherId);
+
+            // If there's a pending request either direction, look up its id
+            // so the template can POST to /accept or /cancel directly.
+            Long requestId = null;
+            if (status == FriendStatus.REQUEST_SENT || status == FriendStatus.REQUEST_RECEIVED) {
+                requestId = friendshipRepo.findBetween(viewerId, otherId)
+                        .map(f -> f.getId())
+                        .orElse(null);
+            }
+
+            results.add(new FriendSearchResult(otherId, p.getUsername(), status, requestId));
+        }
+        return results;
+    }
+    /**
+     * Returns null if the user has a username, or a redirect string if they don't.
+     * Used as a guard at the top of all gated endpoints.
+     */
+    private String requireUsername(Long userId, RedirectAttributes redirectAttributes) {
+        if (!profileService.hasUsername(userId)) {
+            redirectAttributes.addFlashAttribute("errorMessage",
+                    "You need to set a username before using the friends page.");
+            return "redirect:/profile";
+        }
+        return null;
+    }
     // Requests
 
     public void sendFriendRequest(Long fromUserId, Long toUserId) {

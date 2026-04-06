@@ -1,9 +1,10 @@
-package com.mo.mediaodyssey.layout.services;
+package com.mo.mediaodyssey.socialFeature.services;
 
 import com.mo.mediaodyssey.layout.models.Boards;
 import com.mo.mediaodyssey.layout.models.Profile;
 import com.mo.mediaodyssey.layout.repositories.BoardsRepository;
-import com.mo.mediaodyssey.layout.repositories.ProfileRepository;
+import com.mo.mediaodyssey.socialFeature.repositories.ProfileRepository;
+import com.mo.mediaodyssey.layout.services.BoardsService;
 import com.mo.mediaodyssey.socialFeature.models.Comment;
 import com.mo.mediaodyssey.socialFeature.models.Post;
 import com.mo.mediaodyssey.socialFeature.repositories.CommentRepository;
@@ -52,13 +53,38 @@ public class ProfileService {
                 .orElseGet(() -> profileRepo.save(new Profile(userId)));
     }
 
+    /**
+     * Returns true if the user has a non-blank username set on their profile.
+     * Used as a gate for social actions (join board, friend requests, etc.).
+     */
+    public boolean hasUsername(Long userId) {
+        return profileRepo.findByUserId(userId)
+                .map(p -> p.getUsername() != null && !p.getUsername().isBlank())
+                .orElse(false);
+    }
+
 
     /**
      * Update and persist the editable profile fields for the given user.
+     *
+     * Rule: once a user has set a username, they cannot clear it back to
+     *  null/blank. The description and pronouns stay freely editable.
      */
     public Profile updateProfile(Long userId, String username, String description, String pronouns) {
         Profile profile = getOrCreateProfile(userId);
-        profile.setUsername(username);
+
+        String currentUsername = profile.getUsername();
+        boolean hasExistingUsername = currentUsername != null && !currentUsername.isBlank();
+        boolean incomingIsBlank = username == null || username.isBlank();
+
+        if (hasExistingUsername && incomingIsBlank) {
+            throw new IllegalStateException("Username cannot be removed once set.");
+        }
+
+        // Only update username if a value was actually provided.
+        if (!incomingIsBlank) {
+            profile.setUsername(username.trim());
+        }
         profile.setDescription(description);
         profile.setPronouns(pronouns);
         return profileRepo.save(profile);

@@ -1,118 +1,3 @@
-.profile-header {
-    display: flex;
-    flex-direction: row;
-    align-items: flex-start;
-
-    gap: 4rem;
-
-    margin: 100px auto 0 auto;
-    padding: 2rem;
-    max-width: 1000px;
-
-    background: rgba(255, 255, 255, 0.02);
-    border-radius: 16px;
-}
-
-.avatar-container{
-    position: relative;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    margin-left: 1.5rem;
-    min-width: 180px;
-}
-
-.avatar-display, .avatar-option {
-    object-fit: cover;
-}
-
-.avatar-display {
-    width: 160px;
-    height: 160px;
-    border-radius: 50%;
-    object-fit: cover;
-
-    border: 2px solid rgba(139, 92, 246, 0.4);
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
-
-    transition: all 0.3s ease;
-}
-
-.avatar-display:hover {
-    transform: scale(1.05);
-    border-color: rgba(139, 92, 246, 0.8);
-}
-
-.avatar-selection-box {
-    position: absolute;
-    top: 180px;
-    left: 50%;
-    transform: translateX(-50%);
-
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-
-    padding: 1rem;
-    width: 265px;
-
-    background: rgba(20, 20, 30, 0.85);
-    backdrop-filter: blur(10px);
-
-    border: 1px solid rgba(139, 92, 246, 0.4);
-    border-radius: 16px;
-
-    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.5);
-
-    z-index: 10;
-}
-
-.stored-avatars-display {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: 0.8rem;
-}
-
-.avatar-option,
-.avatar-placeholder {
-    width: 70px;
-    height: 70px;
-    border-radius: 50%;
-
-    object-fit: cover;
-
-    display: flex;
-    align-items: center;
-    justify-content: center;
-
-    cursor: pointer;
-    transition: all 0.25s ease;
-}
-
-.avatar-option {
-    background: rgba(255, 255, 255, 0.04);
-    border: 2px solid rgba(139, 92, 246, 0.35);
-}
-
-.avatar-option:hover {
-    transform: scale(1.08);
-    border-color: rgba(139, 92, 246, 0.9);
-}
-
-.avatar-placeholder {
-    border: 2px dashed rgba(139, 92, 246, 0.5);
-}
-
-.avatar-placeholder:hover {
-    transform: scale(1.05);
-    border-color: rgba(139, 92, 246, 0.9);
-}
-
-.plus-icon {
-    font-size: 28px;
-    color: rgba(139, 92, 246, 0.9);
-}
 
 .hidden {
     display: none !important;
@@ -124,8 +9,8 @@
     position: relative;
     display: flex;
     flex-direction: row;
+    flex-wrap: wrap;
     align-items: flex-start;
-
     gap: 3.5rem;
 
     margin: 100px auto 0 auto;
@@ -142,7 +27,7 @@
     box-shadow:
             0 10px 40px rgba(0, 0, 0, 0.35),
             inset 0 1px 0 rgba(255, 255, 255, 0.04);
-    overflow: hidden;
+    overflow: visible;
 }
 
 /* subtle top-border accent line */
@@ -589,34 +474,45 @@
 }
 
 /* =============================================
-   FLASH MESSAGES (success / error toasts)
+   FLASH MESSAGES (inside .profile-header)
+   Takes up a full row above the avatar + info box
+   by claiming 100% flex-basis.
    ============================================= */
 
-.flash-message {
-    max-width: 1000px;
-    margin: 100px auto 0 auto;
-    padding: 0.75rem 1rem;
-    border-radius: 10px;
-    font-size: 0.9rem;
+.profile-header > .flash-message {
+    flex: 1 0 100%;
+    margin: 0 0 0.5rem 0;
+    padding: 0.85rem 1.2rem;
+    border-radius: 12px;
+    font-size: 0.92rem;
+    font-weight: 500;
     font-family: 'Space Grotesk', sans-serif;
+    text-align: center;
+    animation: flashSlideIn 0.3s ease;
 }
 
-.flash-message + .profile-header {
-    margin-top: 1rem;
-}
-
-.flash-success {
-    background: rgba(52, 211, 153, 0.12);
+.profile-header > .flash-success {
     color: #a7f3d0;
-    border: 1px solid rgba(52, 211, 153, 0.3);
+    background: linear-gradient(145deg,
+    rgba(16, 185, 129, 0.15) 0%,
+    rgba(5, 150, 105, 0.1) 100%);
+    border: 1px solid rgba(16, 185, 129, 0.4);
+    box-shadow: 0 4px 16px -6px rgba(16, 185, 129, 0.25);
 }
 
-.flash-error {
-    background: rgba(248, 113, 113, 0.12);
-    color: #fecaca;
-    border: 1px solid rgba(248, 113, 113, 0.3);
+.profile-header > .flash-error {
+    color: #fca5a5;
+    background: linear-gradient(145deg,
+    rgba(239, 68, 68, 0.15) 0%,
+    rgba(220, 38, 38, 0.1) 100%);
+    border: 1px solid rgba(239, 68, 68, 0.4);
+    box-shadow: 0 4px 16px -6px rgba(239, 68, 68, 0.25);
 }
 
+@keyframes flashSlideIn {
+    from { opacity: 0; transform: translateY(-8px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
 /* =============================================
    PROFILE BOARDS SECTIONS (created / joined)
    ============================================= */
@@ -1054,6 +950,87 @@
 @keyframes popupRise {
     from { opacity: 0; transform: translateY(20px) scale(0.96); }
     to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* =============================================
+   FORM VALIDATION — INPUT ERROR STATE
+   Red border + glow on inputs that fail client-side
+   validation (e.g. trying to clear an existing username).
+   ============================================= */
+
+.info-items.input-error {
+    border-color: rgba(239, 68, 68, 0.75) !important;
+    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.15);
+    background: rgba(239, 68, 68, 0.05);
+}
+
+.info-items.input-error:focus {
+    border-color: rgba(239, 68, 68, 0.9) !important;
+    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.25);
+    outline: none;
+}
+
+/* Inline error message shown below the input */
+.field-error {
+    margin-top: 0.4rem;
+    font-size: 0.8rem;
+    color: #fca5a5;
+    font-style: italic;
+    padding-left: 0.2rem;
+    line-height: 1.4;
+}
+
+.field-error.hidden {
+    display: none;
+}
+
+/* =============================================
+   FLASH MESSAGES
+   Success / error banners at the top of main content.
+   (Also used on friends.html — shared via userProfile.css
+   since friends.html already imports it.)
+   ============================================= */
+
+.flash-message {
+    max-width: 900px;
+    margin: 1rem auto;
+    padding: 0.85rem 1.2rem;
+    border-radius: 10px;
+    font-size: 0.92rem;
+    font-weight: 500;
+    font-family: 'Space Grotesk', sans-serif;
+    text-align: center;
+    animation: flashSlideIn 0.3s ease;
+}
+
+.flash-success {
+    color: #a7f3d0;
+    background: linear-gradient(145deg,
+    rgba(16, 185, 129, 0.15) 0%,
+    rgba(5, 150, 105, 0.1) 100%);
+    border: 1px solid rgba(16, 185, 129, 0.4);
+    box-shadow: 0 4px 16px -6px rgba(16, 185, 129, 0.25);
+}
+
+.flash-error {
+    color: #fca5a5;
+    background: linear-gradient(145deg,
+    rgba(239, 68, 68, 0.15) 0%,
+    rgba(220, 38, 38, 0.1) 100%);
+    border: 1px solid rgba(239, 68, 68, 0.4);
+    box-shadow: 0 4px 16px -6px rgba(239, 68, 68, 0.25);
+}
+
+
+@keyframes flashSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-8px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 /*

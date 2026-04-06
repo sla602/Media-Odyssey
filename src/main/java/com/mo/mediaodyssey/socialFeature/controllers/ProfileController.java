@@ -2,7 +2,7 @@ package com.mo.mediaodyssey.socialFeature.controllers;
 
 import com.mo.mediaodyssey.layout.models.Profile;
 import com.mo.mediaodyssey.layout.services.AvatarService;
-import com.mo.mediaodyssey.layout.services.ProfileService;
+import com.mo.mediaodyssey.socialFeature.services.ProfileService;
 import com.mo.mediaodyssey.shared.model.User;
 import com.mo.mediaodyssey.socialFeature.services.FriendshipService;
 import com.mo.mediaodyssey.socialFeature.services.FriendshipService.FriendStatus;
@@ -82,8 +82,12 @@ public class ProfileController {
                               Authentication authentication,
                               RedirectAttributes redirectAttributes) {
         User user = (User) authentication.getPrincipal();
-        profileService.updateProfile(user.getId(), username, description, pronouns);
-
+        try {
+            profileService.updateProfile(user.getId(), username, description, pronouns);
+            redirectAttributes.addFlashAttribute("successMessage", "Profile saved.");
+        } catch (IllegalStateException e) {
+            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+        }
         redirectAttributes.addFlashAttribute("successMessage", "Profile saved.");
         return "redirect:/profile";
     }
@@ -98,6 +102,12 @@ public class ProfileController {
                             Authentication authentication,
                             RedirectAttributes redirectAttributes) {
         User viewer = (User) authentication.getPrincipal();
+        if (!profileService.hasUsername(viewer.getId())) {
+            redirectAttributes.addFlashAttribute("errorMessage",
+                    "You need to set a username before sending friend requests.");
+            return "redirect:/profile";
+        }
+
         try {
             friendshipService.sendFriendRequest(viewer.getId(), targetUserId);
             redirectAttributes.addFlashAttribute("successMessage", "Friend request sent.");

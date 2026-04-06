@@ -1,9 +1,10 @@
 package com.mo.mediaodyssey.socialFeature.controllers;
 
-import com.mo.mediaodyssey.layout.repositories.ProfileRepository;
+import com.mo.mediaodyssey.socialFeature.repositories.ProfileRepository;
 import com.mo.mediaodyssey.shared.model.User;
 import com.mo.mediaodyssey.socialFeature.models.DTO.FriendRequestDTO;
 import com.mo.mediaodyssey.socialFeature.services.FriendshipService;
+import com.mo.mediaodyssey.socialFeature.services.ProfileService;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -23,14 +24,28 @@ public class FriendshipController {
 
     private final FriendshipService friendshipService;
     private final ProfileRepository profileRepo;
+    private final ProfileService profileService;
 
     public FriendshipController(FriendshipService friendshipService,
-                                ProfileRepository profileRepo) {
+                                ProfileRepository profileRepo, ProfileService profileService) {
         this.friendshipService = friendshipService;
         this.profileRepo = profileRepo;
+        this.profileService = profileService;
     }
 
     // ─── Helpers ─────────────────────────────────────────────────────
+    /**
+     * Returns null if the user has a username, or a redirect string if they don't.
+     * Used as a guard at the top of all gated endpoints.
+     */
+    private String requireUsername(Long userId, RedirectAttributes redirectAttributes) {
+        if (!profileService.hasUsername(userId)) {
+            redirectAttributes.addFlashAttribute("errorMessage",
+                    "You need to set a username before using the friends page.");
+            return "redirect:/profile";
+        }
+        return null;
+    }
 
     /**
      * Look up the display username for a user id.
@@ -69,14 +84,26 @@ public class FriendshipController {
      *   4) Pending (outgoing) requests — user can cancel these
      */
     @GetMapping("/friends")
-    public String viewFriendsPage(Authentication authentication, Model model) {
+    public String viewFriendsPage(@RequestParam(value = "search", required = false) String search, Authentication authentication, Model model, RedirectAttributes redirectAttributes) {
         User user = (User) authentication.getPrincipal();
         Long userId = user.getId();
+
+        // Gate: username required to use the friends page
+
+        if (!profileService.hasUsername(userId)) {
+            redirectAttributes.addFlashAttribute("errorMessage",
+                    "You need to set a username before using the friends page.");
+            return "redirect:/profile";
+        }
 
         List<User> friends = friendshipService.getFriends(userId);
         List<FriendRequestDTO> incoming = friendshipService.getIncomingRequests(userId);
         List<User> suggested = friendshipService.getSuggestedFriends(userId);
         List<FriendRequestDTO> pending = friendshipService.getOutgoingRequests(userId);
+
+        // Search results (empty list if no query)
+        List<FriendshipService.FriendSearchResult> searchResults =
+                friendshipService.searchUsersByUsername(userId, search);
 
         // Collect every user id we'll display so we can batch-load usernames.
         Set<Long> idsToResolve = new HashSet<>();
@@ -94,6 +121,8 @@ public class FriendshipController {
         model.addAttribute("suggestedFriends", suggested);
         model.addAttribute("pendingRequests", pending);
         model.addAttribute("usernames", usernames);
+        model.addAttribute("searchQuery", search);
+        model.addAttribute("searchResults", searchResults);
 
         return "friends-view/friends";
     }
@@ -101,8 +130,12 @@ public class FriendshipController {
     // ─── Friend request actions ──────────────────────────────────────
 
     @PostMapping("/friends/requests/{requestId}/accept")
-    public String acceptRequest(@PathVariable Long requestId,
+    public String acceptRequest(@PathVariable Long requestId, Authentication authentication,
                                 RedirectAttributes redirectAttributes) {
+
+        User viewer = (User) authentication.getPrincipal();
+        String guard = requireUsername(viewer.getId(), redirectAttributes);
+        if (guard != null) return guard;
         try {
             friendshipService.acceptFriendRequest(requestId);
             redirectAttributes.addFlashAttribute("successMessage", "Friend request accepted.");
@@ -113,8 +146,16 @@ public class FriendshipController {
     }
 
     @PostMapping("/friends/requests/{requestId}/reject")
-    public String rejectRequest(@PathVariable Long requestId,
+    public String rejectRequest(@PathVariable Long requestId, Authentication authentication,
                                 RedirectAttributes redirectAttributes) {
+        User user = (User) authentication.getPrincipal();
+        Long userId = user.getId();
+
+        if (!profileService.hasUsername(userId)) {
+            redirectAttributes.addFlashAttribute("errorMessage",
+                    "You need to set a username before using the friends page.");
+            return "redirect:/profile";
+        }
         try {
             friendshipService.cancelFriendRequest(requestId);
             redirectAttributes.addFlashAttribute("successMessage", "Friend request rejected.");
@@ -126,8 +167,16 @@ public class FriendshipController {
 
     /** Cancel an outgoing pending request. */
     @PostMapping("/friends/requests/{requestId}/cancel")
-    public String cancelRequest(@PathVariable Long requestId,
+    public String cancelRequest(@PathVariable Long requestId, Authentication authentication,
                                 RedirectAttributes redirectAttributes) {
+        User user = (User) authentication.getPrincipal();
+        Long userId = user.getId();
+
+        if (!profileService.hasUsername(userId)) {
+            redirectAttributes.addFlashAttribute("errorMessage",
+                    "You need to set a username before using the friends page.");
+            return "redirect:/profile";
+        }
         try {
             friendshipService.cancelFriendRequest(requestId);
             redirectAttributes.addFlashAttribute("successMessage", "Friend request cancelled.");
@@ -143,6 +192,13 @@ public class FriendshipController {
                                     Authentication authentication,
                                     RedirectAttributes redirectAttributes) {
         User viewer = (User) authentication.getPrincipal();
+
+
+        if (!profileService.hasUsername(viewer.getId())) {
+            redirectAttributes.addFlashAttribute("errorMessage",
+                    "You need to set a username before using the friends page.");
+            return "redirect:/profile";
+        }
         try {
             friendshipService.sendFriendRequest(viewer.getId(), targetUserId);
             redirectAttributes.addFlashAttribute("successMessage", "Friend request sent.");
@@ -157,6 +213,11 @@ public class FriendshipController {
                                Authentication authentication,
                                RedirectAttributes redirectAttributes) {
         User viewer = (User) authentication.getPrincipal();
+        if (!profileService.hasUsername(viewer.getId())) {
+            redirectAttributes.addFlashAttribute("errorMessage",
+                    "You need to set a username before using the friends page.");
+            return "redirect:/profile";
+        }
         try {
             friendshipService.removeFriend(viewer.getId(), friendUserId);
             redirectAttributes.addFlashAttribute("successMessage", "Friend removed.");

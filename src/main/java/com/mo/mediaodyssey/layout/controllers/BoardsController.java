@@ -2,9 +2,7 @@ package com.mo.mediaodyssey.layout.controllers;
 
 import com.mo.mediaodyssey.layout.models.BoardRole;
 import com.mo.mediaodyssey.layout.repositories.BoardRoleRepository;
-import com.mo.mediaodyssey.layout.repositories.ProfileRepository;
-import com.mo.mediaodyssey.socialFeature.enums.RoleType;
-import com.mo.mediaodyssey.socialFeature.models.Comment;
+import com.mo.mediaodyssey.socialFeature.repositories.ProfileRepository;
 import com.mo.mediaodyssey.socialFeature.models.DTO.CommentDTO;
 import com.mo.mediaodyssey.socialFeature.models.DTO.PostDTO;
 import com.mo.mediaodyssey.socialFeature.models.Post;
@@ -15,7 +13,7 @@ import com.mo.mediaodyssey.socialFeature.repositories.ReportRepository;
 import com.mo.mediaodyssey.socialFeature.services.CommentService;
 import com.mo.mediaodyssey.socialFeature.services.ModerationService;
 import com.mo.mediaodyssey.socialFeature.services.PostService;
-import org.springframework.http.ResponseEntity;
+import com.mo.mediaodyssey.socialFeature.services.ProfileService;
 import org.springframework.security.core.Authentication;
 
 import java.util.*;
@@ -55,9 +53,10 @@ public class BoardsController {
     private final PostRepository postRepository;
     private final CommentRepository commentRepository;
     private final ProfileRepository profileRepository;
+    private final ProfileService profileService;
 
     public BoardsController (BoardsService boardsService, BoardMediaRepository boardMediaRepository, MovieService movieService, PostService postService, BoardRoleRepository boardRoleRepository, CommentService commentService, ReportRepository reportRepository, ModerationService moderationService, PostRepository postRepository, CommentRepository commentRepository,
-                             ProfileRepository profileRepository) {
+                             ProfileRepository profileRepository, ProfileService profileService) {
         this.boardsService = boardsService; 
         this.boardMediaRepository = boardMediaRepository;
         this.movieService = movieService;
@@ -69,6 +68,7 @@ public class BoardsController {
         this.postRepository = postRepository;
         this.commentRepository = commentRepository;
         this.profileRepository = profileRepository;
+        this.profileService = profileService;
     }
 
 
@@ -297,9 +297,20 @@ public class BoardsController {
     // ─── Join / Leave ────────────────────────────────────────────────
 
     @PostMapping("/display/{boardId}/join")
-    public String joinBoard(@PathVariable Long boardId, Authentication authentication) {
+    public String joinBoard(@PathVariable Long boardId, Authentication authentication,RedirectAttributes redirectAttributes) {
         User user = (User) authentication.getPrincipal();
-        boardsService.joinBoard(user.getId(), boardId);
+        if (!profileService.hasUsername(user.getId())) {
+            redirectAttributes.addFlashAttribute("errorMessage",
+                    "You need to set a username before joining boards.");
+            return "redirect:/profile";
+        }
+
+        try {
+            boardsService.joinBoard(user.getId(), boardId);
+        } catch (IllegalStateException e) {
+            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+        }
+
         return "redirect:/boards/display/" + boardId;
     }
 

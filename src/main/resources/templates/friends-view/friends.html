@@ -36,9 +36,86 @@
     <div th:if="${errorMessage}"   class="flash-message flash-error"   th:text="${errorMessage}"></div>
 
     <h1 class="friends-page-title">Friends</h1>
+    <!-- =====================================================
+     USERNAME SEARCH BAR
+     Lets the user look up other users by username and
+     act on the result (add / accept / cancel / view).
+     ===================================================== -->
+    <section class="friend-search-section">
+        <form th:action="@{/friends}" method="get" class="friend-search-form">
+            <input type="text"
+                   name="search"
+                   class="friend-search-input"
+                   placeholder="Search users by username..."
+                   th:value="${searchQuery}"
+                   autocomplete="off">
+            <button type="submit" class="friend-search-btn">Search</button>
+            <a th:if="${searchQuery != null and !#strings.isEmpty(searchQuery)}"
+               th:href="@{/friends}"
+               class="friend-search-clear">Clear</a>
+        </form>
 
+        <!-- Results only render when a search was actually performed -->
+        <div th:if="${searchQuery != null and !#strings.isEmpty(searchQuery)}"
+             class="friend-search-results">
+
+            <div class="friends-panel-head">
+                <h2 class="section-title">Search Results</h2>
+                <span class="friends-count" th:text="${#lists.size(searchResults)}">0</span>
+            </div>
+
+            <!-- No matches -->
+            <div th:if="${#lists.isEmpty(searchResults)}" class="empty-message">
+                No users found matching "<span th:text="${searchQuery}">query</span>".
+            </div>
+
+            <!-- Results list -->
+            <div th:each="result : ${searchResults}" class="member-card friend-card">
+                <div class="member-info">
+                    <div class="friend-text">
+                        <a th:href="@{'/profile/' + ${result.userId}}"
+                           class="member-name friend-name-link"
+                           th:text="${result.username}">username</a>
+                    </div>
+                </div>
+                <div class="member-actions">
+
+                    <!-- NONE: can send a request -->
+                    <form th:if="${result.statusName == 'NONE'}"
+                          th:action="@{'/friends/add/' + ${result.userId}}"
+                          method="post" class="action-form">
+                        <button type="submit" class="action-btn action-add">Add Friend</button>
+                    </form>
+
+                    <!-- REQUEST_SENT: show cancel -->
+                    <form th:if="${result.statusName == 'REQUEST_SENT'}"
+                          th:action="@{'/friends/requests/' + ${result.requestId} + '/cancel'}"
+                          method="post" class="action-form">
+                        <button type="submit" class="action-btn action-cancel">Cancel Request</button>
+                    </form>
+
+                    <!-- REQUEST_RECEIVED: accept/reject -->
+                    <th:block th:if="${result.statusName == 'REQUEST_RECEIVED'}">
+                        <form th:action="@{'/friends/requests/' + ${result.requestId} + '/accept'}"
+                              method="post" class="action-form">
+                            <button type="submit" class="action-btn action-accept">Accept</button>
+                        </form>
+                        <form th:action="@{'/friends/requests/' + ${result.requestId} + '/reject'}"
+                              method="post" class="action-form">
+                            <button type="submit" class="action-btn action-reject">Reject</button>
+                        </form>
+                    </th:block>
+
+                    <!-- FRIENDS: just a label -->
+                    <span th:if="${result.statusName == 'FRIENDS'}"
+                          class="action-btn action-already-friends">Friends</span>
+                </div>
+            </div>
+        </div>
+    </section>
     <!-- Grid of 4 columns / panels -->
     <div class="friends-grid">
+
 
         <!-- ======================================================
              1) FRIENDS

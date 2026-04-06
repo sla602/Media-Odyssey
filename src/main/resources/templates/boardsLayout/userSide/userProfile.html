@@ -25,9 +25,20 @@
         *   + avatar  +username  +description  +gender  +boards user created  +boards user've joined
         -->
 
+
+
         <!-- MAIN CONTENT STARTS HERE -->
         <main class="user-profile-container">
+            <!-- Flash messages — shown after save attempts or after being
+                 redirected here by a gated action (e.g. trying to add a friend
+                 without having set a username yet) -->
+
+
+
             <div class="profile-header">
+
+                <div th:if="${successMessage}" class="flash-message flash-success" th:text="${successMessage}"></div>
+                <div th:if="${errorMessage}"   class="flash-message flash-error"   th:text="${errorMessage}"></div>
 
                 <!-- Avatar is displayed on the right side as a circle,
                 allows user to upload their own profile picture.
@@ -164,19 +175,34 @@
 
                     <!-- ─── EDIT MODE (own profile only, hidden by default) ─── -->
                     <th:block th:if="${isOwnProfile == null or isOwnProfile}">
+                        <!-- added novalidate + onsubmit hook so we can block
+                             clearing an already-set username via JS validator -->
                         <form id="profileEdit"
                               th:action="@{/profile/save}"
                               method="post"
-                              class="profile-edit-mode hidden">
+                              class="profile-edit-mode hidden"
+                              novalidate
+                              onsubmit="return validateProfileForm();">
+
 
                             <div class="info-field">
                                 <label class="info-label" for="usernameInput">
                                     <span class="info-label-icon">@</span>
                                     Username
                                 </label>
+                                <!-- data-has-username flag tells the JS validator
+                                     whether the user already has a username set. If true,
+                                     a blank submission is blocked and shows the red border. -->
                                 <input type="text" id="usernameInput" name="username"
                                        placeholder="Choose a username"
-                                       class="info-items" th:value="${profile?.username}">
+                                       class="info-items"
+                                       th:value="${profile?.username}"
+                                       th:attr="data-has-username=${profile?.username != null and !#strings.isEmpty(profile?.username)}">
+                                <!-- inline error slot (unique id, not a duplicate
+                                     of the input's id). Hidden until validation fails. -->
+                                <div class="field-error hidden" id="usernameErrorMsg">
+                                    Username cannot be empty once set.
+                                </div>
                             </div>
 
                             <div class="info-field">
@@ -352,6 +378,37 @@
                     view.classList.remove('hidden');
                 }
             }
+            // CHANGED: Block clearing an already-set username on submit.
+            // Returns false to prevent the form from submitting, which
+            // triggers the red border + inline error message.
+            function validateProfileForm() {
+                const input = document.getElementById('usernameInput');
+                const error = document.getElementById('usernameErrorMsg');
+                if (!input || !error) return true;
+
+                const hasExisting = input.dataset.hasUsername === 'true';
+                const isBlank = input.value.trim() === '';
+
+                if (hasExisting && isBlank) {
+                    input.classList.add('input-error');
+                    error.classList.remove('hidden');
+                    input.focus();
+                    return false;
+                }
+
+                input.classList.remove('input-error');
+                error.classList.add('hidden');
+                return true;
+            }
+
+            // CHANGED: Clear the error state as soon as the user starts typing again
+            document.getElementById('usernameInput')?.addEventListener('input', function () {
+                const error = document.getElementById('usernameErrorMsg');
+                if (this.value.trim() !== '') {
+                    this.classList.remove('input-error');
+                    error?.classList.add('hidden');
+                }
+            });
         </script>
 
     </body>
