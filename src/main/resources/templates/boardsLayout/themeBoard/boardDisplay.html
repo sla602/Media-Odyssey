@@ -61,7 +61,6 @@
                         <span th:text="${board.board_description}"></span>
                     </div>
 
-
                     <!-- BOARD'S META: Show whether the board is public or private.-->
                     <!-- Meta row: type badge + join button -->
                     <div class="board-meta">
@@ -156,7 +155,7 @@
                                         <button type="submit" class="action-btn action-delete"
                                                 onclick="return confirm('Delete this post?')">Delete</button>
                                     </form>
-                                    <a th:href="@{/boards/display/{id}(id=${board.id}, view='post', postId=${post.id})}"
+                                    <a th:href="@{/boards/display/{id}(id=${board.id}, view='post', postId=${post.id}, edit='true')}"
                                        class="action-btn action-edit">Edit</a>
                                     <a th:href="@{/boards/display/{id}(id=${board.id}, view='post', postId=${post.id})}"
                                        class="action-btn action-reply">Reply</a>
@@ -294,10 +293,12 @@
                     </th:block>
                     <!-- Comments List -->
                     <div class="comments-section">
-                        <h2 class="comments-heading" th:text="${#lists.size(comments)} + ' Comment' + (${#lists.size(comments) != 1} ? 's' : '')"></h2>
+                        <h2 id="comments-heading" class="comments-heading" th:text="${#lists.size(comments)} + ' Comment' + (${#lists.size(comments) != 1} ? 's' : '')"></h2>
                         <div th:if="${#lists.isEmpty(comments)}"><p class="empty-message">No comments yet.</p></div>
 
-                        <div th:each="comment : ${comments}" class="comment-card" th:style="'margin-left: ' + (${comment.depth} * 32) + 'px'">
+                        <div th:each="comment : ${comments}" class="comment-card"
+                             th:id="'comment-' + ${comment.id}"
+                             th:style="'margin-left: ' + (${comment.depth} * 32) + 'px'">
 
                             <!-- Comment display (hidden when editing) -->
                             <div th:id="'comment-display-' + ${comment.id}">
@@ -394,10 +395,8 @@
                            class="mod-sub-tab" th:classappend="${modTab == 'members'} ? ' mod-sub-active' : ''">
                             Members
                         </a>
-                        <!-- Invites sub-tab — only shown for private boards. Owners and
-     moderators can invite friends who aren't already in the board. -->
-                        <a th:if="${board.board_type != null and board.board_type.equalsIgnoreCase('private')}"
-                           th:href="@{/boards/display/{id}(id=${board.id}, view='moderation', modTab='invites')}"
+                        <!-- Invites sub-tab -->
+                        <a th:href="@{/boards/display/{id}(id=${board.id}, view='moderation', modTab='invites')}"
                            class="mod-sub-tab" th:classappend="${modTab == 'invites'} ? ' mod-sub-active' : ''">
                             Invites
                             <span th:if="${pendingInvites != null and !#lists.isEmpty(pendingInvites)}"
@@ -512,13 +511,9 @@
                     </th:block>
 
                     <!-- ============================================================
-                        Invites Tab — private boards only
                         Lists friends eligible to invite and currently pending invites.
                     ============================================================ -->
-                    <th:block th:if="${modTab == 'invites'
-                  and board.board_type != null
-                  and board.board_type.equalsIgnoreCase('private')}">
-
+                    <th:block th:if="${modTab == 'invites'}">
                         <!-- Invitable friends section -->
                         <div class="invite-subsection">
                             <h3 class="invite-subheading">Invite a Friend</h3>
@@ -665,6 +660,7 @@
                     </div>
                 </div>
             </div>
+            </div>
             <!-- Footer Section: in thoughts progress...-->
         </main>
  
@@ -711,6 +707,19 @@
                     edit.style.display = 'none';
                 }
             }
+
+            // Auto-open the post edit form when arriving via the Edit button
+            // from the post list
+            (function () {
+                var params = new URLSearchParams(window.location.search);
+                if (params.get('edit') === 'true') {
+                    var editForm = document.querySelector('[id^="post-edit-"]');
+                    if (editForm) {
+                        var postId = editForm.id.replace('post-edit-', '');
+                        toggleEditPost(postId);
+                    }
+                }
+            })();
         </script>
 
     </body>

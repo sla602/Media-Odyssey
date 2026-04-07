@@ -265,7 +265,7 @@ public class BoardsController {
                         // otherwise, but guard here too for direct URL hits.
                         // Loads invitable friends + pending invites in one place
                         // (no more duplicate blocks scattered around the method).
-                        if ("private".equalsIgnoreCase(board.getBoard_type())) {
+
                             List<User> invitable =
                                     boardInviteService.getInvitableFriends(user.getId(), id);
                             List<BoardInvite> pending =
@@ -281,7 +281,6 @@ public class BoardsController {
                             for (BoardInvite inv : pending) {
                                 userIdsToResolve.add(inv.getInviteeUserId());
                                 userIdsToResolve.add(inv.getInviterUserId());
-                            }
                         }
                         break;
                     default:
