@@ -272,7 +272,7 @@ public class RecommendationService {
         Set<String> banned = loadBannedIds();
         int page = random.nextInt(5) + 1;
         String url = "https://api.rawg.io/api/games?key=" + rawgApiKey +
-                "&metacritic=70,100&dates=2016-01-01,2099-12-31&page_size=20&page=" + page;
+                "&metacritic=70,100&page_size=20&page=" + page;
                 
         try {
             String response = restTemplate.getForObject(url, String.class);
@@ -363,8 +363,7 @@ public class RecommendationService {
                 + "?key=" + rawgApiKey
                 + "&genres=" + genreSlug
                 + "&metacritic=70,100"
-                + "&dates=2016-01-01,2099-12-31"
-                + "&page_size=" + limit
+                + "&page_size=" + limit //10 or 20 depending on whether it's the fav genre or the random genre
                 + "&page=" + page;
 
         try {
