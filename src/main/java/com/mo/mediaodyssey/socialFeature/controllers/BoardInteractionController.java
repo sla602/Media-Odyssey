@@ -24,14 +24,14 @@ import java.util.List;
  */
 @Controller
 @RequestMapping("/boards/display/{boardId}")
-public class InteractionController {
+public class BoardInteractionController {
 
     private final PostService postService;
     private final CommentService commentService;
     private final ModerationService moderationService;
 
-    public InteractionController(PostService postService,
-                                 CommentService commentService, ModerationService moderationService) {
+    public BoardInteractionController(PostService postService,
+                                      CommentService commentService, ModerationService moderationService) {
         this.postService = postService;
         this.commentService = commentService;
         this.moderationService = moderationService;

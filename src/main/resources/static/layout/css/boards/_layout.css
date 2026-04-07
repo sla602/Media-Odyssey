@@ -1,0 +1,208 @@
+/* boards/_layout.css
+   Board display container, header, role + staff tab badges,
+   POST/MEDIA toggle, media-tabs row. */
+
+/* =============================================================================================
+        BOARD DISPLAY SECTION
+==============================================================================================*/
+/* Board Display Page Styles */
+
+/* Main container */
+.board-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem;
+    margin-left: 80px;
+}
+
+.side-bar.collapsed ~ .board-container,
+.board-container.sidebar-collapsed { margin-left: 0; }
+
+/* ===============================================================
+        BOARD DISPLAY — Layout
+==================================================================*/
+
+.board-container { max-width: 1200px; margin: 0 auto; padding: 2rem; margin-left: 80px; }
+
+.side-bar.collapsed ~ .board-container,
+.board-container.sidebar-collapsed { margin-left: 0; }
+
+/* ===============================================================
+        BOARD HEADER
+==================================================================*/
+
+.board-header {
+    display: flex; align-items: flex-start; gap: 2rem; padding: 2rem;
+    background: linear-gradient(145deg, #1a1a2e 0%, #252545 100%);
+    border-radius: 16px; margin-top: 82px; margin-bottom: 2rem;
+    border: 1px solid rgba(99, 102, 241, 0.1);
+    position: relative;
+}
+
+.board-Info { flex: 1; }
+.board-title { font-size: 2rem; font-weight: 700; color: #ffffff; margin-bottom: 0.75rem; line-height: 1.2; }
+.board-desciption { color: #a0a0b0; font-size: 1rem; line-height: 1.6; margin-bottom: 1rem; }
+.board-meta { display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; }
+
+.board-type-badge {
+    display: inline-block; padding: 0.375rem 1rem;
+    background: rgba(99, 102, 241, 0.2); color: #818cf8;
+    border-radius: 20px; font-size: 0.875rem; font-weight: 500; text-transform: capitalize;
+}
+
+/* ===============================================================
+        JOIN / LEAVE BUTTONS (next to type badge)
+==================================================================*/
+
+.join-btn {
+    padding: 0.375rem 1.25rem;
+    border-radius: 20px;
+
+    background: rgba(52, 211, 153, 0.25);
+    color: rgb(167, 243, 208); /* brighter green text */
+    border: 1px solid rgba(52, 211, 153, 0.4);
+
+    font-size: 0.875rem;
+    font-weight: 600;
+    font-family: 'Space Grotesk', sans-serif;
+    cursor: pointer;
+
+    transition: all 0.2s ease;
+}
+
+.join-btn:hover {
+    background: rgba(52, 211, 153, 0.45);
+    color: rgb(209, 250, 229); /* very light mint */
+    border-color: rgba(52, 211, 153, 0.7);
+
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(52, 211, 153, 0.35);
+}
+
+.joined-btn {
+    padding: 0.375rem 1.25rem;
+    border-radius: 20px;
+
+    background: rgba(148, 163, 184, 0.15);
+    color: rgb(148, 163, 184);
+    border: 1px solid rgba(148, 163, 184, 0.30);
+
+    font-size: 0.875rem;
+    font-weight: 600;
+    font-family: 'Space Grotesk', sans-serif;
+    cursor: pointer;
+
+    transition: all 0.2s ease;
+}
+.joined-btn:hover {
+    background: rgba(248, 113, 113, 0.15);
+    color: rgb(248, 113, 113);
+    border-color: rgba(248, 113, 113, 0.40);
+}
+
+/* ===============================================================
+        USER ROLE BADGE (bottom-right of header)
+==================================================================*/
+
+.board-user-role {
+    position: absolute; bottom: 1.25rem; right: 1.5rem;
+}
+
+.user-role-badge {
+    display: inline-block; padding: 0.25rem 0.85rem;
+    border-radius: 12px; font-size: 0.75rem; font-weight: 600; text-transform: uppercase;
+    color: #a0a0b0; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.user-role-badge.role-owner { color: #fbbf24; background: rgba(251, 191, 36, 0.15); border-color: rgba(251, 191, 36, 0.3); }
+.user-role-badge.role-mod { color: #818cf8; background: rgba(99, 102, 241, 0.15); border-color: rgba(99, 102, 241, 0.3); }
+
+/* ===============================================================
+        STAFF TAB BUTTONS (top-right of header)
+==================================================================*/
+
+.board-staff-tabs { display: flex; gap: 0.5rem; position: absolute; top: 1.25rem; right: 1.5rem; }
+
+.staff-tab-btn {
+    display: inline-flex; align-items: center; gap: 0.4rem;
+    padding: 0.5rem 1.25rem; border-radius: 20px;
+    font-size: 0.85rem; font-weight: 600; text-decoration: none;
+    font-family: 'Space Grotesk', sans-serif;
+    color: #a0a0b0; background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(99, 102, 241, 0.15);
+    transition: all 0.2s ease; cursor: pointer;
+}
+.staff-tab-btn:hover { color: #ffffff; background: rgba(99, 102, 241, 0.12); border-color: rgba(99, 102, 241, 0.35); }
+.staff-tab-btn.active { color: #ffffff; background: linear-gradient(135deg, rgba(99, 102, 241, 0.3) 0%, rgba(139, 92, 246, 0.3) 100%); border-color: rgba(99, 102, 241, 0.5); }
+
+.staff-tab-settings { border-color: rgba(251, 191, 36, 0.15); color: #c0a040; }
+.staff-tab-settings:hover { color: #fbbf24; background: rgba(251, 191, 36, 0.08); border-color: rgba(251, 191, 36, 0.35); }
+.staff-tab-settings.active { color: #fbbf24; background: rgba(251, 191, 36, 0.15); border-color: rgba(251, 191, 36, 0.5); }
+
+.report-badge {
+    display: inline-flex; align-items: center; justify-content: center;
+    min-width: 18px; height: 18px; padding: 0 5px;
+    background: #ef4444; color: #ffffff;
+    border-radius: 50%; font-size: 0.7rem; font-weight: 700; line-height: 1;
+}
+
+/* ===============================================================
+        TABS — POST / MEDIA toggle
+==================================================================*/
+
+.board-middle {
+    background: linear-gradient(145deg, #1a1a2e 0%, #252545 100%);
+    border-radius: 16px; padding: 1.5rem;
+    border: 1px solid rgba(99, 102, 241, 0.1);
+}
+
+.middle-select {
+    display: flex; gap: 0.5rem; margin-bottom: 1.5rem;
+    border-bottom: 1px solid rgba(99, 102, 241, 0.2); padding-bottom: 1rem;
+}
+
+.board-post, .board-media {
+    padding: 0.75rem 2rem; background: transparent; border: none;
+    color: #a0a0b0; font-size: 1rem; font-weight: 600;
+    cursor: pointer; border-radius: 8px; transition: all 0.3s ease;
+    font-family: 'Space Grotesk', sans-serif;
+}
+
+.board-post:hover, .board-media:hover { color: #ffffff; background: rgba(99, 102, 241, 0.1); }
+.board-post.active, .board-media.active { color: #ffffff; background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); }
+
+.board-POST-container, .board-MEDIA-container { min-height: 200px; padding: 1rem; }
+
+
+/* ===== MEDIA TABS (Movies / Music / Games) ===== */
+.media-select {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.media-tab {
+    padding: 0.5rem 1.5rem;
+    background: transparent;
+    border: none;
+    color: #a0a0b0;
+    font-weight: 600;
+    cursor: pointer;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+}
+
+.media-tab:hover {
+    color: #ffffff;
+    background: rgba(99, 102, 241, 0.1);
+}
+
+.media-tab.active {
+    color: #ffffff;
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+}
+
+/* Sections */
+.media-section {
+    margin-top: 1.5rem;
+}

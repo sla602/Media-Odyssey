@@ -17,6 +17,7 @@ import jakarta.persistence.GenerationType;
 
 @Entity
 @Table(name = "verification_tokens")
+
 public class VerificationToken {
     // Inspiried by: https://www.baeldung.com/registration-verify-user-by-email
     // Debugging assisted by AI.

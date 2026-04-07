@@ -276,6 +276,98 @@
     font-weight: 600;
 }
 
+/* =============================================
+   SUGGESTED FRIENDS — filter toggle + signal badges
+   ============================================= */
+
+.suggestion-filter-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin: 0.75rem 0 1rem 0;
+}
+
+.suggestion-filter-btn {
+    padding: 0.4rem 0.9rem;
+    border-radius: 999px;
+
+    background: rgba(20, 20, 40, 0.5);
+    border: 1px solid rgba(139, 92, 246, 0.3);
+    color: #c4b5fd;
+
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 0.78rem;
+    font-weight: 600;
+    cursor: pointer;
+
+    transition: all 0.18s ease;
+}
+
+.suggestion-filter-btn:hover {
+    background: rgba(139, 92, 246, 0.15);
+    border-color: rgba(139, 92, 246, 0.55);
+    color: #ffffff;
+}
+
+.suggestion-filter-btn.active {
+    background: rgba(139, 92, 246, 0.35);
+    border-color: rgba(139, 92, 246, 0.75);
+    color: #ffffff;
+    box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.15);
+}
+
+/* Cards hidden by the filter */
+.suggestion-card.suggestion-hidden {
+    display: none;
+}
+
+/* Signal badges stacked under the username */
+.suggestion-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    margin-top: 0.3rem;
+}
+
+.suggestion-badge {
+    display: inline-block;
+    padding: 0.14rem 0.55rem;
+    border-radius: 999px;
+
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+
+    background: rgba(15, 15, 30, 0.5);
+    border: 1px solid rgba(139, 92, 246, 0.3);
+    color: #c4b5fd;
+}
+
+.badge-board {
+    background: rgba(139, 92, 246, 0.18);
+    border-color: rgba(139, 92, 246, 0.45);
+    color: #c4b5fd;
+}
+
+.badge-movie {
+    background: rgba(139, 92, 246, 0.14);
+    border-color: rgba(139, 92, 246, 0.4);
+    color: #c4b5fd;
+}
+
+.badge-game {
+    background: rgba(96, 165, 250, 0.14);
+    border-color: rgba(96, 165, 250, 0.4);
+    color: #93c5fd;
+}
+
+.badge-song {
+    background: rgba(244, 114, 182, 0.14);
+    border-color: rgba(244, 114, 182, 0.4);
+    color: #f9a8d4;
+}
+
 /* ===============================================================
    RESPONSIVE
 ================================================================== */
