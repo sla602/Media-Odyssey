@@ -82,39 +82,6 @@
         color: #ffffff;
       }
 
-      /* === Live Search Input === */
-      /* Styled to match the global search bar in fragments.css */
-      #localSearch {
-        position: sticky;
-        top: 0;
-        z-index: 10;
-        width: 100%;
-        max-width: 400px;
-        padding: 0.625rem 1rem;
-        background: rgba(255, 255, 255, 0.05);
-        border: 1px solid rgba(139, 92, 246, 0.3);
-        border-radius: 25px;
-        color: #e2e8f0;
-        font-size: 0.9rem;
-        font-family: 'Space Grotesk', sans-serif;
-        outline: none;
-        transition: all 0.3s ease;
-        margin-bottom: 1.25rem;
-        display: block;
-      }
-
-      #localSearch::placeholder {
-        color: rgba(203, 213, 225, 0.5);
-        font-style: italic;
-      }
-
-      #localSearch:focus {
-        background: rgba(255, 255, 255, 0.08);
-        border-color: rgba(139, 92, 246, 0.6);
-        box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.15),
-                    0 4px 20px rgba(139, 92, 246, 0.2);
-      }
-
       /* === Divider === */
       hr {
         border: none;
@@ -278,18 +245,7 @@
           </button>
         </a>
       </div>
-
-      <!-- Live search bar -->
-      <div>
-        <input
-          id="localSearch"
-          type="text"
-          placeholder="Search titles..."
-          autocomplete="off"
-        />
-      </div>
-
-      <hr />
+<hr />
 
       <!-- ── Fast-Rising Top 5 ───────────────────────────────────────── -->
       <!--
@@ -351,7 +307,6 @@
       <!--
                 Ranked by Point System: LIKE × 10 + VIEW × 1.
                 Aggregated from UserInteraction table via MediaRankingService.
-                data-title used by JS live search filter.
 
                 Current iteration:
                 - keep internal score for sorting
@@ -444,8 +399,8 @@
 
     <!-- ── JavaScript ──────────────────────────────────────────────────── -->
     <script>
-      // ── Live search (client-side, no reload) ─────────────────────────
-      // Auto view on page load
+      // Auto-record VIEW interaction for each Top 10 card on page load.
+      // Used internally by MediaRankingService to compute popularity scores.
       document
         .querySelectorAll("#top10Grid > div[data-api-id]")
         .forEach((card) => {
@@ -456,119 +411,6 @@
             { method: "POST" },
           ).catch(() => {});
         });
-
-      document
-        .getElementById("localSearch")
-        .addEventListener("input", function (e) {
-          const query = e.target.value.trim().toLowerCase();
-          document.querySelectorAll("#top10Grid > div").forEach((card) => {
-            const title = (card.dataset.title || "").toLowerCase();
-            card.style.display = !query || title.includes(query) ? "" : "none";
-          });
-        });
-
-      // ── Like button ───────────────────────────────────────────────────
-      /*
-       * Records a LIKE interaction via POST /community/like/{mediaApiId}.
-       * Session-based: server prevents duplicate likes.
-       * The actual ranking update happens asynchronously as UserInteraction
-       * data accumulates — page refresh will reflect updated rankings.
-       */
-      document.querySelectorAll(".like-btn").forEach((btn) => {
-        btn.addEventListener("click", () => {
-          if (btn.disabled) return;
-          btn.disabled = true;
-
-          const mediaApiId = btn.dataset.apiId;
-          const mediaType = btn.dataset.type;
-          fetch(
-            `/community/like?mediaApiId=${encodeURIComponent(mediaApiId)}&mediaType=${encodeURIComponent(mediaType)}`,
-            { method: "POST" },
-          )
-            .then((r) => r.json())
-            .then((data) => {
-              if (data.liked) {
-                btn.textContent = "❤️ Liked!";
-              } else {
-                btn.textContent = "✓ Already Liked";
-              }
-            })
-            .catch(() => {
-              btn.disabled = false;
-            });
-        });
-      });
-    </script>
-
-    <script>
-      
-      document.querySelectorAll(".rating-stars").forEach((group) => {
-        const apiId = group.dataset.apiId;
-        const mediaType = group.dataset.type;
-        const buttons = Array.from(group.querySelectorAll(".star-btn"));
-        const msg = group.parentElement.querySelector(".rating-msg");
-
-        buttons.forEach((btn, index) => {
-          btn.addEventListener("mouseenter", () => {
-            highlight(index + 1);
-          });
-
-          btn.addEventListener("mouseleave", () => {
-            resetIfNotLocked();
-          });
-
-          btn.addEventListener("click", () => {
-            const stars = Number(btn.dataset.stars);
-
-            buttons.forEach((b) => (b.disabled = true));
-
-            fetch(
-              `/community/rate/${apiId}?stars=${stars}&mediaType=${encodeURIComponent(mediaType)}`,
-              {
-                method: "POST",
-              },
-            )
-              .then((r) => r.json())
-              .then((data) => {
-                if (data.rated) {
-                  highlight(stars);
-                  lockStars(stars);
-                  msg.textContent = `Thanks! You rated this ${stars}/5.`;
-                } else {
-                  msg.textContent =
-                    "You already rated this item in this session.";
-                }
-              })
-              .catch(() => {
-                buttons.forEach((b) => (b.disabled = false));
-                msg.textContent = "Rating failed. Please try again.";
-              });
-          });
-        });
-
-        function highlight(stars) {
-          buttons.forEach((b, i) => {
-            b.textContent = i < stars ? "★" : "☆";
-          });
-        }
-
-        function lockStars(stars) {
-          highlight(stars);
-          buttons.forEach((b) => (b.disabled = true));
-          group.dataset.locked = "true";
-          group.dataset.lockedStars = String(stars);
-        }
-
-        function resetIfNotLocked() {
-          if (group.dataset.locked === "true") {
-            highlight(Number(group.dataset.lockedStars || "0"));
-          } else {
-            highlight(0);
-          }
-        }
-
-        highlight(0);
-      });
     </script>
 
 
