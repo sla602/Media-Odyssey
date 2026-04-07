@@ -212,38 +212,10 @@
                 Tab values match UserInteraction mediaType: MOVIE, GAME, SONG.
             -->
       <div class="tab-container">
-        <a href="/community">
-          <button
-            class="tab-btn"
-            th:classappend="${currentCat == null} ? 'active'"
-          >
-            All
-          </button>
-        </a>
-        <a href="/community?category=MOVIE">
-          <button
-            class="tab-btn"
-            th:classappend="${currentCat == 'MOVIE'} ? 'active'"
-          >
-            Movies
-          </button>
-        </a>
-        <a href="/community?category=GAME">
-          <button
-            class="tab-btn"
-            th:classappend="${currentCat == 'GAME'} ? 'active'"
-          >
-            Games
-          </button>
-        </a>
-        <a href="/community?category=SONG">
-          <button
-            class="tab-btn"
-            th:classappend="${currentCat == 'SONG'} ? 'active'"
-          >
-            Songs
-          </button>
-        </a>
+        <button class="tab-btn active" data-type="ALL">All</button>
+        <button class="tab-btn" data-type="MOVIE">Movies</button>
+        <button class="tab-btn" data-type="GAME">Games</button>
+        <button class="tab-btn" data-type="SONG">Songs</button>
       </div>
 <hr />
 
@@ -256,49 +228,10 @@
             -->
       <section class="trending-section">
         <h2>🔥 Fast-Rising This Week (Top 5)</h2>
-
-        <div th:if="${#lists.isEmpty(trending)}">
-          <p>
-            No trending data yet — start interacting with media on the home
-            page!
-          </p>
-        </div>
-
-        <div id="trendingGrid" th:unless="${#lists.isEmpty(trending)}">
-          <div
-            th:each="m : ${trending}"
-            class="media-card trending-card"
-            th:attr="data-title=${m.title}, data-type=${m.mediaType}"
-          >
-            <!-- Thumbnail image -->
-            <img
-              th:if="${m.imageUrl != null and !m.imageUrl.isEmpty()}"
-              th:src="${m.imageUrl}"
-              th:alt="${m.title}"
-              class="media-thumbnail"
-              onerror="this.style.display = 'none'"
-            />
-            <div
-              th:if="${m.imageUrl == null or m.imageUrl.isEmpty()}"
-              class="media-thumbnail-placeholder"
-            >No Image</div>
-
-            <div class="card-title">
-              <strong th:text="${m.title}">Title</strong>
-              <!-- Artist name for songs -->
-              <span
-                th:if="${m.artist != null and !m.artist.isEmpty()}"
-                th:text="'by ' + ${m.artist}"
-                class="artist-name"
-              ></span>
-              <em th:text="'[' + ${m.mediaType} + ']'">[Type]</em>
-            </div>
-
-            <div class="card-stats">
-              <span>🔥 Fast-Rising Score: <span class="score-number" th:text="${m.weeklyLikes}">0</span> likes this week</span>
-            </div>
-          </div>
-        </div>
+        <!-- Status message (loading / empty) -->
+        <p id="trendingStatus"></p>
+        <!-- Cards rendered here by trending.js -->
+        <div id="trendingGrid"></div>
       </section>
 
       <hr />
@@ -317,104 +250,16 @@
             -->
       <section class="ranking-section">
         <h2>🏆 Top 10 Ranked</h2>
-
-        <div th:if="${#lists.isEmpty(mediaList)}">
-          <p>
-            No rankings yet — start interacting with media on the home page!
-          </p>
-        </div>
-
-        <div id="top10Grid" th:unless="${#lists.isEmpty(mediaList)}">
-          <div
-            th:each="m, stat : ${mediaList}"
-            class="media-card"
-            th:attr="data-api-id=${m.mediaApiId}, data-type=${m.mediaType}, data-title=${m.title}"
-          >
-            <!-- Rank number + thumbnail -->
-            <span class="rank-number" th:text="${stat.index + 1}">1</span>
-
-            <img
-              th:if="${m.imageUrl != null and !m.imageUrl.isEmpty()}"
-              th:src="${m.imageUrl}"
-              th:alt="${m.title}"
-              class="media-thumbnail"
-              onerror="this.style.display = 'none'"
-            />
-            <div
-              th:if="${m.imageUrl == null or m.imageUrl.isEmpty()}"
-              class="media-thumbnail-placeholder"
-            >No Image</div>
-
-            <!-- Title + artist + type -->
-            <div class="card-title">
-              <strong th:text="${m.title}">Title</strong>
-              <span
-                th:if="${m.artist != null and !m.artist.isEmpty()}"
-                th:text="'by ' + ${m.artist}"
-                class="artist-name"
-              ></span>
-              <em th:text="'[' + ${m.mediaType} + ']'">[Type]</em>
-            </div>
-
-            <!-- Added: popularity score display derived from community interactions -->
-            <!-- Requires m.totalScore, m.likes, m.views from RankedMediaResponse / MediaRankingService -->
-            <div class="popularity-score">
-              ⭐ Popularity Score: <span class="score-number" th:text="${m.totalScore}">0</span>
-              <span class="score-detail">
-                <span th:text="${m.likes}">0</span> likes ·
-                <span th:text="${m.views}">0</span> views
-              </span>
-            </div>
-
-            <!--
-              Previous current-iteration UI removed intentionally:
-              raw score is still used internally for ranking,
-              but is no longer shown directly to the user.
-            -->
-            <!--
-            <div class="card-stats">
-              <span
-                >Score:
-                <span class="score-val" th:text="${m.totalScore}">0</span></span
-              >
-            </div>
-            -->
-
-            <!--
-              Like button hidden for this iteration.
-              Endpoint can remain in backend because ranking still uses likes internally.
-            -->
-            <!--
-            <button
-              class="like-btn"
-              th:attr="data-api-id=${m.mediaApiId}, data-type=${m.mediaType}"
-            >
-              ❤️ Like
-            </button>
-            -->
-          </div>
-        </div>
+        <!-- Status message (loading / empty) -->
+        <p id="top10Status"></p>
+        <!-- Cards rendered here by trending.js -->
+        <div id="top10Grid"></div>
       </section>
     </main>
 
     <!-- ── JavaScript ──────────────────────────────────────────────────── -->
-    <script>
-      // Auto-record VIEW interaction for each Top 10 card on page load.
-      // Used internally by MediaRankingService to compute popularity scores.
-      document
-        .querySelectorAll("#top10Grid > div[data-api-id]")
-        .forEach((card) => {
-          const mediaApiId = card.dataset.apiId;
-          const mediaType = card.dataset.type;
-          fetch(
-            `/community/view?mediaApiId=${encodeURIComponent(mediaApiId)}&mediaType=${encodeURIComponent(mediaType)}`,
-            { method: "POST" },
-          ).catch(() => {});
-        });
-    </script>
-
-
-    <!-- This js script path: ensures sidebar + header logic -->
+<!-- This js script path: ensures sidebar + header logic -->
+    <script th:src="@{/layout/js/trending.js}"></script>
     <script th:src="@{/layout/js/fragments.js}"></script>
 </body>
 </html>
