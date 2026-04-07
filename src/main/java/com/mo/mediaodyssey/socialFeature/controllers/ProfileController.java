@@ -2,16 +2,22 @@ package com.mo.mediaodyssey.socialFeature.controllers;
 
 import com.mo.mediaodyssey.layout.models.Profile;
 import com.mo.mediaodyssey.layout.services.AvatarService;
+import com.mo.mediaodyssey.recommendation.RecommendationResponse;
+import com.mo.mediaodyssey.recommendation.RecommendationService;
 import com.mo.mediaodyssey.socialFeature.services.ProfileService;
 import com.mo.mediaodyssey.shared.model.User;
 import com.mo.mediaodyssey.shared.services.CurrentAccountService;
 import com.mo.mediaodyssey.socialFeature.services.FriendshipService;
 import com.mo.mediaodyssey.socialFeature.services.FriendshipService.FriendStatus;
+
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+
+import java.util.List;
 
 /**
  * Handles the user profile page (username/description/pronouns, save button,
@@ -20,15 +26,36 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 @Controller
 public class ProfileController {
 
-    private final FriendshipService friendshipService;
-    private final ProfileService profileService;
-    private final CurrentAccountService currentAccountService;
+    private static final int LIKED_MEDIA_PREVIEW_LIMIT = 12;
 
-    public ProfileController(FriendshipService friendshipService, ProfileService profileService,
-            CurrentAccountService currentAccountService) {
-        this.friendshipService = friendshipService;
-        this.profileService = profileService;
-        this.currentAccountService = currentAccountService;
+    @Autowired
+    private FriendshipService friendshipService;
+
+    @Autowired
+    private ProfileService profileService;
+
+    @Autowired
+    private CurrentAccountService currentAccountService;
+
+    @Autowired
+    private RecommendationService recommendationService;
+
+    /**
+     * Pulls the user's liked media for the profile preview section. Capped at
+     * LIKED_MEDIA_PREVIEW_LIMIT so the profile page stays lightweight — users
+     * who want the full list can visit a dedicated liked-media page later.
+     *
+     * Safe to call for any user id; returns an empty list if the user has
+     * no interactions yet.
+     */
+    private List<RecommendationResponse> getLikedMediaPreview(Long userId) {
+        List<RecommendationResponse> liked = recommendationService.getLikedMedia(userId);
+        if (liked == null || liked.isEmpty())
+            return List.of();
+        if (liked.size() > LIKED_MEDIA_PREVIEW_LIMIT) {
+            return liked.subList(0, LIKED_MEDIA_PREVIEW_LIMIT);
+        }
+        return liked;
     }
 
     // ─── Own profile page ────────────────────────────────────────────
@@ -46,6 +73,7 @@ public class ProfileController {
         model.addAttribute("isOwnProfile", true);
         model.addAttribute("avatarUrl", AvatarService.avatarGenerate(user.getId()));
         model.addAttribute("recentActivity", profileService.buildRecentActivity(user.getId(), user.getId()));
+        model.addAttribute("likedMedia", getLikedMediaPreview(user.getId())); // viewOwnProfile
 
         return "boardsLayout/userSide/userProfile";
     }
@@ -71,6 +99,7 @@ public class ProfileController {
         model.addAttribute("friendStatus", status.name());
         model.addAttribute("avatarUrl", AvatarService.avatarGenerate(userId));
         model.addAttribute("recentActivity", profileService.buildRecentActivity(userId, viewer.getId()));
+        model.addAttribute("likedMedia", getLikedMediaPreview(userId)); // viewProfile (other user)
 
         return "boardsLayout/userSide/userProfile";
     }

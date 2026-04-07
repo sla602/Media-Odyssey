@@ -6,6 +6,8 @@ import com.mo.mediaodyssey.socialFeature.models.DTO.PostDTO;
 import com.mo.mediaodyssey.socialFeature.services.CommentService;
 import com.mo.mediaodyssey.socialFeature.services.ModerationService;
 import com.mo.mediaodyssey.socialFeature.services.PostService;
+
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
@@ -25,21 +27,19 @@ import java.util.List;
  */
 @Controller
 @RequestMapping("/boards/display/{boardId}")
-public class InteractionController {
+public class BoardInteractionController {
 
-    private final PostService postService;
-    private final CommentService commentService;
-    private final ModerationService moderationService;
-    private final CurrentAccountService currentAccountService;
+    @Autowired
+    private PostService postService;
 
-    public InteractionController(PostService postService,
-            CommentService commentService, ModerationService moderationService,
-            CurrentAccountService currentAccountService) {
-        this.postService = postService;
-        this.commentService = commentService;
-        this.moderationService = moderationService;
-        this.currentAccountService = currentAccountService;
-    }
+    @Autowired
+    private CommentService commentService;
+
+    @Autowired
+    private ModerationService moderationService;
+
+    @Autowired
+    private CurrentAccountService currentAccountService;
 
     // ─── Posts ───────────────────────────────────────────────────────
 

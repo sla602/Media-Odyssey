@@ -41,7 +41,7 @@ public class BoardInviteController {
         } catch (IllegalStateException e) {
             redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
         }
-        return "redirect:/boards/display/" + boardId;
+         return "redirect:/boards/display/" + boardId + "?view=moderation&modTab=invites";
     }
 
     /**
@@ -93,6 +93,6 @@ public class BoardInviteController {
         } catch (IllegalStateException e) {
             redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
         }
-        return "redirect:/boards/display/" + boardId;
+        return "redirect:/boards/display/" + boardId + "?view=moderation&modTab=invites";
     }
 }

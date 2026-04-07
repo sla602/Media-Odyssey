@@ -100,7 +100,7 @@ function buildCard(item) {
         if (item.mediaType === 'SONG') {
           destination = `/mediaView/song/${encodeURIComponent(item.artist)}/${encodeURIComponent(item.title)}`; 
         } else { 
-          destination = `/mediaView/${mediaType}/${item.mediaApiId}`;
+          destination = `/mediaView/${item.mediaType.toLowerCase()}/${item.mediaApiId}`;
         }
     card.href = "javascript:void(0)";
     card.addEventListener("click", async (e) => {

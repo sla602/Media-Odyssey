@@ -282,22 +282,21 @@ public class BoardsController {
                         // otherwise, but guard here too for direct URL hits.
                         // Loads invitable friends + pending invites in one place
                         // (no more duplicate blocks scattered around the method).
-                        if ("private".equalsIgnoreCase(board.getBoard_type())) {
-                            List<User> invitable = boardInviteService.getInvitableFriends(user.getId(), id);
-                            List<BoardInvite> pending = boardInviteService.getInvitesForBoard(id);
 
-                            model.addAttribute("invitableFriends", invitable);
-                            model.addAttribute("pendingInvites", pending);
+                        List<User> invitable = boardInviteService.getInvitableFriends(user.getId(), id);
+                        List<BoardInvite> pending = boardInviteService.getInvitesForBoard(id);
 
-                            // Feed ids into userIdsToResolve so buildUserDisplayNames
-                            // at the bottom of this method populates userDisplayNames
-                            // for both invitable friends and pending invite rows.
-                            for (User f : invitable)
-                                userIdsToResolve.add(f.getId());
-                            for (BoardInvite inv : pending) {
-                                userIdsToResolve.add(inv.getInviteeUserId());
-                                userIdsToResolve.add(inv.getInviterUserId());
-                            }
+                        model.addAttribute("invitableFriends", invitable);
+                        model.addAttribute("pendingInvites", pending);
+
+                        // Feed ids into userIdsToResolve so buildUserDisplayNames
+                        // at the bottom of this method populates userDisplayNames
+                        // for both invitable friends and pending invite rows.
+                        for (User f : invitable)
+                            userIdsToResolve.add(f.getId());
+                        for (BoardInvite inv : pending) {
+                            userIdsToResolve.add(inv.getInviteeUserId());
+                            userIdsToResolve.add(inv.getInviterUserId());
                         }
                         break;
                     default:

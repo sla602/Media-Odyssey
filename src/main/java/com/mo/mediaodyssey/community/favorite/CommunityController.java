@@ -83,28 +83,34 @@ public class CommunityController {
 
     /**
      * Loads the Community Favourites page.
-     * category: MOVIE / GAME / SONG / null
+     * category param is kept for URL compatibility but is now handled client-side.
      *
      * Iteration 3: Fast-Rising section now populated via getFastRising5().
      */
     @GetMapping
     public String communityPage(Model model,
             @RequestParam(required = false) String category) {
-
-        String normalizedCategory = (category == null || category.isBlank())
-                ? null
-                : mediaRankingService.normalizeMediaType(category);
-
-        List<RankedMediaResponse> mediaList = (normalizedCategory == null)
-                ? mediaRankingService.getTop10()
-                : mediaRankingService.getTop10ByMediaType(normalizedCategory);
-
-        List<RankedMediaResponse> trending = mediaRankingService.getFastRising5();
-        model.addAttribute("mediaList", mediaList);
-        model.addAttribute("trending", trending);
-        model.addAttribute("currentCat", normalizedCategory);
-
         return "boardsLayout/features/trending";
+    }
+
+    /**
+     * JSON API: returns ALL Top 10 + Fast-Rising data in one shot so the
+     * front-end can filter client-side (same pattern as likedMedia.js).
+     *
+     * Response shape:
+     * {
+     *   "top10":    [ RankedMediaResponse, ... ],   // all categories, sorted by score
+     *   "trending": [ RankedMediaResponse, ... ]    // fast-rising top 5 (past 7 days)
+     * }
+     */
+    @GetMapping("/data")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> communityData() {
+        List<RankedMediaResponse> top10    = mediaRankingService.getTop10();
+        List<RankedMediaResponse> trending = mediaRankingService.getFastRising5();
+        return ResponseEntity.ok(Map.of(
+                "top10",    top10,
+                "trending", trending));
     }
 
     /**

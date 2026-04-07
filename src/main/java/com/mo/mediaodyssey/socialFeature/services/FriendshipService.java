@@ -1,23 +1,22 @@
 package com.mo.mediaodyssey.socialFeature.services;
 
 import com.mo.mediaodyssey.layout.models.Profile;
+import com.mo.mediaodyssey.recommendation.UserInteractionRepository;
+import com.mo.mediaodyssey.shared.model.User;
 import com.mo.mediaodyssey.auth.repository.UserRepository;
 import com.mo.mediaodyssey.layout.models.BoardRole;
 import com.mo.mediaodyssey.layout.repositories.BoardRoleRepository;
-import com.mo.mediaodyssey.shared.model.User;
 import com.mo.mediaodyssey.socialFeature.models.DTO.FriendRequestDTO;
 import com.mo.mediaodyssey.socialFeature.models.Friendship;
 import com.mo.mediaodyssey.socialFeature.repositories.FriendshipRepository;
 import com.mo.mediaodyssey.socialFeature.repositories.ProfileRepository;
+
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -31,20 +30,82 @@ import java.util.stream.Collectors;
 @Transactional
 public class FriendshipService {
 
-    private final FriendshipRepository friendshipRepo;
-    private final BoardRoleRepository boardRoleRepo;
-    private final ProfileService profileService;
-    private final ProfileRepository profileRepo;
-    private final UserRepository userRepo;
+    @Autowired
+    private FriendshipRepository friendshipRepo;
 
-    public FriendshipService(FriendshipRepository friendshipRepo,
-            BoardRoleRepository boardRoleRepo, ProfileService profileService, ProfileRepository profileRepo,
-            UserRepository userRepo) {
-        this.friendshipRepo = friendshipRepo;
-        this.boardRoleRepo = boardRoleRepo;
-        this.profileService = profileService;
-        this.profileRepo = profileRepo;
-        this.userRepo = userRepo;
+    @Autowired
+    private BoardRoleRepository boardRoleRepo;
+
+    @Autowired
+    private ProfileService profileService;
+
+    @Autowired
+    private ProfileRepository profileRepo;
+
+    @Autowired
+    private UserRepository userRepo;
+
+    @Autowired
+    private UserInteractionRepository interactionRepo;
+
+    /**
+     * Enriched friend suggestion carrying the signals that led to it.
+     * A single user can be suggested via multiple signals (e.g. shares a
+     * board AND likes the same movies) — all matching flags are set true.
+     *
+     * Used by the toggle filters on friends.html so the template can
+     * show/hide entries by signal without extra requests.
+     */
+    public static class SuggestedFriend {
+        private final User user;
+        private final boolean fromSharedBoard;
+        private final boolean fromSharedMovie;
+        private final boolean fromSharedGame;
+        private final boolean fromSharedSong;
+        private final int overlapCount;
+
+        public SuggestedFriend(User user,
+                boolean fromSharedBoard,
+                boolean fromSharedMovie,
+                boolean fromSharedGame,
+                boolean fromSharedSong,
+                int overlapCount) {
+            this.user = user;
+            this.fromSharedBoard = fromSharedBoard;
+            this.fromSharedMovie = fromSharedMovie;
+            this.fromSharedGame = fromSharedGame;
+            this.fromSharedSong = fromSharedSong;
+            this.overlapCount = overlapCount;
+        }
+
+        public User getUser() {
+            return user;
+        }
+
+        public Long getUserId() {
+            return user.getId();
+        }
+
+        public boolean isFromSharedBoard() {
+            return fromSharedBoard;
+        }
+
+        public boolean isFromSharedMovie() {
+            return fromSharedMovie;
+        }
+
+        public boolean isFromSharedGame() {
+            return fromSharedGame;
+        }
+
+        public boolean isFromSharedSong() {
+            return fromSharedSong;
+        }
+
+        public int getOverlapCount() {
+            return overlapCount;
+        }
+
     }
 
     /**
@@ -192,6 +253,110 @@ public class FriendshipService {
 
     public List<FriendRequestDTO> getOutgoingRequests(Long userId) {
         return friendshipRepo.findOutgoingRequests(userId);
+    }
+
+    /**
+     * Suggest friends using two signals:
+     * 1. Users who share at least one Board with the viewer.
+     * 2. Users who have LIKED the same media as the viewer, broken
+     * down by media type (MOVIE / GAME / SONG).
+     *
+     * A single candidate can match multiple signals — the returned
+     * SuggestedFriend carries a flag for each so the UI can filter.
+     *
+     * Excludes: the viewer themselves, existing friends, and anyone
+     * with a pending request in either direction.
+     */
+    public List<SuggestedFriend> getSuggestedFriendsMedia(Long userId) {
+
+        Map<Long, SuggestionAccumulator> candidates = new LinkedHashMap<>();
+
+        // ─── Signal 1: shared boards ─────────────────────────────
+        List<BoardRole> myRoles = boardRoleRepo.findActiveByUserId(userId);
+        List<Long> myBoardIds = myRoles.stream()
+                .map(BoardRole::getBoardId)
+                .collect(Collectors.toList());
+
+        for (Long boardId : myBoardIds) {
+            List<BoardRole> rolesInBoard = boardRoleRepo.findMembersByBoardId(boardId);
+            for (BoardRole r : rolesInBoard) {
+                Long otherId = r.getUserId();
+                if (otherId.equals(userId))
+                    continue;
+                candidates.computeIfAbsent(otherId, k -> new SuggestionAccumulator()).sharedBoard = true;
+            }
+        }
+
+        // ─── Signal 2: taste overlap per media type ──────────────
+        mergeOverlap(candidates, userId, "MOVIE");
+        mergeOverlap(candidates, userId, "GAME");
+        mergeOverlap(candidates, userId, "SONG");
+
+        // ─── Filter out self, existing friendships, pending reqs ─
+        List<SuggestedFriend> results = new ArrayList<>();
+        for (Map.Entry<Long, SuggestionAccumulator> entry : candidates.entrySet()) {
+            Long candidateId = entry.getKey();
+            SuggestionAccumulator acc = entry.getValue();
+
+            boolean hasRelation = friendshipRepo.existsByUserIdAndFriendId(userId, candidateId) ||
+                    friendshipRepo.existsByFriendIdAndUserId(userId, candidateId) ||
+                    friendshipRepo.existsByUserIdAndFriendId(candidateId, userId) ||
+                    friendshipRepo.existsByFriendIdAndUserId(candidateId, userId);
+            if (hasRelation)
+                continue;
+            // Skip anyone who hasn't set a username yet. They can't be meaningfully
+            // displayed or interacted with until they complete their profile.
+            if (!profileService.hasUsername(candidateId))
+                continue;
+
+            userRepo.findById(candidateId).ifPresent(u -> results.add(new SuggestedFriend(
+                    u,
+                    acc.sharedBoard,
+                    acc.movieOverlap > 0,
+                    acc.gameOverlap > 0,
+                    acc.songOverlap > 0,
+                    acc.movieOverlap + acc.gameOverlap + acc.songOverlap)));
+        }
+
+        // Sort: overlap count first (strongest signal),
+        // then alphabetical as a tiebreaker.
+        results.sort((a, b) -> {
+            int byOverlap = Integer.compare(b.getOverlapCount(), a.getOverlapCount());
+            if (byOverlap != 0)
+                return byOverlap;
+            return Long.compare(a.getUserId(), b.getUserId());
+        });
+
+        return results;
+    }
+
+    /**
+     * Query the interaction repo for users who liked the same media
+     * of the given type as the viewer, then merge the overlap counts
+     * into the candidate map.
+     */
+    private void mergeOverlap(Map<Long, SuggestionAccumulator> candidates,
+            Long userId,
+            String mediaType) {
+        List<Object[]> rows = interactionRepo.findUsersWithLikeOverlapByMediaType(userId, mediaType);
+        for (Object[] row : rows) {
+            Long otherId = (Long) row[0];
+            long overlap = ((Number) row[1]).longValue();
+            SuggestionAccumulator acc = candidates.computeIfAbsent(otherId, k -> new SuggestionAccumulator());
+            switch (mediaType) {
+                case "MOVIE" -> acc.movieOverlap = (int) overlap;
+                case "GAME" -> acc.gameOverlap = (int) overlap;
+                case "SONG" -> acc.songOverlap = (int) overlap;
+            }
+        }
+    }
+
+    /** Private mutable accumulator used while building the candidate map. */
+    private static class SuggestionAccumulator {
+        boolean sharedBoard = false;
+        int movieOverlap = 0;
+        int gameOverlap = 0;
+        int songOverlap = 0;
     }
 
     /**
