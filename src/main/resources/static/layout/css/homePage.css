@@ -464,3 +464,7 @@ when the js runs. Testing are required to see how it works.*/
 .rec-cards {
     align-items: flex-start;
 }
+
+.rec-btn.liked:hover {
+    background-color: #c0392b;
+}
