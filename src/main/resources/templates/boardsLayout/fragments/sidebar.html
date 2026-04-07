@@ -34,21 +34,21 @@
 
         <div class="sidebar-divider"></div>
 
+        <!-- ADMIN SECTION: -->
+        <ul class="features-list">
+            <li data-feature="viewUserDB">
+                <div sec:authorize="hasRole('ADMIN')">
+                    <a th:href="@{/admin/users}" class="sidebar-menu-items">
+                        View MO Users 
+                    </a>
+                </div>
+            </li>
+        </ul>
+
         <!-- Called this "Friends": Social Section -->
         <ul class="features-list">
             <li data-feature="logOut">
                 <a href="/auth/logout" class="sidebar-menu-items">Log out</a>
-            </li>
-        </ul>
-
-        <!-- ADMIN SECTION: -->
-        <ul class="features-list">
-            <li data-feature="">
-                <div sec:authorize="hasRole('ADMIN')">
-                    <a th:href="@{/admin/users}" class="admin-btn">
-                        View Users Database
-                    </a>
-                </div>
             </li>
         </ul>
 
