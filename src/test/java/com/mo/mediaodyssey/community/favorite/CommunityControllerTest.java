@@ -2,6 +2,7 @@ package com.mo.mediaodyssey.community.favorite;
 
 import com.mo.mediaodyssey.recommendation.UserInteraction;
 import com.mo.mediaodyssey.recommendation.UserInteractionRepository;
+import com.mo.mediaodyssey.shared.services.CurrentAccountService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -34,6 +35,9 @@ class CommunityControllerTest {
 
     @Mock
     private UserInteractionRepository userInteractionRepository;
+
+    @Mock
+    private CurrentAccountService currentAccountService;
 
     @InjectMocks
     private CommunityController communityController;

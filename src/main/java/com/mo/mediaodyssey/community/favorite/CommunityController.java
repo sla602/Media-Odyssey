@@ -6,10 +6,13 @@ import com.mo.mediaodyssey.shared.services.CurrentAccountService;
 
 import jakarta.servlet.http.HttpSession;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.AuthenticationCredentialsNotFoundException;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+
+import com.mo.mediaodyssey.shared.model.User;
 
 import java.time.LocalDateTime;
 import java.util.HashSet;
@@ -48,7 +51,16 @@ public class CommunityController {
      * Resolves the logged-in user's database ID from Spring Security.
      */
     private Long getUserId(Authentication auth) {
-        return currentAccountService.getCurrentAccount(auth).getId();
+        if (auth == null) {
+            return null;
+        }
+
+        try {
+            User account = currentAccountService.getCurrentAccount(auth);
+            return account != null ? account.getId() : null;
+        } catch (AuthenticationCredentialsNotFoundException ex) {
+            return null;
+        }
     }
 
     /**
