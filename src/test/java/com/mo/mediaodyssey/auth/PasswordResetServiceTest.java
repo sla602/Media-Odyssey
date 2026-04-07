@@ -139,17 +139,16 @@ class PasswordResetServiceTest {
     }
 
     @Test
-    void requestPasswordReset_forOauthUser_blocksResetWithDescriptiveError() {
+    void requestPasswordReset_forOauthUser_blocksResetWithClearError() {
         User oauthUser = new User("oauth-user@mediaodyssey.example", "unused-password");
         oauthUser.setAuthProvider("OAUTH");
-        oauthUser.setOauthProvider("google");
         when(userRepository.findByEmail("oauth-user@mediaodyssey.example")).thenReturn(Optional.of(oauthUser));
 
         assertThatThrownBy(
                 () -> passwordResetService
                         .requestPasswordReset(new ForgotPasswordDto("oauth-user@mediaodyssey.example")))
                 .isInstanceOf(PasswordResetNotAllowedException.class)
-                .hasMessageContaining("Google");
+                .hasMessageContaining("OAuth accounts");
 
         verifyNoInteractions(emailService);
         verify(passwordResetTokenRepository, never()).save(any());
@@ -200,5 +199,24 @@ class PasswordResetServiceTest {
                 .isInstanceOf(InvalidPasswordResetTokenException.class);
 
         verifyNoInteractions(passwordEncoder, userRepository, sessionRegistry);
+    }
+
+    @Test
+    void resetPassword_withOauthAccount_throwsNotAllowedAndSkipsMutation() {
+        User oauthUser = new User("oauth-user@mediaodyssey.example", "old-password");
+        oauthUser.setAuthProvider("OAUTH");
+
+        PasswordResetToken tokenEntity = new PasswordResetToken("oauth-token", oauthUser, CONFIGURED_EXPIRY_MINUTES);
+        tokenEntity.setExpiryDate(Date.from(Instant.now().plus(10, ChronoUnit.MINUTES)));
+
+        when(passwordResetTokenRepository.findByToken("oauth-token")).thenReturn(Optional.of(tokenEntity));
+
+        assertThatThrownBy(
+                () -> passwordResetService.resetPassword(new ResetPasswordDto("oauth-token", "new-password")))
+                .isInstanceOf(PasswordResetNotAllowedException.class)
+                .hasMessageContaining("OAuth accounts");
+
+        verifyNoInteractions(passwordEncoder, userRepository, sessionRegistry);
+        verify(passwordResetTokenRepository, never()).delete(any());
     }
 }

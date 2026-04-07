@@ -1,14 +1,19 @@
 package com.mo.mediaodyssey.auth;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.Date;
+import java.util.Optional;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -24,6 +29,8 @@ import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
 import com.mo.mediaodyssey.auth.model.VerificationToken;
+import com.mo.mediaodyssey.auth.dto.VerifyTokenDto;
+import com.mo.mediaodyssey.auth.exception.InvalidVerificationTokenException;
 import com.mo.mediaodyssey.auth.repository.UserRepository;
 import com.mo.mediaodyssey.auth.repository.VerificationTokenRepository;
 import com.mo.mediaodyssey.auth.services.EmailVerificationService;
@@ -113,5 +120,39 @@ class EmailVerificationServiceTest {
 
         assertThat(actualExpiry).isAfter(expectedMin);
         assertThat(actualExpiry).isBefore(expectedMax);
+    }
+
+    @Test
+    void verifyUser_withValidToken_marksUserVerifiedAndInvalidatesToken() {
+        User user = new User("verify-user@mediaodyssey.example", "encoded-password");
+        user.setEmailVerified(false);
+
+        VerificationToken tokenEntity = new VerificationToken("valid-token", user, CONFIGURED_EXPIRY_MINUTES);
+        tokenEntity.setExpiryDate(Date.from(Instant.now().plus(5, ChronoUnit.MINUTES)));
+        user.setVerificationToken(tokenEntity);
+
+        when(verificationTokenRepository.findByToken("valid-token")).thenReturn(Optional.of(tokenEntity));
+
+        emailVerificationService.verifyUser(new VerifyTokenDto("valid-token"));
+
+        assertThat(user.isEmailVerified()).isTrue();
+        assertThat(user.getVerificationToken()).isNull();
+        verify(userRepository).save(user);
+        verify(verificationTokenRepository).delete(tokenEntity);
+    }
+
+    @Test
+    void verifyUser_withExpiredToken_throwsValidationError() {
+        User user = new User("verify-user@mediaodyssey.example", "encoded-password");
+        VerificationToken tokenEntity = new VerificationToken("expired-token", user, CONFIGURED_EXPIRY_MINUTES);
+        tokenEntity.setExpiryDate(Date.from(Instant.now().minus(1, ChronoUnit.MINUTES)));
+
+        when(verificationTokenRepository.findByToken("expired-token")).thenReturn(Optional.of(tokenEntity));
+
+        assertThatThrownBy(() -> emailVerificationService.verifyUser(new VerifyTokenDto("expired-token")))
+                .isInstanceOf(InvalidVerificationTokenException.class);
+
+        verify(userRepository, never()).save(any(User.class));
+        verify(verificationTokenRepository, never()).delete(any(VerificationToken.class));
     }
 }

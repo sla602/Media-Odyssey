@@ -2,7 +2,6 @@ package com.mo.mediaodyssey.auth.services;
 
 import java.security.Principal;
 import java.util.Date;
-import java.util.Optional;
 import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -51,16 +50,13 @@ public class PasswordResetService {
 
     @Transactional
     public void requestPasswordReset(ForgotPasswordDto dto) {
-        Optional<User> userOptional = userRepository.findByEmail(dto.email());
-
-        if (userOptional.isEmpty()) {
+        User user = userRepository.findByEmail(dto.email()).orElse(null);
+        if (user == null) {
             return;
         }
 
-        User user = userOptional.get();
-
         if (user.isOauthAccount()) {
-            throw buildOauthResetNotAllowed(user);
+            throw buildOauthResetNotAllowed();
         }
 
         PasswordResetToken existingToken = user.getPasswordResetToken();
@@ -104,7 +100,7 @@ public class PasswordResetService {
         User user = tokenEntity.getUser();
 
         if (user.isOauthAccount()) {
-            throw buildOauthResetNotAllowed(user);
+            throw buildOauthResetNotAllowed();
         }
 
         user.setPassword(passwordEncoder.encode(dto.newPassword()));
@@ -148,7 +144,7 @@ public class PasswordResetService {
         return false;
     }
 
-    private PasswordResetNotAllowedException buildOauthResetNotAllowed(User user) {
+    private PasswordResetNotAllowedException buildOauthResetNotAllowed() {
         return new PasswordResetNotAllowedException(
                 "Password reset is not available for OAuth accounts. Please sign in with your OAuth provider.");
     }
