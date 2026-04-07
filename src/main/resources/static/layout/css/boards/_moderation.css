@@ -17,7 +17,7 @@
     font-size: 0.95rem; font-weight: 600; text-decoration: none;
     font-family: 'Space Grotesk', sans-serif;
     color: #a0a0b0; background: transparent; transition: all 0.2s ease;
-}
+} 
 
 .mod-sub-tab:hover { color: #ffffff; background: rgba(99, 102, 241, 0.1); }
 .mod-sub-active { color: #ffffff; background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); }
@@ -103,7 +103,26 @@
     background-repeat: no-repeat; background-position: right 1rem center; background-size: 1.25rem;
 }
 
-.ownership-form select option { background: #1a1a2e; color: #e2e8f0; }
+/*.ownership-form select option { background: #1a1a2e; color: #e2e8f0; }*/
+
+.settings-form select,
+.ownership-form select {
+    background: rgba(255, 255, 255, 0.05); 
+    color: #e2e8f0;
+    border: 1px solid rgba(99, 102, 241, 0.2);
+    border-radius: 10px;
+    padding: 0.6rem 1rem;
+    font-size: 0.95rem;
+    font-family: 'Space Grotesk', sans-serif;
+    cursor: pointer;
+}
+
+/* Dropdown options — keep simple and readable */
+.settings-form select option,
+.ownership-form select option {
+    background: #1e1e3f;
+    color: #e2e8f0;      
+}
 
 .ownership-danger { border-color: rgba(220, 38, 38, 0.3); }
 .danger-text { color: #f87171; }
