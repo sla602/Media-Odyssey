@@ -3,10 +3,16 @@
    ========================================================= */
 
 let currentType = initialType || "MOVIE";
+const searchCache = {};
 
 // Run search on page load if query is present
 if (initialQuery && initialQuery.trim() !== "") {
     runSearch(initialQuery, currentType);
+    // Prefetch the other two types in the background
+    const allTypes = ["MOVIE", "GAME", "SONG"];
+    allTypes.filter(t => t !== currentType).forEach(type => {
+        prefetch(initialQuery, type);
+    });
 }
 
 // Tab switching
@@ -20,9 +26,30 @@ document.querySelectorAll(".rec-tab").forEach(tab => {
     });
 });
 
+async function prefetch(query, type) {
+    const cacheKey = `${query}__${type}`;
+    if (searchCache[cacheKey]) return;
+    try {
+        const res  = await fetch(`/api/search?q=${encodeURIComponent(query)}&type=${type}`);
+        const data = await res.json();
+        if (data && data.length > 0) searchCache[cacheKey] = data;
+    } catch (err) {
+        // silently fail — prefetch is best effort
+    }
+}
+
 async function runSearch(query, type) {
     const statusEl = document.getElementById("searchStatus");
     const cardsEl  = document.getElementById("searchCards");
+
+    // serve from cache if already fetched
+    const cacheKey = `${query}__${type}`;
+    if (searchCache[cacheKey]) {
+        statusEl.textContent = "";
+        cardsEl.innerHTML = "";
+        renderSearchCards(searchCache[cacheKey]);
+        return;
+    }
 
     statusEl.textContent = "Searching…";
     cardsEl.innerHTML    = "";
@@ -36,6 +63,7 @@ async function runSearch(query, type) {
             return;
         }
 
+        searchCache[cacheKey] = data;
         statusEl.textContent = "";
         renderSearchCards(data);
 
@@ -64,11 +92,11 @@ function renderSearchCards(items) {
                 : `<div class="rec-img rec-img-placeholder">No Image</div>`;
 
         const mediaType   = item.mediaType.toLowerCase();
-        let destination; 
+        let destination;
         if (item.mediaType === 'SONG') {
-          destination = `/mediaView/song/${encodeURIComponent(item.artist)}/${encodeURIComponent(item.title)}`; 
-        } else { 
-          destination = `/mediaView/${mediaType}/${item.mediaApiId}`;
+            destination = `/mediaView/song/${encodeURIComponent(item.artist)}/${encodeURIComponent(item.title)}`;
+        } else {
+            destination = `/mediaView/${mediaType}/${item.mediaApiId}`;
         }
         card.href = "javascript:void(0)";
         card.addEventListener("click", async (e) => {
@@ -161,7 +189,7 @@ async function recordSearchInteraction(card, interactionType) {
                 mediaApiId,
                 interactionType,
                 mediaType,
-                genres: genre ? [genre] : []  // empty array = interaction saved, no genre rows written
+                genres: genre ? [genre] : []
             })
         });
     } catch (err) {
