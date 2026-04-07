@@ -1,6 +1,7 @@
 package com.mo.mediaodyssey.recommendation;
 
-import com.mo.mediaodyssey.auth.repository.UserRepository;
+import com.mo.mediaodyssey.shared.services.CurrentAccountService;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
@@ -12,27 +13,26 @@ import java.util.List;
 public class RecommendationController {
 
     private final RecommendationService recommendationService;
-    private final UserRepository userRepository;
+    private final CurrentAccountService currentAccountService;
 
     public RecommendationController(RecommendationService recommendationService,
-                                    UserRepository userRepository) {
+            CurrentAccountService currentAccountService) {
         this.recommendationService = recommendationService;
-        this.userRepository = userRepository;
+        this.currentAccountService = currentAccountService;
     }
 
-    // gets the logged-in user's ID by looking up their email in the database
-    // auth.getName() returns the username field, which defaults to email at registration
+    // gets the logged-in user's ID
     private Long getUserIdFromSession(Authentication auth) {
-        return userRepository.findByEmail(auth.getName())
-                .orElseThrow(() -> new RuntimeException("Authenticated user not found"))
-                .getId();
+        return currentAccountService.getCurrentAccount(auth).getId();
+
     }
 
     // POST /api/recommendations/interactions
-    // body: { "mediaApiId": "...", "interactionType": "VIEW", "mediaType": "MOVIE", "genres": ["Action"] }
+    // body: { "mediaApiId": "...", "interactionType": "VIEW", "mediaType": "MOVIE",
+    // "genres": ["Action"] }
     @PostMapping("/interactions")
     public ResponseEntity<Void> recordInteraction(@RequestBody InteractionRequest request,
-                                                   Authentication auth) {
+            Authentication auth) {
         Long userId = getUserIdFromSession(auth);
         recommendationService.recordInteraction(userId, request);
         return ResponseEntity.ok().build();
@@ -41,7 +41,7 @@ public class RecommendationController {
     // DELETE /api/recommendations/interactions/like?mediaApiId=123
     @DeleteMapping("/interactions/like")
     public ResponseEntity<Void> unlikeMedia(@RequestParam String mediaApiId,
-                                             Authentication auth) {
+            Authentication auth) {
         Long userId = getUserIdFromSession(auth);
         recommendationService.unlikeMedia(userId, mediaApiId);
         return ResponseEntity.ok().build();
@@ -50,14 +50,15 @@ public class RecommendationController {
     // GET /api/recommendations?mediaType=MOVIE
     @GetMapping
     public ResponseEntity<List<RecommendationResponse>> getRecommendations(@RequestParam String mediaType,
-                                                                            Authentication auth) {
+            Authentication auth) {
         Long userId = getUserIdFromSession(auth);
         List<RecommendationResponse> recommendations = recommendationService.getRecommendations(userId, mediaType);
         return ResponseEntity.ok(recommendations);
     }
 
     // GET /api/recommendations/liked
-    // Returns all media the logged-in user has liked, enriched with title/image from external APIs
+    // Returns all media the logged-in user has liked, enriched with title/image
+    // from external APIs
     @GetMapping("/liked")
     public ResponseEntity<List<RecommendationResponse>> getLikedMedia(Authentication auth) {
         Long userId = getUserIdFromSession(auth);
@@ -68,7 +69,7 @@ public class RecommendationController {
     // POST /api/recommendations/admin/ban?mediaApiId=123&mediaType=MOVIE
     @PostMapping("/admin/ban")
     public ResponseEntity<Void> banMedia(@RequestParam String mediaApiId,
-                                          @RequestParam String mediaType) {
+            @RequestParam String mediaType) {
         recommendationService.banMedia(mediaApiId, mediaType);
         return ResponseEntity.ok().build();
     }

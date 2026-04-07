@@ -1,6 +1,7 @@
 package com.mo.mediaodyssey.socialFeature.controllers;
 
 import com.mo.mediaodyssey.shared.model.User;
+import com.mo.mediaodyssey.shared.services.CurrentAccountService;
 import com.mo.mediaodyssey.socialFeature.services.BoardInviteService;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
@@ -18,9 +19,11 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 public class BoardInviteController {
 
     private final BoardInviteService inviteService;
+    private final CurrentAccountService currentAccountService;
 
-    public BoardInviteController(BoardInviteService inviteService) {
+    public BoardInviteController(BoardInviteService inviteService, CurrentAccountService currentAccountService) {
         this.inviteService = inviteService;
+        this.currentAccountService = currentAccountService;
     }
 
     /**
@@ -28,10 +31,10 @@ public class BoardInviteController {
      */
     @PostMapping("/boards/display/{boardId}/invite")
     public String sendInvite(@PathVariable Long boardId,
-                             @RequestParam Long inviteeUserId,
-                             Authentication authentication,
-                             RedirectAttributes redirectAttributes) {
-        User user = (User) authentication.getPrincipal();
+            @RequestParam Long inviteeUserId,
+            Authentication authentication,
+            RedirectAttributes redirectAttributes) {
+        User user = currentAccountService.getCurrentAccount(authentication);
         try {
             inviteService.sendInvite(user.getId(), inviteeUserId, boardId);
             redirectAttributes.addFlashAttribute("successMessage", "Invite sent.");
@@ -46,9 +49,9 @@ public class BoardInviteController {
      */
     @PostMapping("/invites/{inviteId}/accept")
     public String acceptInvite(@PathVariable Long inviteId,
-                               Authentication authentication,
-                               RedirectAttributes redirectAttributes) {
-        User user = (User) authentication.getPrincipal();
+            Authentication authentication,
+            RedirectAttributes redirectAttributes) {
+        User user = currentAccountService.getCurrentAccount(authentication);
         try {
             inviteService.acceptInvite(inviteId, user.getId());
             redirectAttributes.addFlashAttribute("successMessage", "Invite accepted.");
@@ -63,9 +66,9 @@ public class BoardInviteController {
      */
     @PostMapping("/invites/{inviteId}/decline")
     public String declineInvite(@PathVariable Long inviteId,
-                                Authentication authentication,
-                                RedirectAttributes redirectAttributes) {
-        User user = (User) authentication.getPrincipal();
+            Authentication authentication,
+            RedirectAttributes redirectAttributes) {
+        User user = currentAccountService.getCurrentAccount(authentication);
         try {
             inviteService.declineInvite(inviteId, user.getId());
             redirectAttributes.addFlashAttribute("successMessage", "Invite declined.");
@@ -80,10 +83,10 @@ public class BoardInviteController {
      */
     @PostMapping("/boards/display/{boardId}/invite/{inviteId}/cancel")
     public String cancelInvite(@PathVariable Long boardId,
-                               @PathVariable Long inviteId,
-                               Authentication authentication,
-                               RedirectAttributes redirectAttributes) {
-        User user = (User) authentication.getPrincipal();
+            @PathVariable Long inviteId,
+            Authentication authentication,
+            RedirectAttributes redirectAttributes) {
+        User user = currentAccountService.getCurrentAccount(authentication);
         try {
             inviteService.cancelInvite(inviteId, user.getId());
             redirectAttributes.addFlashAttribute("successMessage", "Invite cancelled.");

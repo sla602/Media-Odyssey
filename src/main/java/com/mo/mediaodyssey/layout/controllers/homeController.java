@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import com.mo.mediaodyssey.layout.models.Boards;
 import com.mo.mediaodyssey.layout.services.BoardsService;
 import com.mo.mediaodyssey.shared.model.User;
+import com.mo.mediaodyssey.shared.services.CurrentAccountService;
 
 @Controller
 public class homeController {
@@ -17,9 +18,11 @@ public class homeController {
     /* After users logged in, they will be direct to homePage.html */
 
     private final BoardsService boardsService;
+    private final CurrentAccountService currentAccountService;
 
-    public homeController(BoardsService boardsService) {
+    public homeController(BoardsService boardsService, CurrentAccountService currentAccountService) {
         this.boardsService = boardsService;
+        this.currentAccountService = currentAccountService;
     }
 
     /*
@@ -36,14 +39,14 @@ public class homeController {
     @GetMapping("/")
     public String home(Model model, Authentication authentication) {
 
-        User user = (User) authentication.getPrincipal();
+        User user = currentAccountService.getCurrentAccount(authentication);
 
-        //shows only created boards by the user
-        //List<Boards> boards = boardsService.findBoardsByUser(user);
+        // shows only created boards by the user
+        // List<Boards> boards = boardsService.findBoardsByUser(user);
 
-        //all roltype joined boards
+        // all roltype joined boards
         List<Boards> boards = boardsService.getJoinedBoards(user.getId());
-        
+
         model.addAttribute("boards", boards);
 
         return "boardsLayout/homePage";

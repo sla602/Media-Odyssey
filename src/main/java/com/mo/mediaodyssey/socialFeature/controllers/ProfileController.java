@@ -6,8 +6,11 @@ import com.mo.mediaodyssey.recommendation.RecommendationResponse;
 import com.mo.mediaodyssey.recommendation.RecommendationService;
 import com.mo.mediaodyssey.socialFeature.services.ProfileService;
 import com.mo.mediaodyssey.shared.model.User;
+import com.mo.mediaodyssey.shared.services.CurrentAccountService;
 import com.mo.mediaodyssey.socialFeature.services.FriendshipService;
 import com.mo.mediaodyssey.socialFeature.services.FriendshipService.FriendStatus;
+
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -25,15 +28,17 @@ public class ProfileController {
 
     private static final int LIKED_MEDIA_PREVIEW_LIMIT = 12;
 
-    private final FriendshipService friendshipService;
-    private final ProfileService profileService;
-    private final RecommendationService recommendationService;
+    @Autowired
+    private FriendshipService friendshipService;
 
-    public ProfileController(FriendshipService friendshipService, ProfileService profileService, RecommendationService recommendationService) {
-        this.friendshipService = friendshipService;
-        this.profileService = profileService;
-        this.recommendationService = recommendationService;
-    }
+    @Autowired
+    private ProfileService profileService;
+
+    @Autowired
+    private CurrentAccountService currentAccountService;
+
+    @Autowired
+    private RecommendationService recommendationService;
 
     /**
      * Pulls the user's liked media for the profile preview section. Capped at
@@ -45,13 +50,13 @@ public class ProfileController {
      */
     private List<RecommendationResponse> getLikedMediaPreview(Long userId) {
         List<RecommendationResponse> liked = recommendationService.getLikedMedia(userId);
-        if (liked == null || liked.isEmpty()) return List.of();
+        if (liked == null || liked.isEmpty())
+            return List.of();
         if (liked.size() > LIKED_MEDIA_PREVIEW_LIMIT) {
             return liked.subList(0, LIKED_MEDIA_PREVIEW_LIMIT);
         }
         return liked;
     }
-
 
     // ─── Own profile page ────────────────────────────────────────────
 
@@ -60,7 +65,7 @@ public class ProfileController {
      */
     @GetMapping("/profile")
     public String viewOwnProfile(Authentication authentication, Model model) {
-        User user = (User) authentication.getPrincipal();
+        User user = currentAccountService.getCurrentAccount(authentication);
         Profile profile = profileService.getOrCreateProfile(user.getId());
 
         model.addAttribute("user", user);
@@ -68,7 +73,7 @@ public class ProfileController {
         model.addAttribute("isOwnProfile", true);
         model.addAttribute("avatarUrl", AvatarService.avatarGenerate(user.getId()));
         model.addAttribute("recentActivity", profileService.buildRecentActivity(user.getId(), user.getId()));
-        model.addAttribute("likedMedia", getLikedMediaPreview(user.getId()));       // viewOwnProfile
+        model.addAttribute("likedMedia", getLikedMediaPreview(user.getId())); // viewOwnProfile
 
         return "boardsLayout/userSide/userProfile";
     }
@@ -79,9 +84,9 @@ public class ProfileController {
      */
     @GetMapping("/profile/{userId}")
     public String viewProfile(@PathVariable Long userId,
-                              Authentication authentication,
-                              Model model) {
-        User viewer = (User) authentication.getPrincipal();
+            Authentication authentication,
+            Model model) {
+        User viewer = currentAccountService.getCurrentAccount(authentication);
         Profile profile = profileService.getOrCreateProfile(userId);
 
         boolean isOwn = viewer.getId().equals(userId);
@@ -94,7 +99,7 @@ public class ProfileController {
         model.addAttribute("friendStatus", status.name());
         model.addAttribute("avatarUrl", AvatarService.avatarGenerate(userId));
         model.addAttribute("recentActivity", profileService.buildRecentActivity(userId, viewer.getId()));
-        model.addAttribute("likedMedia", getLikedMediaPreview(userId));             // viewProfile (other user)
+        model.addAttribute("likedMedia", getLikedMediaPreview(userId)); // viewProfile (other user)
 
         return "boardsLayout/userSide/userProfile";
     }
@@ -104,11 +109,11 @@ public class ProfileController {
      */
     @PostMapping("/profile/save")
     public String saveProfile(@RequestParam(required = false) String username,
-                              @RequestParam(required = false) String description,
-                              @RequestParam(required = false) String pronouns,
-                              Authentication authentication,
-                              RedirectAttributes redirectAttributes) {
-        User user = (User) authentication.getPrincipal();
+            @RequestParam(required = false) String description,
+            @RequestParam(required = false) String pronouns,
+            Authentication authentication,
+            RedirectAttributes redirectAttributes) {
+        User user = currentAccountService.getCurrentAccount(authentication);
         try {
             profileService.updateProfile(user.getId(), username, description, pronouns);
             redirectAttributes.addFlashAttribute("successMessage", "Profile saved.");
@@ -126,9 +131,9 @@ public class ProfileController {
      */
     @PostMapping("/profile/{targetUserId}/add-friend")
     public String addFriend(@PathVariable Long targetUserId,
-                            Authentication authentication,
-                            RedirectAttributes redirectAttributes) {
-        User viewer = (User) authentication.getPrincipal();
+            Authentication authentication,
+            RedirectAttributes redirectAttributes) {
+        User viewer = currentAccountService.getCurrentAccount(authentication);
         if (!profileService.hasUsername(viewer.getId())) {
             redirectAttributes.addFlashAttribute("errorMessage",
                     "You need to set a username before sending friend requests.");

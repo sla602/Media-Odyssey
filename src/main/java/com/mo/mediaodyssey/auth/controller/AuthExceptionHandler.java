@@ -9,11 +9,15 @@ import org.springframework.security.authentication.LockedException;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.validation.BindException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import com.mo.mediaodyssey.auth.dto.AuthApiResponse;
+import com.mo.mediaodyssey.auth.exception.InvalidPasswordResetTokenException;
 import com.mo.mediaodyssey.auth.exception.InvalidVerificationTokenException;
+import com.mo.mediaodyssey.auth.exception.OAuthSignInRequiredException;
+import com.mo.mediaodyssey.auth.exception.PasswordResetNotAllowedException;
 import com.mo.mediaodyssey.auth.exception.UserAlreadyVerifiedException;
 import com.mo.mediaodyssey.dev.controller.DevAccountController;
 
@@ -21,6 +25,14 @@ import com.mo.mediaodyssey.dev.controller.DevAccountController;
 public class AuthExceptionHandler {
 
         // Debugging assisted by AI.
+
+        @ExceptionHandler(OAuthSignInRequiredException.class)
+        public ResponseEntity<AuthApiResponse> handleOauthSignInRequired() {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .body(AuthApiResponse.error("AUTH_OAUTH_SIGN_IN_REQUIRED",
+                                                "This account uses OAuth sign-in. Please continue via OAuth provider."));
+        }
 
         @ExceptionHandler(BadCredentialsException.class)
         public ResponseEntity<AuthApiResponse> handleBadCredentials() {
@@ -35,7 +47,7 @@ public class AuthExceptionHandler {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN)
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .body(AuthApiResponse.error("AUTH_DISABLED",
-                                                "User is disabled. Please complete verification."));
+                                                "User is disabled. Please contact support."));
         }
 
         @ExceptionHandler(LockedException.class)
@@ -66,11 +78,27 @@ public class AuthExceptionHandler {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .body(AuthApiResponse.error("AUTH_INVALID_VERIFICATION_TOKEN",
-                                                "Verification token is invalid. Please try again."));
+                                                "Verification token is invalid. If you have previously followed this link to verify, please continue to log in. Please try again."));
+        }
+
+        @ExceptionHandler(InvalidPasswordResetTokenException.class)
+        public ResponseEntity<AuthApiResponse> handleInvalidPasswordResetToken() {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .body(AuthApiResponse.error("AUTH_INVALID_PASSWORD_RESET_TOKEN",
+                                                "Password reset token is invalid or expired. Please request a new reset link."));
+        }
+
+        @ExceptionHandler(PasswordResetNotAllowedException.class)
+        public ResponseEntity<AuthApiResponse> handlePasswordResetNotAllowed() {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .body(AuthApiResponse.error("AUTH_PASSWORD_RESET_OAUTH_NOT_ALLOWED",
+                                                "Password reset is not available for OAuth accounts. Please sign in with your OAuth provider."));
         }
 
         @ExceptionHandler({ MethodArgumentNotValidException.class, BindException.class,
-                        IllegalArgumentException.class })
+                        IllegalArgumentException.class, MissingServletRequestParameterException.class })
         public ResponseEntity<AuthApiResponse> handleBadRequest() {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                                 .contentType(MediaType.APPLICATION_JSON)

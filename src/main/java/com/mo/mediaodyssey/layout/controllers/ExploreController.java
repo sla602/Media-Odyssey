@@ -21,7 +21,7 @@ public class ExploreController {
 
     @GetMapping("/explore")
     public String exploreBoardsPage(@RequestParam(value = "search", required = false) String search,
-                                    Model model) {
+            Model model) {
 
         List<Boards> boards = boardsService.findAllBoards().stream()
                 .filter(b -> "public".equalsIgnoreCase(b.getBoard_type()))
@@ -32,7 +32,7 @@ public class ExploreController {
             boards = boards.stream()
                     .filter(b -> b.getBoard_name().toLowerCase().contains(query)
                             || (b.getBoard_description() != null
-                            && b.getBoard_description().toLowerCase().contains(query)))
+                                    && b.getBoard_description().toLowerCase().contains(query)))
                     .collect(Collectors.toList());
         }
 

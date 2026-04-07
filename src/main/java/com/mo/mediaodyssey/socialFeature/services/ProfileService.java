@@ -31,11 +31,10 @@ public class ProfileService {
     private final BoardsRepository boardsRepo;
     private final BoardsService boardsService;
 
-
     public ProfileService(ProfileRepository profileRepo,
-                          PostRepository postRepo,
-                          CommentRepository commentRepo,
-                          BoardsRepository boardsRepo, BoardsService boardsService) {
+            PostRepository postRepo,
+            CommentRepository commentRepo,
+            BoardsRepository boardsRepo, BoardsService boardsService) {
         this.profileRepo = profileRepo;
         this.postRepo = postRepo;
         this.commentRepo = commentRepo;
@@ -63,12 +62,11 @@ public class ProfileService {
                 .orElse(false);
     }
 
-
     /**
      * Update and persist the editable profile fields for the given user.
      *
      * Rule: once a user has set a username, they cannot clear it back to
-     *  null/blank. The description and pronouns stay freely editable.
+     * null/blank. The description and pronouns stay freely editable.
      */
     public Profile updateProfile(Long userId, String username, String description, String pronouns) {
         Profile profile = getOrCreateProfile(userId);
@@ -103,7 +101,8 @@ public class ProfileService {
         // Collect board IDs for all items so we can look up names in one pass.
         Set<Long> boardIds = new HashSet<>();
         for (Post p : posts) {
-            if (!p.isDeleted()) boardIds.add(p.getBoardId());
+            if (!p.isDeleted())
+                boardIds.add(p.getBoardId());
         }
 
         // Comments don't carry boardId directly — look it up via their post.
@@ -128,7 +127,8 @@ public class ProfileService {
 
         // Add posts
         for (Post p : posts) {
-            if (p.isDeleted()) continue;
+            if (p.isDeleted())
+                continue;
             Map<String, Object> item = new HashMap<>();
             item.put("type", "POST");
             item.put("boardId", p.getBoardId());
@@ -144,7 +144,8 @@ public class ProfileService {
         // Add comments
         for (Comment c : comments) {
             Post parent = postsByIdForComments.get(c.getPostId());
-            if (parent == null) continue; // parent post deleted — skip
+            if (parent == null)
+                continue; // parent post deleted — skip
             Map<String, Object> item = new HashMap<>();
             item.put("type", "COMMENT");
             item.put("boardId", parent.getBoardId());
@@ -161,9 +162,12 @@ public class ProfileService {
         items.sort((a, b) -> {
             Object da = a.get("createdAt");
             Object db = b.get("createdAt");
-            if (da == null && db == null) return 0;
-            if (da == null) return 1;
-            if (db == null) return -1;
+            if (da == null && db == null)
+                return 0;
+            if (da == null)
+                return 1;
+            if (db == null)
+                return -1;
             @SuppressWarnings("unchecked")
             Comparable<Object> ca = (Comparable<Object>) da;
             return ca.compareTo(db) * -1;
@@ -183,11 +187,13 @@ public class ProfileService {
      */
     private Map<Long, String> loadBoardNames(Collection<Long> boardIds) {
         Map<Long, String> names = new HashMap<>();
-        if (boardIds == null || boardIds.isEmpty()) return names;
+        if (boardIds == null || boardIds.isEmpty())
+            return names;
 
         Set<Long> distinct = new HashSet<>();
         for (Long id : boardIds) {
-            if (id != null) distinct.add(id);
+            if (id != null)
+                distinct.add(id);
         }
         for (Long id : distinct) {
             Optional<Boards> b = boardsRepo.findById(id);
@@ -200,9 +206,11 @@ public class ProfileService {
      * Truncate a string to maxLen characters if needed.
      */
     private String preview(String text, int maxLen) {
-        if (text == null) return "";
+        if (text == null)
+            return "";
         String clean = text.trim();
-        if (clean.length() <= maxLen) return clean;
+        if (clean.length() <= maxLen)
+            return clean;
         return clean.substring(0, maxLen).trim() + "…";
     }
 }
