@@ -10,28 +10,28 @@
     <link rel="stylesheet" href="/auth/auth-styles.css">
 </head>
 
-<body class="text-light min-vh-100 mt-5 overflow-hidden">
-    <header class="container">
-        <h1 class="display-4 fw-bold text-light mb-3" id="title">MEDIA ODYSSEY</h1>
-        <p class="lead fw-bold text-light mb-1" id="subtitle">Discover your next obsession!</p>
-        <p class="lead fw-bold text-light mb-4" id="subtitle">Your journey starts here!</p>
+<body class="auth-page text-light min-vh-100 d-flex flex-column justify-content-center">
+    <header class="container px-3 px-lg-4 mb-2">
+        <h1 class="mo-title display-4 fw-bold text-light text-center mb-3">MEDIA ODYSSEY</h1>
+        <p class="mo-subtitle lead fw-bold text-light text-center mb-1">Discover your next obsession!</p>
+        <p class="mo-subtitle lead fw-bold text-light text-center mb-4">Your journey starts here!</p>
     </header>
-    <main class="container d-flex align-items-center justify-content-center py-3">
-        <section class="card auth-card border-0 shadow-lg w-100" style="max-width: 520px;">
+    <main class="container px-3 px-lg-4 d-flex align-items-center justify-content-center py-2">
+        <section class="card auth-card auth-panel border-0 shadow-lg w-100">
             <div class="card-body p-4 p-md-5">
-                <h3 class="text-center text-light fw-bold" id="welcome-text">Start your journey now!</h3>
-                <form id="signupForm" class="needs-validation" novalidate>
+                <h3 class="mo-copy text-center text-light fw-bold mb-3">Start your journey now!</h3>
+                <form id="resendForm" class="needs-validation" novalidate>
                     <div class="mb-3">
                         <input type="email" class="form-control form-control-lg bg-light text-dark border-secondary"
                             id="email" name="email" autocomplete="email" required placeholder="example@email.com">
                     </div>
 
                     <div class="row g-2">
-                        <div class="col-6 d-grid gap-2">
-                            <button type="submit" class="btn btn-lg fw-semibold text-white" id="button">Re-send</button>
+                        <div class="col-12 col-md-6 d-grid gap-2">
+                            <button type="submit" class="btn mo-btn btn-lg fw-semibold text-white">Re-send</button>
                         </div>
-                        <div class="col-6 d-grid gap-2">
-                            <a href="/auth/login" class="btn btn-lg fw-semibold text-white" id="button">Already have an
+                        <div class="col-12 col-md-6 d-grid gap-2">
+                            <a href="/auth/login" class="btn mo-btn btn-lg fw-semibold text-white">Already have an
                                 account? Log In</a>
                         </div>
                     </div>
@@ -72,30 +72,25 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"
         integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI"
         crossorigin="anonymous"></script>
+    <script src="/auth/auth-modal-flow.js"></script>
 
     <script>
         window.addEventListener("DOMContentLoaded", () => {
-            const statusModalEl = document.getElementById("statusModal");
-            const statusModalBody = document.getElementById("statusModalBody");
-            const statusModal = new bootstrap.Modal(statusModalEl);
+            const { showLoadingModal, showAuthStatusAfterLoading, setFormSubmitting } = AuthModalFlow.create();
+            const resendForm = document.getElementById("resendForm");
 
-            let redirectAfterClose = null;
+            let isSubmitting = false;
 
-            function showStatusModal(message, redirectUrl = null) {
-                statusModalBody.textContent = message;
-                redirectAfterClose = redirectUrl;
-                statusModal.show();
-            }
-
-            statusModalEl.addEventListener("hidden.bs.modal", () => {
-                if (redirectAfterClose) window.location.href = redirectAfterClose;
-            });
-
-            const loadingModal = new bootstrap.Modal(document.getElementById('loadingModal'));
-
-            document.getElementById("signupForm").addEventListener("submit", async (e) => {
+            resendForm.addEventListener("submit", async (e) => {
                 e.preventDefault();
-                loadingModal.show();
+
+                if (isSubmitting) {
+                    return;
+                }
+
+                isSubmitting = true;
+                setFormSubmitting(resendForm, true);
+                showLoadingModal();
                 try {
 
                     const email = document.getElementById("email").value.trim();
@@ -112,26 +107,17 @@
                     });
 
                     const resText = await res.json();
+                    const status = resText?.status;
+                    const statusRedirects = {
+                        AUTH_RESEND_SUCCESS: "/auth/login",
+                    };
 
-                    // If successful, responds with "OK". Otherwise, attempts default behavior of redirecting (failed).
-                    if (resText.status === "AUTH_RESEND_SUCCESS") {
-                        // If successful signup, tell the User. Do not automatically redirect. User needs to be informed to check their email. User can choose to be redirected by closing pop up.
-                        showStatusModal("Successfully re-sent email verification link. Please check your email to verify your account.", "/auth/login");
-                    } else if (resText.status === "AUTH_INVALID_CREDENTIALS" || "AUTH_USER_NOT_FOUND") {
-                        showStatusModal("The email and/or password provided is incorrect. Please try again.");
-                    } else if (resText.status === "AUTH_USER_ALREADY_VERIFIED") {
-                        showStatusModal("The email is already registered. Please log in.");
-                    } else if (resText.status === "AUTH_LOCKED") {
-                        showStatusModal("Your account is locked. Please contact support.");
-                    } else if (resText.status === "AUTH_BAD_REQUEST") {
-                        showStatusModal("There was a problem with the input submitted. Please try again.");
-                    } else {
-                        showStatusModal("An unexpected error occurred. Please try again later.");
-                    }
+                    showAuthStatusAfterLoading(status, resText, { statusRedirects });
                 } catch (error) {
-                    showStatusModal("An unexpected error occurred. Please try again later.");
+                    showAuthStatusAfterLoading(undefined, undefined);
                 } finally {
-                    loadingModal.hide();
+                    isSubmitting = false;
+                    setFormSubmitting(resendForm, false);
                 }
             });
         });

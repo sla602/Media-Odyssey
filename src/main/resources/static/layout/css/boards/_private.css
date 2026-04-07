@@ -1,0 +1,220 @@
+/* boards/_private.css
+   Private board gate page + invite picker. */
+
+/* =============================================
+   PRIVATE BOARD GATE PAGE
+   Shown when a non-member hits a private board URL
+   ============================================= */
+
+.private-board-gate-container {
+    max-width: 640px;
+    margin: 120px auto 0 auto;
+    padding: 0 1rem;
+}
+
+.private-board-gate-card {
+    border-radius: 20px;
+    text-align: center;
+
+    background:
+            radial-gradient(circle at 0% 0%, rgba(139, 92, 246, 0.12) 0%, transparent 45%),
+            radial-gradient(circle at 100% 100%, rgba(99, 102, 241, 0.08) 0%, transparent 45%),
+            linear-gradient(145deg, rgba(30, 30, 63, 0.55) 0%, rgba(20, 20, 40, 0.65) 100%);
+    border: 1px solid rgba(139, 92, 246, 0.25);
+    box-shadow: 0 15px 50px -10px rgba(0, 0, 0, 0.5);
+}
+
+.gate-icon {
+    font-size: 3.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.gate-title {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 1.1rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: #c4b5fd;
+    margin: 0 0 0.5rem 0;
+}
+
+.gate-board-name {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 2rem;
+    font-weight: 700;
+    color: #ffffff;
+    margin: 0 0 1.5rem 0;
+}
+
+.gate-message {
+    font-size: 1rem;
+    color: #c4b5cf;
+    line-height: 1.6;
+    margin: 0 0 0.75rem 0;
+}
+
+.gate-subtext {
+    font-size: 0.88rem;
+    color: #8b93a7;
+    font-style: italic;
+    margin: 0 0 2rem 0;
+}
+
+.gate-actions {
+    display: flex;
+    gap: 0.75rem;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.gate-btn {
+    padding: 0.75rem 1.6rem;
+    border-radius: 10px;
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 0.92rem;
+    font-weight: 600;
+    text-decoration: none;
+    transition: all 0.2s ease;
+}
+
+.gate-btn-primary {
+    background: rgba(139, 92, 246, 0.25);
+    border: 1px solid rgba(139, 92, 246, 0.6);
+    color: #ffffff;
+}
+
+.gate-btn-primary:hover {
+    background: rgba(139, 92, 246, 0.4);
+    border-color: rgba(139, 92, 246, 0.85);
+    transform: translateY(-1px);
+}
+
+.gate-btn-secondary {
+    background: transparent;
+    border: 1px solid rgba(139, 92, 246, 0.3);
+    color: #c4b5fd;
+}
+
+.gate-btn-secondary:hover {
+    background: rgba(139, 92, 246, 0.1);
+    border-color: rgba(139, 92, 246, 0.5);
+    color: #ffffff;
+    transform: translateY(-1px);
+}
+
+/* =============================================
+   INVITE PICKER (board display, private boards only)
+   ============================================= */
+
+.invite-picker-section {
+    max-width: 1100px;
+    margin: 1.25rem auto;
+    padding: 1rem 1.25rem;
+    border-radius: 14px;
+
+    background: linear-gradient(145deg,
+    rgba(30, 30, 63, 0.4) 0%,
+    rgba(20, 20, 40, 0.5) 100%);
+    border: 1px solid rgba(139, 92, 246, 0.25);
+}
+
+.invite-picker-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+}
+
+.invite-picker-title {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 1rem;
+    font-weight: 600;
+    color: #c4b5fd;
+    margin: 0;
+}
+
+.invite-picker-toggle {
+    padding: 0.45rem 1rem;
+    border-radius: 8px;
+    border: 1px solid rgba(139, 92, 246, 0.4);
+    background: rgba(139, 92, 246, 0.15);
+    color: #e2e8f0;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.18s ease;
+}
+
+.invite-picker-toggle:hover {
+    background: rgba(139, 92, 246, 0.3);
+    border-color: rgba(139, 92, 246, 0.65);
+}
+
+.invite-picker-body {
+    margin-top: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+}
+
+.invite-picker-subsection {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.invite-subheading {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #a5b4c8;
+    margin: 0;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.invitable-friend-list,
+.pending-invite-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.invitable-friend-item,
+.pending-invite-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.65rem 0.9rem;
+    background: rgba(20, 20, 40, 0.4);
+    border: 1px solid rgba(139, 92, 246, 0.15);
+    border-radius: 10px;
+    font-size: 0.9rem;
+}
+
+.invitable-friend-name,
+.pending-invite-text {
+    color: #e2e8f0;
+}
+
+/* Invites sub-tab content */
+.invite-subsection {
+    margin-bottom: 2rem;
+}
+
+.invite-subsection-pending {
+    margin-top: 2.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid rgba(139, 92, 246, 0.15);
+}
+
+.invite-subheading {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: #ffffff;
+    margin: 0 0 0.35rem 0;
+}

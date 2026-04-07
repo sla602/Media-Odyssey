@@ -3,7 +3,6 @@ package com.mo.mediaodyssey.recommendation;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
@@ -62,23 +61,21 @@ public class RecommendationService {
 
     // genre tags used for Last.fm tag.getTopTracks — must be valid Last.fm tags
     private static final List<String> SONG_GENRES = Arrays.asList(
-    "rock", "electronic", "alternative", "pop", "indie",
-    "metal", "jazz", "ambient", "folk", "punk",
-    "Hip-Hop", "hard rock", "soul", "dance",
-    "Classical", "Soundtrack", "blues", "rap",
-    "chillout", "electronica", "House", "techno"
-    );
+            "rock", "electronic", "alternative", "pop", "indie",
+            "metal", "jazz", "ambient", "folk", "punk",
+            "Hip-Hop", "hard rock", "soul", "dance",
+            "Classical", "Soundtrack", "blues", "rap",
+            "chillout", "electronica", "House", "techno");
 
     // genre slugs used for RAWG — must match RAWG's accepted genre slugs
     private static final List<String> RAWG_GENRES = Arrays.asList(
-    "Action", "Adventure", "Arcade", "Board Games", "Card", "Casual",
-    "Educational", "Family", "Fighting", "Indie", "Massively Multiplayer",
-    "Platformer", "Puzzle", "Racing", "Role Playing Games RPG", "Shooter",
-    "Simulation", "Sports", "Strategy"
-    );
+            "Action", "Adventure", "Arcade", "Board Games", "Card", "Casual",
+            "Educational", "Family", "Fighting", "Indie", "Massively Multiplayer",
+            "Platformer", "Puzzle", "Racing", "Role Playing Games RPG", "Shooter",
+            "Simulation", "Sports", "Strategy");
 
     public RecommendationService(UserInteractionRepository userInteractionRepository,
-                                  BannedMediaRepository bannedMediaRepository) {
+            BannedMediaRepository bannedMediaRepository) {
         this.userInteractionRepository = userInteractionRepository;
         this.bannedMediaRepository = bannedMediaRepository;
         this.restTemplate = new RestTemplate();
@@ -89,8 +86,8 @@ public class RecommendationService {
     // duplicate likes are blocked; duplicate views are allowed
     public void recordInteraction(Long userId, InteractionRequest request) {
         if ("LIKE".equals(request.getInteractionType()) &&
-            userInteractionRepository.existsByUserIdAndMediaApiIdAndInteractionType(
-                userId, request.getMediaApiId(), "LIKE")) {
+                userInteractionRepository.existsByUserIdAndMediaApiIdAndInteractionType(
+                        userId, request.getMediaApiId(), "LIKE")) {
             return;
         }
 
@@ -102,7 +99,8 @@ public class RecommendationService {
         interaction.setGenres(request.getGenres());
         interaction.setTimestamp(LocalDateTime.now());
 
-        // Store display fields on LIKE so Liked Media page needs zero external API calls
+        // Store display fields on LIKE so Liked Media page needs zero external API
+        // calls
         if ("LIKE".equals(request.getInteractionType())) {
             interaction.setTitle(request.getTitle());
             interaction.setArtist(request.getArtist());
@@ -129,9 +127,15 @@ public class RecommendationService {
 
                 int points = 0;
                 switch (interaction.getInteractionType()) {
-                    case "VIEW": points = 1; break;
-                    case "LIKE": points = 10; break;
-                    default: points = 0; break;
+                    case "VIEW":
+                        points = 1;
+                        break;
+                    case "LIKE":
+                        points = 10;
+                        break;
+                    default:
+                        points = 0;
+                        break;
                 }
 
                 for (String genre : interaction.getGenres()) {
@@ -156,7 +160,8 @@ public class RecommendationService {
     private String pickOtherGenre(String favoriteGenre, List<String> genreList) {
         List<String> others = new ArrayList<>(genreList);
         others.removeIf(g -> g.equalsIgnoreCase(favoriteGenre));
-        if (others.isEmpty()) return genreList.get(0);
+        if (others.isEmpty())
+            return genreList.get(0);
         Collections.shuffle(others);
         return others.get(0);
     }
@@ -165,8 +170,8 @@ public class RecommendationService {
         List<String> likedIds = userInteractionRepository.findLikedMediaApiIdsByUserId(userId);
         Set<String> likedSet = new HashSet<>(likedIds);
         return results.stream()
-            .filter(r -> !likedSet.contains(r.getMediaApiId()))
-            .collect(Collectors.toList());
+                .filter(r -> !likedSet.contains(r.getMediaApiId()))
+                .collect(Collectors.toList());
     }
 
     // main recommendation method
@@ -178,10 +183,17 @@ public class RecommendationService {
         if (favoriteGenre == null) {
             List<RecommendationResponse> fallback;
             switch (mediaType) {
-                case "MOVIE": fallback = fetchTmdbPopular(); break;
-                case "GAME":  fallback = fetchRawgPopular(); break;
-                case "SONG":  fallback = fetchLastfmPopular(); break;
-                default:      return List.of();
+                case "MOVIE":
+                    fallback = fetchTmdbPopular();
+                    break;
+                case "GAME":
+                    fallback = fetchRawgPopular();
+                    break;
+                case "SONG":
+                    fallback = fetchLastfmPopular();
+                    break;
+                default:
+                    return List.of();
             }
             return filterAndMarkLiked(fallback, userId);
         }
@@ -198,10 +210,10 @@ public class RecommendationService {
             }
             case "GAME": {
                 String otherGenre = pickOtherGenre(favoriteGenre, RAWG_GENRES);
-                CompletableFuture<List<RecommendationResponse>> favFuture =
-                    CompletableFuture.supplyAsync(() -> fetchRawgRecommendations(favoriteGenre, 20));
-                CompletableFuture<List<RecommendationResponse>> otherFuture =
-                    CompletableFuture.supplyAsync(() -> fetchRawgRecommendations(otherGenre, 10));
+                CompletableFuture<List<RecommendationResponse>> favFuture = CompletableFuture
+                        .supplyAsync(() -> fetchRawgRecommendations(favoriteGenre, 20));
+                CompletableFuture<List<RecommendationResponse>> otherFuture = CompletableFuture
+                        .supplyAsync(() -> fetchRawgRecommendations(otherGenre, 10));
                 results.addAll(favFuture.join());
                 results.addAll(otherFuture.join());
                 break;
@@ -225,8 +237,8 @@ public class RecommendationService {
         return filterAndMarkLiked(results, userId);
     }
 
-    
-    // Loads all banned mediaApiIds into a Set in one query — used by all fetch methods
+    // Loads all banned mediaApiIds into a Set in one query — used by all fetch
+    // methods
     // to replace N individual existsByMediaApiId calls with a single DB round trip
     private Set<String> loadBannedIds() {
         return bannedMediaRepository.findAll().stream()
@@ -246,10 +258,11 @@ public class RecommendationService {
             JsonNode movies = objectMapper.readTree(response).path("results");
             for (JsonNode movie : movies) {
                 String mediaApiId = movie.path("id").asText();
-                if (banned.contains(mediaApiId)) continue;
-                String title    = movie.path("title").asText();
+                if (banned.contains(mediaApiId))
+                    continue;
+                String title = movie.path("title").asText();
                 String imageUrl = "https://image.tmdb.org/t/p/w500" + movie.path("poster_path").asText();
-                double score    = movie.path("popularity").asDouble();
+                double score = movie.path("popularity").asDouble();
 
                 String genre = "Action";
                 JsonNode genreIds = movie.path("genre_ids");
@@ -272,16 +285,18 @@ public class RecommendationService {
         Set<String> banned = loadBannedIds();
         int page = random.nextInt(5) + 1;
         String url = "https://api.rawg.io/api/games?key=" + rawgApiKey +
-                "&ordering=-metacritic&dates=2016-01-01,2099-12-31&page_size=20&page=" + page;
+                "&metacritic=70,100&page_size=20&page=" + page;
+                
         try {
             String response = restTemplate.getForObject(url, String.class);
             JsonNode games = objectMapper.readTree(response).path("results");
             for (JsonNode game : games) {
                 String mediaApiId = game.path("id").asText();
-                if (banned.contains(mediaApiId)) continue;
-                String title    = game.path("name").asText();
+                if (banned.contains(mediaApiId))
+                    continue;
+                String title = game.path("name").asText();
                 String imageUrl = game.path("background_image").asText();
-                double score    = game.path("metacritic").asDouble();
+                double score = game.path("metacritic").asDouble();
 
                 String genre = "Action";
                 JsonNode genres = game.path("genres");
@@ -316,12 +331,14 @@ public class RecommendationService {
         return results;
     }
 
-    // calls TMDB to get top movies in the user's favourite genre — random page for variety
+    // calls TMDB to get top movies in the user's favourite genre — random page for
+    // variety
     private List<RecommendationResponse> fetchTmdbRecommendations(String genre) {
         List<RecommendationResponse> results = new ArrayList<>();
 
         Integer genreId = TMDB_GENRE_IDS.get(genre);
-        if (genreId == null) return results;
+        if (genreId == null)
+            return results;
 
         Set<String> banned = loadBannedIds();
         int page = random.nextInt(10) + 1;
@@ -337,10 +354,11 @@ public class RecommendationService {
 
             for (JsonNode movie : movies) {
                 String mediaApiId = movie.path("id").asText();
-                if (banned.contains(mediaApiId)) continue;
-                String title    = movie.path("title").asText();
+                if (banned.contains(mediaApiId))
+                    continue;
+                String title = movie.path("title").asText();
                 String imageUrl = "https://image.tmdb.org/t/p/w500" + movie.path("poster_path").asText();
-                double score    = movie.path("popularity").asDouble();
+                double score = movie.path("popularity").asDouble();
                 results.add(new RecommendationResponse(mediaApiId, title, "", "MOVIE", genre, imageUrl, score));
             }
         } catch (Exception e) {
@@ -350,7 +368,8 @@ public class RecommendationService {
         return results;
     }
 
-    // calls RAWG to get top games in the user's favourite genre — random page for variety
+    // calls RAWG to get top games in the user's favourite genre — random page for
+    // variety
     private List<RecommendationResponse> fetchRawgRecommendations(String genre, int limit) {
         List<RecommendationResponse> results = new ArrayList<>();
 
@@ -361,9 +380,8 @@ public class RecommendationService {
         String url = "https://api.rawg.io/api/games"
                 + "?key=" + rawgApiKey
                 + "&genres=" + genreSlug
-                + "&ordering=-metacritic"
-                + "&dates=2016-01-01,2099-12-31"
-                + "&page_size=" + limit
+                + "&metacritic=70,100"
+                + "&page_size=" + limit //10 or 20 depending on whether it's the fav genre or the random genre
                 + "&page=" + page;
 
         try {
@@ -372,10 +390,11 @@ public class RecommendationService {
 
             for (JsonNode game : games) {
                 String mediaApiId = game.path("id").asText();
-                if (banned.contains(mediaApiId)) continue;
-                String title    = game.path("name").asText();
+                if (banned.contains(mediaApiId))
+                    continue;
+                String title = game.path("name").asText();
                 String imageUrl = game.path("background_image").asText();
-                double score    = game.path("metacritic").asDouble();
+                double score = game.path("metacritic").asDouble();
                 results.add(new RecommendationResponse(mediaApiId, title, "", "GAME", genre, imageUrl, score));
             }
         } catch (Exception e) {
@@ -385,7 +404,8 @@ public class RecommendationService {
         return results;
     }
 
-    // uses Last.fm tag.getTopTracks to get top tracks for a genre tag — random page for variety
+    // uses Last.fm tag.getTopTracks to get top tracks for a genre tag — random page
+    // for variety
     private List<RecommendationResponse> fetchLastfmRecommendations(String genre, int limit) {
         List<RecommendationResponse> results = new ArrayList<>();
         try {
@@ -402,11 +422,13 @@ public class RecommendationService {
             JsonNode tracks = objectMapper.readTree(lastfmResponse).path("tracks").path("track");
             for (JsonNode track : tracks) {
                 String mediaApiId = track.path("url").asText();
-                if (mediaApiId.isEmpty()) continue;
-                if (banned.contains(mediaApiId)) continue;
-                String title  = track.path("name").asText();
+                if (mediaApiId.isEmpty())
+                    continue;
+                if (banned.contains(mediaApiId))
+                    continue;
+                String title = track.path("name").asText();
                 String artist = track.path("artist").path("name").asText();
-                double score  = track.path("playcount").asDouble();
+                double score = track.path("playcount").asDouble();
                 results.add(new RecommendationResponse(mediaApiId, title, artist, "SONG", genre, "", score));
             }
         } catch (Exception e) {
@@ -415,8 +437,10 @@ public class RecommendationService {
         return results;
     }
 
-    // Returns all media the user has liked directly from the DB — no external API calls.
-    // Title, artist, and imageUrl were stored at like-time from the frontend card data.
+    // Returns all media the user has liked directly from the DB — no external API
+    // calls.
+    // Title, artist, and imageUrl were stored at like-time from the frontend card
+    // data.
     public List<RecommendationResponse> getLikedMedia(Long userId) {
         List<UserInteraction> liked = userInteractionRepository
                 .findByUserIdAndInteractionType(userId, "LIKE");
@@ -424,7 +448,8 @@ public class RecommendationService {
         List<RecommendationResponse> results = new ArrayList<>();
         for (UserInteraction interaction : liked) {
             String genre = interaction.getGenres() != null && !interaction.getGenres().isEmpty()
-                           ? interaction.getGenres().get(0) : "";
+                    ? interaction.getGenres().get(0)
+                    : "";
             RecommendationResponse response = new RecommendationResponse(
                     interaction.getMediaApiId(),
                     interaction.getTitle() != null ? interaction.getTitle() : "",
@@ -432,8 +457,7 @@ public class RecommendationService {
                     interaction.getMediaType(),
                     genre,
                     interaction.getImageUrl() != null ? interaction.getImageUrl() : "",
-                    0
-            );
+                    0);
             response.setUserLiked(true);
             results.add(response);
         }

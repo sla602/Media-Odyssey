@@ -1,5 +1,6 @@
 package com.mo.mediaodyssey.auth.model;
 
+import java.io.Serializable;
 import java.util.Calendar;
 import java.util.Date;
 
@@ -17,9 +18,11 @@ import jakarta.persistence.GenerationType;
 
 @Entity
 @Table(name = "verification_tokens")
-public class VerificationToken {
-    // Inspiried by: https://www.baeldung.com/registration-verify-user-by-email
+public class VerificationToken implements Serializable {
+    // Inspired by: https://www.baeldung.com/registration-verify-user-by-email
     // Debugging assisted by AI.
+
+    private static final long serialVersionUID = 1L;
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

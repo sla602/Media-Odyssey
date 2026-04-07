@@ -5,8 +5,6 @@ import com.mo.mediaodyssey.layout.models.Boards;
 import com.mo.mediaodyssey.layout.repositories.BoardsRepository;
 import com.mo.mediaodyssey.socialFeature.enums.RoleType;
 import com.mo.mediaodyssey.layout.models.BoardRole;
-import com.mo.mediaodyssey.socialFeature.models.Comment;
-import com.mo.mediaodyssey.socialFeature.models.Post;
 import com.mo.mediaodyssey.layout.repositories.BoardRoleRepository;
 import com.mo.mediaodyssey.socialFeature.repositories.CommentRepository;
 import com.mo.mediaodyssey.socialFeature.repositories.PostRepository;
@@ -29,23 +27,17 @@ public class BoardsService {
 
     private final BoardsRepository boardsRepo;
     private final BoardRoleRepository roleRepo;
-    private final PostRepository postRepo;
-    private final CommentRepository commentRepo;
     private final PermissionService permissionService;
-    private final CommentService commentService;
 
     public BoardsService(BoardsRepository boardsRepo,
-                        BoardRoleRepository roleRepo,
-                        PostRepository postRepo,
-                        CommentRepository commentRepo,
-                        PermissionService permissionService,
-                        CommentService commentService) {
+            BoardRoleRepository roleRepo,
+            PostRepository postRepo,
+            CommentRepository commentRepo,
+            PermissionService permissionService,
+            CommentService commentService) {
         this.boardsRepo = boardsRepo;
         this.roleRepo = roleRepo;
-        this.postRepo = postRepo;
-        this.commentRepo = commentRepo;
         this.permissionService = permissionService;
-        this.commentService = commentService;
     }
 
     // -----------------helper-------------------
@@ -136,9 +128,12 @@ public class BoardsService {
                 roleRepo.save(existing.get());
                 return;
             }
-            if (role.isOwner()) throw new IllegalStateException("You are already the owner.");
-            if (role.isModerator()) throw new IllegalStateException("You are already a moderator.");
-            if (role.isBanned()) throw new IllegalStateException("You are banned from this board.");
+            if (role.isOwner())
+                throw new IllegalStateException("You are already the owner.");
+            if (role.isModerator())
+                throw new IllegalStateException("You are already a moderator.");
+            if (role.isBanned())
+                throw new IllegalStateException("You are banned from this board.");
             throw new IllegalStateException("You are already a member.");
         }
 
@@ -167,6 +162,5 @@ public class BoardsService {
     public Long getMemberCount(Long boardId) {
         return roleRepo.countByBoardId(boardId);
     }
-
 
 }

@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Media Odyssey - Forgot password</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
+    <link rel="stylesheet" href="/auth/auth-styles.css">
+</head>
+
+<body class="auth-page text-light min-vh-100 d-flex flex-column justify-content-center">
+    <header class="container px-3 px-lg-4 mb-2">
+        <h1 class="mo-title display-4 fw-bold text-light text-center mb-3">MEDIA ODYSSEY</h1>
+        <p class="mo-subtitle lead fw-bold text-light text-center mb-1">Discover your next obsession!</p>
+        <p class="mo-subtitle lead fw-bold text-light text-center mb-4">Your journey starts here!</p>
+    </header>
+    <main class="container px-3 px-lg-4 d-flex align-items-center justify-content-center py-2">
+        <section class="card auth-card auth-panel border-0 shadow-lg w-100">
+            <div class="card-body p-4 p-md-5">
+                <h3 class="mo-copy text-center text-light fw-bold mb-3">Recover your account</h3>
+                <p class="text-center text-light mb-4">
+                    Enter your email and we will send you a password reset link.
+                </p>
+                <form id="forgotPasswordForm" class="needs-validation" novalidate>
+                    <div class="mb-3">
+                        <input type="email" class="form-control form-control-lg bg-light text-dark border-secondary"
+                            id="email" name="email" autocomplete="email" required placeholder="example@email.com">
+                    </div>
+
+                    <div class="row g-2">
+                        <div class="col-12 col-md-6 d-grid gap-2">
+                            <button type="submit" class="btn mo-btn btn-lg fw-semibold text-white">Send link</button>
+                        </div>
+                        <div class="col-12 col-md-6 d-grid gap-2">
+                            <a href="/auth/login" class="btn mo-btn btn-lg fw-semibold text-white">Back to Login</a>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </section>
+    </main>
+
+    <!-- Bootstrap status modal -->
+    <div class="modal fade" id="statusModal" tabindex="-1" aria-labelledby="statusModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content bg-dark text-white border-secondary">
+                <div class="modal-header border-secondary">
+                    <h5 class="modal-title" id="statusModalLabel">Media Odyssey</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                        aria-label="Close"></button>
+                </div>
+                <div class="modal-body" id="statusModalBody"></div>
+                <div class="modal-footer border-secondary">
+                    <button type="button" class="btn btn-info text-dark fw-semibold" data-bs-dismiss="modal">OK</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="loadingModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content bg-dark text-white border-0 shadow">
+                <div class="modal-body d-flex justify-content-center align-items-center" style="min-height: 120px;">
+                    <div class="spinner-border text-info" role="status" style="width: 3rem; height: 3rem;">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI"
+        crossorigin="anonymous"></script>
+    <script src="/auth/auth-modal-flow.js"></script>
+
+    <script>
+        window.addEventListener("DOMContentLoaded", () => {
+            const { showLoadingModal, showAuthStatusAfterLoading, setFormSubmitting } = AuthModalFlow.create();
+            const forgotPasswordForm = document.getElementById("forgotPasswordForm");
+
+            let isSubmitting = false;
+
+            forgotPasswordForm.addEventListener("submit", async (e) => {
+                e.preventDefault();
+
+                if (isSubmitting) {
+                    return;
+                }
+
+                isSubmitting = true;
+                setFormSubmitting(forgotPasswordForm, true);
+                showLoadingModal();
+                try {
+                    const email = document.getElementById("email").value.trim();
+                    const payload = {
+                        email: email,
+                    };
+
+                    const res = await fetch("/api/auth/password/forgot", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        credentials: "include",
+                        body: JSON.stringify(payload)
+                    });
+
+                    const resText = await res.json();
+                    const status = resText?.status;
+                    const statusRedirects = {
+                        AUTH_PASSWORD_RESET_EMAIL_SENT: "/auth/login",
+                        AUTH_PASSWORD_RESET_OAUTH_NOT_ALLOWED: "/auth/login",
+                    };
+
+                    showAuthStatusAfterLoading(status, resText, { statusRedirects });
+                } catch (error) {
+                    showAuthStatusAfterLoading(undefined, undefined);
+                } finally {
+                    isSubmitting = false;
+                    setFormSubmitting(forgotPasswordForm, false);
+                }
+            });
+        });
+    </script>
+</body>
+
+</html>

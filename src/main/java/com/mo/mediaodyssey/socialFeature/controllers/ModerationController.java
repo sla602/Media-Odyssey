@@ -3,6 +3,7 @@ package com.mo.mediaodyssey.socialFeature.controllers;
 import com.mo.mediaodyssey.layout.models.BoardRole;
 import com.mo.mediaodyssey.layout.repositories.BoardRoleRepository;
 import com.mo.mediaodyssey.shared.model.User;
+import com.mo.mediaodyssey.shared.services.CurrentAccountService;
 import com.mo.mediaodyssey.socialFeature.enums.RoleType;
 import com.mo.mediaodyssey.socialFeature.services.ModerationService;
 import org.springframework.security.core.Authentication;
@@ -28,11 +29,13 @@ public class ModerationController {
 
     private final ModerationService moderationService;
     private final BoardRoleRepository boardRoleRepository;
+    private final CurrentAccountService currentAccountService;
 
     public ModerationController(ModerationService moderationService,
-                                BoardRoleRepository boardRoleRepository) {
+            BoardRoleRepository boardRoleRepository, CurrentAccountService currentAccountService) {
         this.moderationService = moderationService;
         this.boardRoleRepository = boardRoleRepository;
+        this.currentAccountService = currentAccountService;
     }
 
     // ─── Helper ──────────────────────────────────────────────────────
@@ -48,21 +51,21 @@ public class ModerationController {
 
     @PostMapping("/reports/{reportId}/dismiss")
     public String dismissReport(@PathVariable Long boardId,
-                                @PathVariable Long reportId) {
+            @PathVariable Long reportId) {
         moderationService.dismissReport(reportId);
         return "redirect:/boards/display/" + boardId + "?view=moderation&modTab=reports";
     }
 
     @PostMapping("/reports/{reportId}/delete-content")
     public String deleteReportedContent(@PathVariable Long boardId,
-                                        @PathVariable Long reportId) {
+            @PathVariable Long reportId) {
         moderationService.deleteReportedContent(reportId);
         return "redirect:/boards/display/" + boardId + "?view=moderation&modTab=reports";
     }
 
     @PostMapping("/reports/{reportId}/ban")
     public String banFromReport(@PathVariable Long boardId,
-                                @PathVariable Long reportId) {
+            @PathVariable Long reportId) {
         moderationService.banFromReport(reportId);
         return "redirect:/boards/display/" + boardId + "?view=moderation&modTab=reports";
     }
@@ -71,28 +74,28 @@ public class ModerationController {
 
     @PostMapping("/members/{userId}/ban")
     public String banMember(@PathVariable Long boardId,
-                            @PathVariable Long userId) {
+            @PathVariable Long userId) {
         moderationService.banMember(userId, boardId);
         return "redirect:/boards/display/" + boardId + "?view=moderation&modTab=members";
     }
 
     @PostMapping("/members/{userId}/unban")
     public String unbanMember(@PathVariable Long boardId,
-                              @PathVariable Long userId) {
+            @PathVariable Long userId) {
         moderationService.unbanMember(userId, boardId);
         return "redirect:/boards/display/" + boardId + "?view=moderation&modTab=members";
     }
 
     @PostMapping("/members/{userId}/promote")
     public String promoteMember(@PathVariable Long boardId,
-                                @PathVariable Long userId) {
+            @PathVariable Long userId) {
         moderationService.promoteMember(userId, boardId);
         return "redirect:/boards/display/" + boardId + "?view=moderation&modTab=members";
     }
 
     @PostMapping("/members/{userId}/demote")
     public String demoteModerator(@PathVariable Long boardId,
-                                  @PathVariable Long userId) {
+            @PathVariable Long userId) {
         moderationService.demoteModerator(userId, boardId);
         return "redirect:/boards/display/" + boardId + "?view=moderation&modTab=members";
     }
@@ -101,17 +104,17 @@ public class ModerationController {
 
     @PostMapping("/ownership/transfer")
     public String transferOwnership(@PathVariable Long boardId,
-                                    @RequestParam Long newOwnerId,
-                                    Authentication authentication) {
-        User user = (User) authentication.getPrincipal();
+            @RequestParam Long newOwnerId,
+            Authentication authentication) {
+        User user = currentAccountService.getCurrentAccount(authentication);
         moderationService.transferOwnership(user.getId(), newOwnerId, boardId);
         return "redirect:/boards/display/" + boardId;
     }
 
     @PostMapping("/ownership/delete")
     public String hardDeleteBoard(@PathVariable Long boardId,
-                                  Authentication authentication) {
-        User user = (User) authentication.getPrincipal();
+            Authentication authentication) {
+        User user = currentAccountService.getCurrentAccount(authentication);
         RoleType role = getUserRoleType(user.getId(), boardId);
         if (!role.isOwner()) {
             throw new SecurityException("Only the owner can delete the board");

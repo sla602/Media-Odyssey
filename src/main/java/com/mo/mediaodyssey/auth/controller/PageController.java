@@ -1,8 +1,10 @@
 package com.mo.mediaodyssey.auth.controller;
 
+import com.mo.mediaodyssey.shared.services.CurrentAccountService;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -14,36 +16,54 @@ import com.mo.mediaodyssey.shared.model.User;
 public class PageController {
 
     @Autowired
+    private CurrentAccountService currentAccountService;
+
+    @Autowired
     private UserRepository userRepository;
 
     /**
      * Splash page for authentication. Users can choose to login or signup.
      * 
-     * @return Static page at src/main/resources/static/auth/index.html
+     * @return Redirect to / for authenticated users. Otherwise, static page at
+     *         src/main/resources/static/auth/index.html
      */
     @GetMapping("/auth")
-    public String authPage() {
-        return "forward:/auth/index.html";
+    public String authPage(Authentication authentication) {
+        if (currentAccountService.isAuthenticated(authentication)) {
+            return "redirect:/";
+        } else {
+            return "forward:/auth/index.html";
+        }
     }
 
     /**
      * Log in page for authentication.
      * 
-     * @return Static page at src/main/resources/static/auth/login/index.html
+     * @return Redirect to / for authenticated users. Otherwise, static page at
+     *         src/main/resources/static/auth/login/index.html
      */
     @GetMapping("/auth/login")
-    public String loginPage() {
-        return "forward:/auth/login/index.html";
+    public String loginPage(Authentication authentication) {
+        if (currentAccountService.isAuthenticated(authentication)) {
+            return "redirect:/";
+        } else {
+            return "forward:/auth/login/index.html";
+        }
     }
 
     /**
      * Sign up page for authentication.
      * 
-     * @return Static page at src/main/resources/static/auth/signup/index.html
+     * @return Redirect to / for authenticated users. Otherwise, static page at
+     *         src/main/resources/static/auth/signup/index.html
      */
     @GetMapping("/auth/signup")
-    public String registerPage() {
-        return "forward:/auth/signup/index.html";
+    public String registerPage(Authentication authentication) {
+        if (currentAccountService.isAuthenticated(authentication)) {
+            return "redirect:/";
+        } else {
+            return "forward:/auth/signup/index.html";
+        }
     }
 
     /**
@@ -64,9 +84,49 @@ public class PageController {
         return "redirect:/api/auth/logout";
     }
 
+    /**
+     * Complete email verification token page for authentication.
+     * 
+     * @return Static page at src/main/resources/static/auth/verify/index.html
+     */
+    @GetMapping("/auth/verify")
+    public String verifyPage() {
+        return "forward:/auth/verify/index.html";
+    }
+
+    /**
+     * Resend email verification token page for authentication.
+     * 
+     * @return Static page at src/main/resources/static/auth/resend/index.html
+     */
     @GetMapping("/auth/resend")
     public String resendPage() {
         return "forward:/auth/resend/index.html";
+    }
+
+    /**
+     * Forgot password page for authentication.
+     *
+     * @return Redirect to / for authenticated users. Otherwise, static page at
+     *         src/main/resources/static/auth/forgot/index.html
+     */
+    @GetMapping("/auth/forgot")
+    public String forgotPasswordPage(Authentication authentication) {
+        if (currentAccountService.isAuthenticated(authentication)) {
+            return "redirect:/";
+        } else {
+            return "forward:/auth/forgot/index.html";
+        }
+    }
+
+    /**
+     * Password reset completion page for authentication.
+     *
+     * @return Static page at src/main/resources/static/auth/reset/index.html
+     */
+    @GetMapping("/auth/reset")
+    public String resetPasswordPage() {
+        return "forward:/auth/reset/index.html";
     }
 
     /**

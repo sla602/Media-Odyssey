@@ -352,6 +352,75 @@
                         </li>
                     </ul>
                 </section>
+                <!-- =========================================================
+     LIKED MEDIA PREVIEW
+     Shows the user's most recent likes as a card grid. Pulled
+     from UserInteraction rows so thumbnail/title are already
+     stored — no external API calls at render time.
+========================================================= -->
+                <section class="profile-section liked-media-section">
+                    <div class="profile-section-head">
+                        <h2 class="profile-section-title">Liked Media</h2>
+                        <span class="profile-section-sub"
+                              th:text="${isOwnProfile == null or isOwnProfile}
+                       ? 'Movies, games, and songs you love'
+                       : 'Their favourites'"></span>
+                    </div>
+                    <!-- Shown only on the user's own profile when they haven't set a username yet.
+     Without a username they can't be surfaced as a taste-match friend suggestion. -->
+                    <span class="profile-section-username-hint"
+                          th:if="${(isOwnProfile == null or isOwnProfile)
+                                      and (profile?.username == null or #strings.isEmpty(profile?.username))}">
+                            ⚠ Set a username to be suggested to others as a person with similar interests.
+                        </span>
+
+                    <!-- Empty state -->
+                    <div class="liked-empty"
+                         th:if="${likedMedia == null or #lists.isEmpty(likedMedia)}">
+                        <span class="liked-empty-glyph">♡</span>
+                        <p class="liked-empty-text">No liked media yet.</p>
+                    </div>
+
+                    <!-- Grid of liked media cards -->
+                    <div class="liked-media-grid"
+                         th:if="${likedMedia != null and !#lists.isEmpty(likedMedia)}">
+
+                        <div th:each="item : ${likedMedia}"
+                             class="liked-media-card"
+                             th:classappend="${item.mediaType != null
+                              ? ' liked-media-' + #strings.toLowerCase(item.mediaType)
+                              : ''}">
+
+                            <!-- Thumbnail with fallback when imageUrl is null -->
+                            <div class="liked-media-thumb">
+                                <img th:if="${item.imageUrl != null and !#strings.isEmpty(item.imageUrl)}"
+                                     th:src="${item.imageUrl}"
+                                     th:alt="${item.title}"
+                                     loading="lazy">
+                                <div th:if="${item.imageUrl == null or #strings.isEmpty(item.imageUrl)}"
+                                     class="liked-media-thumb-fallback">
+                    <span th:text="${item.mediaType == 'MOVIE' ? '🎬'
+                                    : (item.mediaType == 'GAME' ? '🎮'
+                                    : (item.mediaType == 'SONG' ? '🎵' : '★'))}">★</span>
+                                </div>
+
+                                <!-- Media type badge pinned to the thumb corner -->
+                                <span class="liked-media-type-badge"
+                                      th:if="${item.mediaType != null}"
+                                      th:text="${#strings.toLowerCase(item.mediaType)}">movie</span>
+                            </div>
+
+                            <div class="liked-media-info">
+                                <div class="liked-media-title"
+                                     th:text="${item.title != null and !#strings.isEmpty(item.title)
+                               ? item.title : '(untitled)'}">Title</div>
+                                <div class="liked-media-artist"
+                                     th:if="${item.artist != null and !#strings.isEmpty(item.artist)}"
+                                     th:text="${item.artist}">Artist</div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
                 <div class="boards-display-box">
                     <div class="boards-created boardItem"></div>
 

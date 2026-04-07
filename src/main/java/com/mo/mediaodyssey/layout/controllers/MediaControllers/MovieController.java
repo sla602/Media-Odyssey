@@ -12,6 +12,7 @@ import com.mo.mediaodyssey.layout.models.Boards;
 import com.mo.mediaodyssey.layout.services.BoardsService;
 import com.mo.mediaodyssey.layout.services.MediaServices.MovieService;
 import com.mo.mediaodyssey.shared.model.User;
+import com.mo.mediaodyssey.shared.services.CurrentAccountService;
 
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -27,6 +28,9 @@ public class MovieController {
 
     @Autowired
     private BoardsService boardsService;
+
+    @Autowired
+    private CurrentAccountService currentAccountService;
 
     /*
      * *** This function will fetch the movie's id from homePage.js (mediaApiId)
@@ -47,7 +51,7 @@ public class MovieController {
             MovieResponse movie = movieService.getMovieWithProviders(id);
 
             // Identify the User in order to get all their boards
-            User user = (User) authentication.getPrincipal();
+            User user = currentAccountService.getCurrentAccount(authentication);
             // Use user to find all the boards that this user created
             List<Boards> boards = boardsService.findBoardsByUser(user);
 
