@@ -27,10 +27,10 @@ public class EmailVerificationService {
     // Inspired by: https://www.baeldung.com/registration-verify-user-by-email
     // Debugging assisted by AI
 
-    // Expiry length determined by environment variable. Default: 60 minutes
     @Value("${spring.application.name:App}")
     private String appName;
 
+    // Expiry length determined by environment variable.
     @Value("${email.verifytoken.expiry-in-minutes}")
     private int tokenExpiryInMinutes;
 
