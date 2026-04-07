@@ -245,6 +245,7 @@
           </button>
         </a>
       </div>
+<hr />
 
       <!-- ── Fast-Rising Top 5 ───────────────────────────────────────── -->
       <!--
@@ -398,6 +399,8 @@
 
     <!-- ── JavaScript ──────────────────────────────────────────────────── -->
     <script>
+      // Auto-record VIEW interaction for each Top 10 card on page load.
+      // Used internally by MediaRankingService to compute popularity scores.
       document
         .querySelectorAll("#top10Grid > div[data-api-id]")
         .forEach((card) => {
@@ -407,6 +410,7 @@
             `/community/view?mediaApiId=${encodeURIComponent(mediaApiId)}&mediaType=${encodeURIComponent(mediaType)}`,
             { method: "POST" },
           ).catch(() => {});
+        });
         });
     </script>
 
