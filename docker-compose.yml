@@ -7,7 +7,7 @@ services:
     # image: media-odyssey-app
 
     # Image is built and published to GHCR by the build-publish-deploy workflow.
-    image: ${GHCR_IMAGE:-ghcr.io/sla602/media-odyssey:latest}
+    image: ${GHCR_IMAGE:-ghcr.io/sla602/media-odyssey:main}
 
     # App runtime variables are loaded from the root .env file.
     env_file:
@@ -32,7 +32,7 @@ services:
     restart: unless-stopped
 
   db:
-    image: postgres:16-alpine
+    image: postgres:18-alpine
     environment:
       POSTGRES_DB: ${POSTGRES_DB}
       POSTGRES_USER: ${POSTGRES_USER}
@@ -43,7 +43,7 @@ services:
       timeout: 5s
       retries: 10
     volumes:
-      - postgres-data:/var/lib/postgresql/data
+      - postgres-data:/var/lib/postgresql
     restart: unless-stopped
 
 volumes:
