@@ -1,12 +1,13 @@
 services:
   app:
-    # For local development, build the image from the Dockerfile in the project root.
+    container_name: mediaodyssey_app
+    # For local development, uncomment below to build the image from the Dockerfile in the project root.
     # build:
     #   context: .
     #   dockerfile: Dockerfile
     # image: media-odyssey-app
 
-    # Image is built and published to GHCR by the build-publish-deploy workflow.
+    # Image is built and published to GHCR by the build-publish-deploy workflow. Comment out below if building locally.
     image: ${GHCR_IMAGE:-ghcr.io/sla602/media-odyssey:main}
 
     # App runtime variables are loaded from the root .env file.
@@ -23,7 +24,8 @@ services:
         condition: service_healthy
     restart: unless-stopped
 
-  cloudflare-tunnel:
+  tunnel:
+    container_name: mediaodyssey_tunnel
     image: cloudflare/cloudflared:latest
     command: tunnel --no-autoupdate run --token ${CLOUDFLARED_TUNNEL_TOKEN}
     depends_on:
@@ -32,13 +34,14 @@ services:
     restart: unless-stopped
 
   db:
+    container_name: mediaodyssey_db
     image: postgres:18-alpine
     environment:
       POSTGRES_DB: ${POSTGRES_DB}
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      test: [ "CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}" ]
       interval: 5s
       timeout: 5s
       retries: 10
