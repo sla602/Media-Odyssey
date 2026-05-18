@@ -33,6 +33,8 @@ build/
 .vscode/
 
 .env
+.env.*
+!.env.example
 backup.sql
 .DS_Store
 logs/

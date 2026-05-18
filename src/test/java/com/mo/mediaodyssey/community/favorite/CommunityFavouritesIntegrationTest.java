@@ -11,7 +11,6 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
-
 /**
  * Integration tests for Community Favourites feature.
  *
@@ -110,8 +109,8 @@ class CommunityFavouritesIntegrationTest {
         long calculatedScore = viewCount * 1 + likeCount * 10;
 
         assertThat(calculatedScore)
-            .as("Score formula: VIEW×1 + LIKE×10 should equal 11")
-            .isGreaterThanOrEqualTo(11L);
+                .as("Score formula: VIEW×1 + LIKE×10 should equal 11")
+                .isGreaterThanOrEqualTo(11L);
 
         // Ranking query itself must not throw
         List<Object[]> allRows = userInteractionRepository.findTop10ByScoreWithCounts();
