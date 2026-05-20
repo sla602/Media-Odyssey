@@ -172,9 +172,25 @@ public class MediaRankingService {
             return "";
         }
 
-        if (body.length >= 2 && body[0] == (byte) 0x1f && body[1] == (byte) 0x8b) {
+        // Check Content-Encoding header to determine if response is gzip-compressed,
+        // fall back to magic-byte detection (0x1f 0x8b) in case the header is missing
+        String contentEncoding = response.getHeaders().getFirst("Content-Encoding");
+        boolean isGzip = "gzip".equalsIgnoreCase(contentEncoding);
+
+        if (!isGzip && body.length >= 2) {
+            int b0 = body[0] & 0xFF;
+            int b1 = body[1] & 0xFF;
+            if (b0 == 0x1F && b1 == 0x8B) {
+                isGzip = true;
+            }
+        }
+
+        if (isGzip) {
             try (GZIPInputStream gzipInputStream = new GZIPInputStream(new ByteArrayInputStream(body))) {
                 body = gzipInputStream.readAllBytes();
+            } catch (IOException e) {
+                System.err.println("Failed to decompress gzip response from " + url + ": " + e.getMessage());
+                throw e;
             }
         }
 

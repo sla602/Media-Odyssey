@@ -75,10 +75,10 @@ public class RecommendationService {
             "Simulation", "Sports", "Strategy");
 
     public RecommendationService(UserInteractionRepository userInteractionRepository,
-            BannedMediaRepository bannedMediaRepository) {
+            BannedMediaRepository bannedMediaRepository, RestTemplate restTemplate) {
         this.userInteractionRepository = userInteractionRepository;
         this.bannedMediaRepository = bannedMediaRepository;
-        this.restTemplate = new RestTemplate();
+        this.restTemplate = restTemplate;
         this.objectMapper = new ObjectMapper();
     }
 

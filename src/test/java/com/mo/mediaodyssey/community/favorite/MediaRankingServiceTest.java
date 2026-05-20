@@ -216,4 +216,33 @@ class MediaRankingServiceTest {
         assertThat(result.get(0).getLikes()).isEqualTo(3L);
         assertThat(result.get(0).getViews()).isEqualTo(5L);
     }
+
+    // Ensure fetchJsonBody correctly handles gzip-compressed responses even when
+    // the
+    // Content-Encoding header is missing (magic-byte detection).
+    @Test
+    void getTop10_handlesGzipCompressedResponses() throws Exception {
+        List<Object[]> fakeRows = Collections.singletonList(
+                new Object[] { "27205", "MOVIE", 20L, 1L, 10L });
+        when(userInteractionRepository.findTop10ByScoreWithCounts()).thenReturn(fakeRows);
+
+        // gzipped JSON body for TMDB
+        byte[] gzipped = gzipBytes("{\"title\":\"Inception\",\"poster_path\":\"/poster.jpg\"}");
+        when(restTemplate.getForEntity(anyString(), eq(byte[].class)))
+                .thenReturn(org.springframework.http.ResponseEntity.ok(gzipped));
+
+        List<RankedMediaResponse> result = rankingService.getTop10();
+
+        assertThat(result).hasSize(1);
+        assertThat(result.get(0).getTitle()).isEqualTo("Inception");
+    }
+
+    // helper to produce gzipped bytes
+    private static byte[] gzipBytes(String input) throws java.io.IOException {
+        java.io.ByteArrayOutputStream bos = new java.io.ByteArrayOutputStream();
+        try (java.util.zip.GZIPOutputStream gos = new java.util.zip.GZIPOutputStream(bos)) {
+            gos.write(input.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+        }
+        return bos.toByteArray();
+    }
 }
