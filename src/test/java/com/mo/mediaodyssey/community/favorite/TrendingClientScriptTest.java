@@ -33,13 +33,13 @@ class TrendingClientScriptTest {
         String script = readTrendingScript();
 
         // Act/Assert:
-        // verify both lists are filtered by currentFilter, and confirm the
-        // regression fix remains in place (trending renders filtered items, not all).
+        // verify category-specific filtering from per-category data structures,
+        // and confirm the regression fix remains in place (trending renders filtered
+        // items).
         assertThat(script)
-                .contains("const top10Items = currentFilter === \"ALL\"")
-                .contains("allTop10.filter(m => m.mediaType === currentFilter)")
-                .contains("const trendingItems = currentFilter === \"ALL\"")
-                .contains("allTrending.filter(m => m.mediaType === currentFilter)")
+                .contains("top10ByCategory")
+                .contains("trendingByCategory")
+                .contains("renderFiltered()")
                 .contains("renderTop10(top10Items);")
                 .contains("renderTrending(trendingItems);")
                 .doesNotContain("renderTrending(allTrending);");
@@ -55,8 +55,18 @@ class TrendingClientScriptTest {
         // and trigger rendering from the fetched payload.
         assertThat(script)
                 .contains("const res = await fetch(\"/community/data\");")
-                .contains("allTop10.forEach(m => recordView(m.mediaApiId, m.mediaType));")
                 .contains("renderFiltered();");
+    }
+
+    @Test
+    void renderedItems_recordViewsOnlyOncePerMedia() throws IOException {
+        String script = readTrendingScript();
+
+        assertThat(script)
+                .contains("const viewedMediaKeys = new Set();")
+                .contains("recordVisibleMediaViews(items);")
+                .contains("if (viewedMediaKeys.has(viewKey)) return;")
+                .doesNotContain("allTop10.forEach(m => recordView(m.mediaApiId, m.mediaType));");
     }
 
     @Test
@@ -82,7 +92,7 @@ class TrendingClientScriptTest {
         // clicking a category tab should update currentFilter and rerender
         // without requesting server-side category-specific endpoints.
         assertThat(script)
-                .contains("currentFilter = tab.dataset.type;")
+                .contains("currentFilter = normalizeMediaType(tab.dataset.type);")
                 .contains("renderFiltered();");
     }
 
@@ -96,8 +106,8 @@ class TrendingClientScriptTest {
         // failure status text for Top 10 and trending panels.
         assertThat(script)
                 .contains("if (!res.ok) {")
-                .contains("setStatus(\"top10Status\",    \"Could not load ranking data.\");")
-                .contains("setStatus(\"trendingStatus\", \"Could not load trending data.\");")
+                .containsPattern("setStatus\\(\"top10Status\",\\s+\"Could not load ranking data\\.\"\\);")
+                .containsPattern("setStatus\\(\"trendingStatus\",\\s+\"Could not load trending data\\.\"\\);")
                 .contains("} catch (err) {");
     }
 }

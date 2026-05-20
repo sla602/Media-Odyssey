@@ -11,15 +11,24 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+
 /**
  * Integration tests for Community Favourites feature.
  *
- * These tests load the full Spring context and connect to the real PostgreSQL DB.
+ * These tests load the full Spring context and connect to the real PostgreSQL
+ * DB.
+ * 
  * They will FAIL if:
- * - The DB connection is misconfigured or unreachable
- * - UserInteraction cannot be saved or queried
- * - The ranking query returns unexpected results
- * - External API keys (TMDB, RAWG, Last.fm) are invalid or missing
+ * - The DB connection is misconfigured or unreachable.
+ * - UserInteraction cannot be saved or queried.
+ * - The ranking query returns unexpected results.
+ * - External API keys (TMDB, RAWG, Last.fm) are invalid or missing.
+ * - 50 likes are added during the test to give the items a score of 500 so they
+ * appear in the Top 10. Likewise, 10 likes are added to the fast-rising top 5
+ * items so they appear in the fast-rising list. However, this can still fail if
+ * there are other items which have greater amount of points. These numbers were
+ * picked because this is a reasonable number of interactions without an
+ * excessive amount of time to write to the DB.
  *
  * Run with: ./mvnw test
  * Requires: valid DB and API credentials in application.properties or .env
@@ -43,6 +52,7 @@ class CommunityFavouritesIntegrationTest {
                 userInteractionRepository.deleteAllInBatch(toDelete);
             }
         }
+        mediaRankingService.clearRequestCache();
     }
 
     // ─── 1. DB Connection / Context Load ──────────────────────────────────────
@@ -119,13 +129,13 @@ class CommunityFavouritesIntegrationTest {
 
     // ─── 3. External API Calls ─────────────────────────────────────────────────
 
-    // Seeds 10 LIKE interactions to give the item score=100, ensuring it appears
-    // in Top 10 even in a populated DB (bypasses LIMIT issue with single-view seed).
+    // Seeds 50 LIKE interactions to give the item score=500, ensuring it appears
+    // in Top 10 even in a populated DB (fast to write, guaranteed ranking).
     @Test
     void tmdbApi_fetchKnownMovie_returnsValidTitle() {
         String movieId = "27205"; // Inception on TMDB
 
-        for (int i = 0; i < 10; i++) {
+        for (int i = 0; i < 50; i++) {
             UserInteraction like = new UserInteraction();
             like.setUserId(TEST_USER_ID_BASE + 2);
             like.setMediaApiId(movieId);
@@ -139,21 +149,21 @@ class CommunityFavouritesIntegrationTest {
         List<RankedMediaResponse> result = mediaRankingService.getTop10ByMediaType("MOVIE");
 
         boolean hasTmdbTitle = result.stream()
-            .anyMatch(r -> r.getMediaApiId().equals(movieId)
+                .anyMatch(r -> r.getMediaApiId().equals(movieId)
                         && r.getTitle() != null
                         && !r.getTitle().isBlank()
                         && !r.getTitle().equals("Unknown"));
 
         assertThat(hasTmdbTitle)
-            .as("TMDB API should return a valid title for movie id=27205 (Inception)")
-            .isTrue();
+                .as("TMDB API should return a valid title for movie id=27205 (Inception)")
+                .isTrue();
     }
 
     @Test
     void rawgApi_fetchKnownGame_returnsValidTitle() {
         String gameId = "3498"; // GTA V on RAWG
 
-        for (int i = 0; i < 10; i++) {
+        for (int i = 0; i < 50; i++) {
             UserInteraction like = new UserInteraction();
             like.setUserId(TEST_USER_ID_BASE + 3);
             like.setMediaApiId(gameId);
@@ -167,14 +177,14 @@ class CommunityFavouritesIntegrationTest {
         List<RankedMediaResponse> result = mediaRankingService.getTop10ByMediaType("GAME");
 
         boolean hasRawgTitle = result.stream()
-            .anyMatch(r -> r.getMediaApiId().equals(gameId)
+                .anyMatch(r -> r.getMediaApiId().equals(gameId)
                         && r.getTitle() != null
                         && !r.getTitle().isBlank()
                         && !r.getTitle().equals("Unknown"));
 
         assertThat(hasRawgTitle)
-            .as("RAWG API should return a valid title for game id=3498 (GTA V)")
-            .isTrue();
+                .as("RAWG API should return a valid title for game id=3498 (GTA V)")
+                .isTrue();
     }
 
     // Last.fm URL format: https://www.last.fm/music/Artist/_/Track
@@ -182,7 +192,7 @@ class CommunityFavouritesIntegrationTest {
     void lastfmApi_fetchKnownTrack_returnsValidTitle() {
         String trackUrl = "https://www.last.fm/music/Queen/_/Bohemian+Rhapsody";
 
-        for (int i = 0; i < 10; i++) {
+        for (int i = 0; i < 50; i++) {
             UserInteraction like = new UserInteraction();
             like.setUserId(TEST_USER_ID_BASE + 4);
             like.setMediaApiId(trackUrl);
@@ -196,13 +206,143 @@ class CommunityFavouritesIntegrationTest {
         List<RankedMediaResponse> result = mediaRankingService.getTop10ByMediaType("SONG");
 
         boolean hasLastfmTitle = result.stream()
-            .anyMatch(r -> r.getMediaApiId().equals(trackUrl)
+                .anyMatch(r -> r.getMediaApiId().equals(trackUrl)
                         && r.getTitle() != null
                         && !r.getTitle().isBlank()
                         && !r.getTitle().equals("Unknown"));
 
         assertThat(hasLastfmTitle)
-            .as("Last.fm API should return a valid title for: " + trackUrl)
-            .isTrue();
+                .as("Last.fm API should return a valid title for: " + trackUrl)
+                .isTrue();
+    }
+
+    // ─── 4. Per-Category Data Structure ───────────────────────────────────────
+
+    @Test
+    void getTop10PerCategory_returnsMapWithAllThreeCategories() {
+        var result = mediaRankingService.getTop10PerCategory();
+
+        assertThat(result)
+                .as("Should return Map with MOVIE, GAME, SONG keys")
+                .containsKeys("MOVIE", "GAME", "SONG");
+
+        assertThat(result.get("MOVIE")).isNotNull().isInstanceOf(List.class);
+        assertThat(result.get("GAME")).isNotNull().isInstanceOf(List.class);
+        assertThat(result.get("SONG")).isNotNull().isInstanceOf(List.class);
+    }
+
+    @Test
+    void getFastRising5PerCategory_returnsMapWithAllThreeCategories() {
+        var result = mediaRankingService.getFastRising5PerCategory();
+
+        assertThat(result)
+                .as("Should return Map with MOVIE, GAME, SONG keys")
+                .containsKeys("MOVIE", "GAME", "SONG");
+
+        assertThat(result.get("MOVIE")).isNotNull().isInstanceOf(List.class);
+        assertThat(result.get("GAME")).isNotNull().isInstanceOf(List.class);
+        assertThat(result.get("SONG")).isNotNull().isInstanceOf(List.class);
+    }
+
+    @Test
+    void getTop10PerCategory_eachCategoryHasUpTo10Items() {
+        // Create 15 likes for each media type to ensure we test the LIMIT 10
+        for (int i = 0; i < 15; i++) {
+            UserInteraction movie = new UserInteraction();
+            movie.setUserId(TEST_USER_ID_BASE + 5);
+            movie.setMediaApiId("test-movie-" + i);
+            movie.setMediaType("MOVIE");
+            movie.setInteractionType("LIKE");
+            movie.setTimestamp(LocalDateTime.now());
+            movie.setTitle("Movie " + i);
+            movie.setImageUrl("https://images.example/movie-" + i + ".jpg");
+            movie.setGenres(List.of());
+            userInteractionRepository.save(movie);
+
+            UserInteraction game = new UserInteraction();
+            game.setUserId(TEST_USER_ID_BASE + 5);
+            game.setMediaApiId("test-game-" + i);
+            game.setMediaType("GAME");
+            game.setInteractionType("LIKE");
+            game.setTimestamp(LocalDateTime.now());
+            game.setTitle("Game " + i);
+            game.setImageUrl("https://images.example/game-" + i + ".jpg");
+            game.setGenres(List.of());
+            userInteractionRepository.save(game);
+
+            UserInteraction song = new UserInteraction();
+            song.setUserId(TEST_USER_ID_BASE + 5);
+            song.setMediaApiId("test-song-" + i);
+            song.setMediaType("SONG");
+            song.setInteractionType("LIKE");
+            song.setTimestamp(LocalDateTime.now());
+            song.setTitle("Song " + i);
+            song.setArtist("Artist " + i);
+            song.setImageUrl("https://images.example/song-" + i + ".jpg");
+            song.setGenres(List.of());
+            userInteractionRepository.save(song);
+        }
+
+        var result = mediaRankingService.getTop10PerCategory();
+
+        assertThat(result.get("MOVIE")).hasSize(10);
+        assertThat(result.get("GAME")).hasSize(10);
+        assertThat(result.get("SONG")).hasSize(10);
+    }
+
+    @Test
+    void getFastRising5PerCategory_eachCategoryHasUpTo5Items() {
+        // Create 10 likes for each media type within the past 7 days using real IDs
+        String[] movieIds = { "27205", "550", "278", "109091", "19404" };
+        String[] gameIds = { "3498", "5286", "802", "13633", "41494" };
+        String[] songIds = {
+                "https://www.last.fm/music/Queen/_/Bohemian+Rhapsody",
+                "https://www.last.fm/music/The+Beatles/_/Hey+Jude",
+                "https://www.last.fm/music/Pink+Floyd/_/Comfortably+Numb",
+                "https://www.last.fm/music/Led+Zeppelin/_/Stairway+to+Heaven",
+                "https://www.last.fm/music/The+Rolling+Stones/_/Paint+It+Black"
+        };
+
+        for (int i = 0; i < 10; i++) {
+            UserInteraction movie = new UserInteraction();
+            movie.setUserId(TEST_USER_ID_BASE + 6);
+            movie.setMediaApiId(movieIds[i % movieIds.length]);
+            movie.setMediaType("MOVIE");
+            movie.setInteractionType("LIKE");
+            movie.setTimestamp(LocalDateTime.now().minusDays(1));
+            movie.setTitle("Movie " + (i % movieIds.length));
+            movie.setImageUrl("https://images.example/movie-fast-" + (i % movieIds.length) + ".jpg");
+            movie.setGenres(List.of());
+            userInteractionRepository.save(movie);
+
+            UserInteraction game = new UserInteraction();
+            game.setUserId(TEST_USER_ID_BASE + 6);
+            game.setMediaApiId(gameIds[i % gameIds.length]);
+            game.setMediaType("GAME");
+            game.setInteractionType("LIKE");
+            game.setTimestamp(LocalDateTime.now().minusDays(1));
+            game.setTitle("Game " + (i % gameIds.length));
+            game.setImageUrl("https://images.example/game-fast-" + (i % gameIds.length) + ".jpg");
+            game.setGenres(List.of());
+            userInteractionRepository.save(game);
+
+            UserInteraction song = new UserInteraction();
+            song.setUserId(TEST_USER_ID_BASE + 6);
+            song.setMediaApiId(songIds[i % songIds.length]);
+            song.setMediaType("SONG");
+            song.setInteractionType("LIKE");
+            song.setTimestamp(LocalDateTime.now().minusDays(1));
+            song.setTitle("Song " + (i % songIds.length));
+            song.setArtist("Artist " + (i % songIds.length));
+            song.setImageUrl("https://images.example/song-fast-" + (i % songIds.length) + ".jpg");
+            song.setGenres(List.of());
+            userInteractionRepository.save(song);
+        }
+
+        var result = mediaRankingService.getFastRising5PerCategory();
+
+        assertThat(result.get("MOVIE")).hasSize(5);
+        assertThat(result.get("GAME")).hasSize(5);
+        assertThat(result.get("SONG")).hasSize(5);
     }
 }

@@ -10,7 +10,11 @@ import org.springframework.security.authentication.AuthenticationCredentialsNotF
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
 
 import com.mo.mediaodyssey.shared.model.User;
 
@@ -94,23 +98,60 @@ public class CommunityController {
     }
 
     /**
-     * JSON API: returns ALL Top 10 + Fast-Rising data in one shot so the
-     * front-end can filter client-side (same pattern as likedMedia.js).
+     * JSON API: returns rankings with both "ALL" (cross-category top 5) and
+     * per-category data.
+     * Single HTTP request containing all category data with proper sorting.
      *
      * Response shape:
      * {
-     *   "top10":    [ RankedMediaResponse, ... ],   // all categories, sorted by score
-     *   "trending": [ RankedMediaResponse, ... ]    // fast-rising top 5 (past 7 days)
+     * "top10": {
+     * "ALL": [ ...top 5 overall sorted by popularity... ], // 5 items
+     * "MOVIE": [ ...10 items per category... ],
+     * "GAME": [ ...10 items per category... ],
+     * "SONG": [ ...10 items per category... ]
+     * },
+     * "trending": {
+     * "ALL": [ ...top 5 overall sorted by trending score... ], // 5 items
+     * "MOVIE": [ ...5 items per category... ],
+     * "GAME": [ ...5 items per category... ],
+     * "SONG": [ ...5 items per category... ]
+     * },
+     * "userLikedMedia": [...],
+     * "userViewedMedia": [...]
      * }
      */
     @GetMapping("/data")
     @ResponseBody
-    public ResponseEntity<Map<String, Object>> communityData() {
-        List<RankedMediaResponse> top10    = mediaRankingService.getTop10();
-        List<RankedMediaResponse> trending = mediaRankingService.getFastRising5();
-        return ResponseEntity.ok(Map.of(
-                "top10",    top10,
-                "trending", trending));
+    public ResponseEntity<Map<String, Object>> communityData(Authentication auth) {
+        try {
+            java.util.Map<String, Object> response = new java.util.LinkedHashMap<>();
+            response.put("top10", mediaRankingService.getTop10PerCategory());
+            response.put("trending", mediaRankingService.getFastRising5PerCategory());
+
+            // Include current user's interactions
+            Long userId = getUserId(auth);
+            List<String> userLikedMedia = new java.util.ArrayList<>();
+            List<String> userViewedMedia = new java.util.ArrayList<>();
+
+            if (userId != null) {
+                List<UserInteraction> userInteractions = userInteractionRepository.findByUserId(userId);
+                for (UserInteraction interaction : userInteractions) {
+                    String key = interaction.getMediaType() + "|" + interaction.getMediaApiId();
+                    if ("LIKE".equals(interaction.getInteractionType())) {
+                        userLikedMedia.add(key);
+                    } else if ("VIEW".equals(interaction.getInteractionType())) {
+                        userViewedMedia.add(key);
+                    }
+                }
+            }
+
+            response.put("userLikedMedia", userLikedMedia);
+            response.put("userViewedMedia", userViewedMedia);
+            return ResponseEntity.ok(response);
+        } finally {
+            // Clear request-scoped cache after building response
+            mediaRankingService.clearRequestCache();
+        }
     }
 
     /**

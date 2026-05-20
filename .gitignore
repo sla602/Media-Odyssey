@@ -38,3 +38,6 @@ build/
 backup.sql
 .DS_Store
 logs/
+.github/java-upgrade/
+.github/copilot-instructions.md
+work/

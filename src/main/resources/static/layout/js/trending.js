@@ -1,16 +1,16 @@
 /**
  * Community Favourites Page — trending.js
  *
- * Fetches ALL ranking data once from /community/data, then filters client-side
- * when the user clicks a category tab — identical pattern to likedMedia.js.
+ * Fetches per-category ranking data from /community/data (10 top per category, 5 trending per category),
+ * then filters client-side when the user clicks a category tab.
  *
- * This avoids a full server round-trip (including external API calls to TMDB /
- * RAWG / Last.fm) every time a tab is clicked.
+ * This avoids repeated server round-trips while keeping all category data in memory.
  */
 
-let allTop10    = [];   // full unfiltered Top 10 list
-let allTrending = [];   // full unfiltered Fast-Rising list
+let top10ByCategory = {};  // {MOVIE: [...], GAME: [...], SONG: [...]}
+let trendingByCategory = {};  // {MOVIE: [...], GAME: [...], SONG: [...]}
 let currentFilter = "ALL";
+const viewedMediaKeys = new Set();  // track viewed media to prevent duplicate view recording
 
 // ─── Boot ─────────────────────────────────────────────────────────────────────
 
@@ -21,7 +21,7 @@ document.addEventListener("DOMContentLoaded", () => {
         tab.addEventListener("click", () => {
             document.querySelectorAll(".tab-btn").forEach(t => t.classList.remove("active"));
             tab.classList.add("active");
-            currentFilter = tab.dataset.type;
+            currentFilter = normalizeMediaType(tab.dataset.type);
             renderFiltered();
         });
     });
@@ -30,31 +30,28 @@ document.addEventListener("DOMContentLoaded", () => {
 // ─── Fetch ────────────────────────────────────────────────────────────────────
 
 async function loadCommunityData() {
-    setStatus("top10Status",    "Loading…");
+    setStatus("top10Status", "Loading…");
     setStatus("trendingStatus", "Loading…");
 
     try {
         const res = await fetch("/community/data");
 
         if (!res.ok) {
-            setStatus("top10Status",    "Could not load ranking data.");
+            setStatus("top10Status", "Could not load ranking data.");
             setStatus("trendingStatus", "Could not load trending data.");
             return;
         }
 
         const data = await res.json();
-        allTop10    = data.top10    || [];
-        allTrending = data.trending || [];
+        top10ByCategory = data.top10 || {};
+        trendingByCategory = data.trending || {};
 
-        setStatus("top10Status",    "");
+        setStatus("top10Status", "");
         setStatus("trendingStatus", "");
-
-        // Record VIEW interactions for every Top 10 item (same as before)
-        allTop10.forEach(m => recordView(m.mediaApiId, m.mediaType));
 
         renderFiltered();
     } catch (err) {
-        setStatus("top10Status",    "Could not load ranking data.");
+        setStatus("top10Status", "Could not load ranking data.");
         setStatus("trendingStatus", "Could not load trending data.");
         console.error("Community data fetch error:", err);
     }
@@ -63,20 +60,21 @@ async function loadCommunityData() {
 // ─── Render ───────────────────────────────────────────────────────────────────
 
 function renderFiltered() {
-    const top10Items = currentFilter === "ALL"
-        ? allTop10
-        : allTop10.filter(m => m.mediaType === currentFilter);
+    const normalizedFilter = normalizeMediaType(currentFilter);
 
-    const trendingItems = currentFilter === "ALL"
-        ? allTrending
-        : allTrending.filter(m => m.mediaType === currentFilter);
+    // Get items for current category/filter from pre-fetched data
+    let top10Items, trendingItems;
+
+    // Use "ALL" key for cross-category top 5, or specific category
+    top10Items = top10ByCategory[normalizedFilter] || [];
+    trendingItems = trendingByCategory[normalizedFilter] || [];
 
     renderTop10(top10Items);
-    renderTrending(allTrending);
+    renderTrending(trendingItems);
 }
 
 function renderTop10(items) {
-    const grid     = document.getElementById("top10Grid");
+    const grid = document.getElementById("top10Grid");
     const emptyMsg = document.getElementById("top10Empty");
     const statusEl = document.getElementById("top10Status");
 
@@ -84,7 +82,8 @@ function renderTop10(items) {
 
     if (items.length === 0) {
         if (emptyMsg) emptyMsg.style.display = "block";
-        statusEl.textContent = allTop10.length === 0
+        const hasAnyTop10 = Object.values(top10ByCategory).some(arr => arr && arr.length > 0);
+        statusEl.textContent = !hasAnyTop10
             ? "No rankings yet — start interacting with media on the home page!"
             : "No ranked media in this category yet.";
         return;
@@ -94,10 +93,11 @@ function renderTop10(items) {
     statusEl.textContent = "";
 
     items.forEach((m, idx) => grid.appendChild(buildTop10Card(m, idx + 1)));
+    recordVisibleMediaViews(items);
 }
 
 function renderTrending(items) {
-    const grid     = document.getElementById("trendingGrid");
+    const grid = document.getElementById("trendingGrid");
     const emptyMsg = document.getElementById("trendingEmpty");
     const statusEl = document.getElementById("trendingStatus");
 
@@ -105,7 +105,8 @@ function renderTrending(items) {
 
     if (items.length === 0) {
         if (emptyMsg) emptyMsg.style.display = "block";
-        statusEl.textContent = allTrending.length === 0
+        const hasAnyTrending = Object.values(trendingByCategory).some(arr => arr && arr.length > 0);
+        statusEl.textContent = !hasAnyTrending
             ? "No trending data yet — start interacting with media on the home page!"
             : "No fast-rising media in this category yet.";
         return;
@@ -115,6 +116,7 @@ function renderTrending(items) {
     statusEl.textContent = "";
 
     items.forEach(m => grid.appendChild(buildTrendingCard(m)));
+    recordVisibleMediaViews(items);
 }
 
 // ─── Card Builders ────────────────────────────────────────────────────────────
@@ -123,7 +125,7 @@ function buildTop10Card(m, rank) {
     const card = document.createElement("div");
     card.className = "media-card";
     card.dataset.apiId = m.mediaApiId;
-    card.dataset.type  = m.mediaType;
+    card.dataset.type = m.mediaType;
     card.dataset.title = m.title;
 
     const imgHtml = m.imageUrl
@@ -155,7 +157,7 @@ function buildTrendingCard(m) {
     const card = document.createElement("div");
     card.className = "media-card trending-card";
     card.dataset.title = m.title;
-    card.dataset.type  = m.mediaType;
+    card.dataset.type = m.mediaType;
 
     const imgHtml = m.imageUrl
         ? `<img src="${escHtml(m.imageUrl)}" alt="${escHtml(m.title)}" class="media-thumbnail" loading="lazy" onerror="this.style.display='none'">`
@@ -196,9 +198,27 @@ function escHtml(str) {
         .replace(/"/g, "&quot;");
 }
 
-// Records a VIEW interaction (called once on page load, not on every filter)
+// Normalize media type to canonical form (MOVIE | GAME | SONG | ALL)
+function normalizeMediaType(type) {
+    if (!type) return "ALL";
+    const upper = String(type).toUpperCase().trim();
+    if (upper === "MOVIE" || upper === "GAME" || upper === "SONG") return upper;
+    return "ALL";
+}
+
+// Records VIEW interactions only for rendered items, deduplicated by media key
+function recordVisibleMediaViews(items) {
+    items.forEach(m => {
+        const viewKey = `${normalizeMediaType(m.mediaType)}|${m.mediaApiId}`;
+        if (viewedMediaKeys.has(viewKey)) return;
+        viewedMediaKeys.add(viewKey);
+        recordView(m.mediaApiId, m.mediaType);
+    });
+}
+
+// Records a VIEW interaction for a specific media item
 function recordView(mediaApiId, mediaType) {
     fetch(`/community/view?mediaApiId=${encodeURIComponent(mediaApiId)}&mediaType=${encodeURIComponent(mediaType)}`,
         { method: "POST" }
-    ).catch(() => {});
+    ).catch(() => { });
 }

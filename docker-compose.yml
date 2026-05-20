@@ -19,6 +19,8 @@ services:
       SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
     expose:
       - "8080"
+    volumes:
+      - ./logs:/logs
     depends_on:
       db:
         condition: service_healthy

@@ -63,7 +63,10 @@ public class SecurityConfig {
                                                                 "/search",
                                                                 "/css/**",
                                                                 "/js/**",
-                                                                "/images/**")
+                                                                "/images/**",
+                                                                "/favicon.ico",
+                                                                "/apple-touch-icon.png",
+                                                                "/apple-touch-icon-precomposed.png")
                                                 .permitAll()
                                                 .requestMatchers("/admin/**").hasRole("ADMIN") // Admin access only.
                                                 .anyRequest().authenticated()) // All others require authentication with

@@ -3,13 +3,21 @@ package com.mo.mediaodyssey.community.favorite;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mo.mediaodyssey.recommendation.UserInteractionRepository;
+import org.springframework.http.ResponseEntity;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.zip.GZIPInputStream;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 /**
  * Service responsible for building the Community Favourites page data.
@@ -23,6 +31,8 @@ public class MediaRankingService {
     private final UserInteractionRepository userInteractionRepository;
     private final RestTemplate restTemplate;
     private final ObjectMapper objectMapper;
+    private final ThreadLocal<Map<String, RankedMediaResponse>> requestCache = ThreadLocal
+            .withInitial(ConcurrentHashMap::new);
 
     @Value("${tmdb.api.key}")
     private String tmdbApiKey;
@@ -33,10 +43,15 @@ public class MediaRankingService {
     @Value("${lastfm.api.key}")
     private String lastfmApiKey;
 
-    public MediaRankingService(UserInteractionRepository userInteractionRepository) {
+    public MediaRankingService(UserInteractionRepository userInteractionRepository, RestTemplate restTemplate) {
         this.userInteractionRepository = userInteractionRepository;
-        this.restTemplate = new RestTemplate();
+        this.restTemplate = restTemplate;
         this.objectMapper = new ObjectMapper();
+    }
+
+    public void clearRequestCache() {
+        requestCache.get().clear();
+        requestCache.remove();
     }
 
     /**
@@ -54,6 +69,26 @@ public class MediaRankingService {
         List<Object[]> rows = userInteractionRepository
                 .findTop10ByScoreWithCountsAndMediaType(normalizeMediaType(mediaType));
         return enrichScoreRows(rows);
+    }
+
+    /**
+     * Returns Top 10 for all three categories PLUS top 10 overall.
+     * Used by Community Favourites page:
+     * - "ALL" tab: top10 overall sorted by popularity score
+     * - Category tabs: top10 per category
+     */
+    public java.util.Map<String, List<RankedMediaResponse>> getTop10PerCategory() {
+        java.util.Map<String, List<RankedMediaResponse>> result = new java.util.LinkedHashMap<>();
+
+        // Top 10 overall (sorted by score across all categories)
+        List<RankedMediaResponse> top10Overall = getTop10();
+        result.put("ALL", top10Overall);
+
+        // Top 10 per category
+        result.put("MOVIE", getTop10ByMediaType("MOVIE"));
+        result.put("GAME", getTop10ByMediaType("GAME"));
+        result.put("SONG", getTop10ByMediaType("SONG"));
+        return result;
     }
 
     /**
@@ -81,27 +116,128 @@ public class MediaRankingService {
                         enriched.getMediaType(), enriched.getImageUrl(),
                         enriched.getTotalScore(), enriched.getLikes(), enriched.getViews(),
                         weeklyLikes));
-            } else {
-                result.add(new RankedMediaResponse(
-                        mediaApiId, "Unknown", "", mediaType, "",
-                        0L, weeklyLikes, 0L, weeklyLikes));
             }
         }
         return result;
     }
 
     /**
-     * Converts aggregated score rows into DTOs enriched with metadata.
-     *
-     * Row format from findTop10ByScoreWithCounts:
-     * [0] mediaApiId (String)
-     * [1] mediaType (String)
-     * [2] totalScore (Long)
-     * [3] likeCount (Long)
-     * [4] viewCount (Long)
+     * Returns Top 5 Fast-Rising items per category PLUS top 5 overall.
+     * Used by Community Favourites page:
+     * - "ALL" tab: top5 trending overall sorted by trending score
+     * - Category tabs: top5 trending per category
+     */
+    public java.util.Map<String, List<RankedMediaResponse>> getFastRising5PerCategory() {
+        java.util.Map<String, List<RankedMediaResponse>> result = new java.util.LinkedHashMap<>();
+        java.time.LocalDateTime since = java.time.LocalDateTime.now().minusDays(7);
+
+        // Collect category-specific results
+        List<RankedMediaResponse> allCombined = new ArrayList<>();
+
+        String[] categories = { "MOVIE", "GAME", "SONG" };
+        for (String category : categories) {
+            List<Object[]> rows = userInteractionRepository.findTop5TrendingLikesSinceAndMediaType(since, category);
+            List<RankedMediaResponse> categoryTrending = enrichTrendingRows(rows);
+            result.put(category, categoryTrending);
+            allCombined.addAll(categoryTrending);
+        }
+
+        // Compute "ALL" from combined categories: sort by trending score DESC and take
+        // top 5
+        List<RankedMediaResponse> allTrending = allCombined.stream()
+                .sorted((a, b) -> Long.compare(b.getWeeklyLikes(), a.getWeeklyLikes()))
+                .limit(5)
+                .collect(Collectors.toList());
+
+        result.put("ALL", allTrending);
+        return result;
+    }
+
+    private String rowString(Object[] row, int index) {
+        if (index >= row.length || row[index] == null) {
+            return "";
+        }
+        return String.valueOf(row[index]).trim();
+    }
+
+    private RankedMediaResponse buildStoredMetadataResponse(String mediaApiId, String mediaType,
+            long totalScore, long likes, long views, String title, String artist, String imageUrl) {
+        return new RankedMediaResponse(mediaApiId, title, artist, mediaType, imageUrl, totalScore, likes, views);
+    }
+
+    private String fetchJsonBody(String url) throws IOException {
+        ResponseEntity<byte[]> response = restTemplate.getForEntity(url, byte[].class);
+        byte[] body = response.getBody();
+        if (body == null || body.length == 0) {
+            return "";
+        }
+
+        if (body.length >= 2 && body[0] == (byte) 0x1f && body[1] == (byte) 0x8b) {
+            try (GZIPInputStream gzipInputStream = new GZIPInputStream(new ByteArrayInputStream(body))) {
+                body = gzipInputStream.readAllBytes();
+            }
+        }
+
+        return new String(body, StandardCharsets.UTF_8).trim();
+    }
+
+    /**
+     * Enriches trending rows.
+     * Row format: [0] mediaApiId, [1] mediaType, [2] likeCount, [3] title, [4]
+     * artist, [5] imageUrl
+     */
+    private List<RankedMediaResponse> enrichTrendingRows(List<Object[]> rows) {
+        List<RankedMediaResponse> result = new ArrayList<>();
+        Map<String, RankedMediaResponse> cache = requestCache.get();
+
+        for (Object[] row : rows) {
+            String mediaApiId = String.valueOf(row[0]);
+            String mediaType = normalizeMediaType(String.valueOf(row[1]));
+            long weeklyLikes = ((Number) row[2]).longValue();
+            String storedTitle = rowString(row, 3);
+            String storedArtist = rowString(row, 4);
+            String storedImageUrl = rowString(row, 5);
+            String cacheKey = mediaType + "|" + mediaApiId;
+
+            RankedMediaResponse cached = cache.get(cacheKey);
+            if (cached != null) {
+                result.add(new RankedMediaResponse(
+                        cached.getMediaApiId(), cached.getTitle(), cached.getArtist(),
+                        cached.getMediaType(), cached.getImageUrl(),
+                        cached.getTotalScore(), weeklyLikes, cached.getViews(), weeklyLikes));
+                continue;
+            }
+
+            if (!storedTitle.isBlank()) {
+                RankedMediaResponse response = buildStoredMetadataResponse(
+                        mediaApiId, mediaType, weeklyLikes, 0L, weeklyLikes,
+                        storedTitle, storedArtist, storedImageUrl);
+                result.add(response);
+                cache.put(cacheKey, response);
+                continue;
+            }
+
+            RankedMediaResponse enriched = fetchMetadata(mediaApiId, mediaType, weeklyLikes, 0L, weeklyLikes);
+            if (enriched != null) {
+                RankedMediaResponse response = new RankedMediaResponse(
+                        enriched.getMediaApiId(), enriched.getTitle(), enriched.getArtist(),
+                        enriched.getMediaType(), enriched.getImageUrl(),
+                        enriched.getTotalScore(), weeklyLikes, enriched.getViews(), weeklyLikes);
+                result.add(response);
+                cache.put(cacheKey, response);
+            }
+        }
+        return result;
+    }
+
+    /**
+     * Converts aggregated score rows into DTOs.
+     * Row format: [0] mediaApiId, [1] mediaType, [2] totalScore, [3] likeCount,
+     * [4] viewCount, [5] title, [6] artist, [7] imageUrl
      */
     private List<RankedMediaResponse> enrichScoreRows(List<Object[]> rows) {
         List<RankedMediaResponse> result = new ArrayList<>();
+        Map<String, RankedMediaResponse> cache = requestCache.get();
 
         for (Object[] row : rows) {
             String mediaApiId = String.valueOf(row[0]);
@@ -109,14 +245,30 @@ public class MediaRankingService {
             long totalScore = ((Number) row[2]).longValue();
             long likes = ((Number) row[3]).longValue();
             long views = ((Number) row[4]).longValue();
+            String storedTitle = rowString(row, 5);
+            String storedArtist = rowString(row, 6);
+            String storedImageUrl = rowString(row, 7);
+            String cacheKey = mediaType + "|" + mediaApiId;
+
+            RankedMediaResponse cached = cache.get(cacheKey);
+            if (cached != null) {
+                result.add(cached);
+                continue;
+            }
+
+            if (!storedTitle.isBlank()) {
+                RankedMediaResponse response = buildStoredMetadataResponse(
+                        mediaApiId, mediaType, totalScore, likes, views,
+                        storedTitle, storedArtist, storedImageUrl);
+                result.add(response);
+                cache.put(cacheKey, response);
+                continue;
+            }
 
             RankedMediaResponse enriched = fetchMetadata(mediaApiId, mediaType, totalScore, likes, views);
             if (enriched != null) {
                 result.add(enriched);
-            } else {
-                result.add(new RankedMediaResponse(
-                        mediaApiId, "Unknown", "", mediaType, "",
-                        totalScore, likes, views));
+                cache.put(cacheKey, enriched);
             }
         }
 
@@ -139,10 +291,13 @@ public class MediaRankingService {
     private RankedMediaResponse fetchTmdbMetadata(String mediaApiId, long totalScore, long likes, long views) {
         try {
             String url = "https://api.themoviedb.org/3/movie/" + mediaApiId + "?api_key=" + tmdbApiKey;
-            String response = restTemplate.getForObject(url, String.class);
+            String response = fetchJsonBody(url);
             JsonNode movie = objectMapper.readTree(response);
 
-            String title = movie.path("title").asText("Unknown");
+            String title = movie.path("title").asText("");
+            if (title.isBlank()) {
+                return null;
+            }
             String posterPath = movie.path("poster_path").asText("");
             String imageUrl = posterPath.isBlank() ? "" : "https://image.tmdb.org/t/p/w500" + posterPath;
 
@@ -159,10 +314,13 @@ public class MediaRankingService {
     private RankedMediaResponse fetchRawgMetadata(String mediaApiId, long totalScore, long likes, long views) {
         try {
             String url = "https://api.rawg.io/api/games/" + mediaApiId + "?key=" + rawgApiKey;
-            String response = restTemplate.getForObject(url, String.class);
+            String response = fetchJsonBody(url);
             JsonNode game = objectMapper.readTree(response);
 
-            String title = game.path("name").asText("Unknown");
+            String title = game.path("name").asText("");
+            if (title.isBlank()) {
+                return null;
+            }
             String imageUrl = game.path("background_image").asText("");
 
             return new RankedMediaResponse(mediaApiId, title, "", "GAME", imageUrl, totalScore, likes, views);
@@ -186,6 +344,9 @@ public class MediaRankingService {
 
             String artist = URLDecoder.decode(parts[0], "UTF-8").replace("+", " ").trim();
             String track = URLDecoder.decode(parts[1], "UTF-8").replace("+", " ").trim();
+            if (track.isBlank()) {
+                return null;
+            }
 
             String url = "https://ws.audioscrobbler.com/2.0/?method=track.getInfo"
                     + "&artist=" + java.net.URLEncoder.encode(artist, "UTF-8")
@@ -194,7 +355,7 @@ public class MediaRankingService {
                     + "&api_key=" + lastfmApiKey
                     + "&format=json";
 
-            String response = restTemplate.getForObject(url, String.class);
+            String response = fetchJsonBody(url);
             JsonNode trackNode = objectMapper.readTree(response).path("track");
 
             if (trackNode.isMissingNode() || trackNode.isEmpty()) {

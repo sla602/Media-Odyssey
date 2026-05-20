@@ -26,11 +26,11 @@ import static org.mockito.Mockito.*;
  *
  * Uses pure Mockito (no Spring context) and verifies three behaviors:
  * - Page endpoint contract: communityPage() always returns the trending view
- *   and does not perform server-side category filtering/population.
+ * and does not perform server-side category filtering/population.
  * - Data endpoint contract: communityData() returns both "top10" and
- *   "trending" payloads from MediaRankingService.
+ * "trending" payloads from MediaRankingService.
  * - Interaction persistence rules: likes/views are saved only for authenticated
- *   users and duplicate interactions are deduplicated per session.
+ * users and duplicate interactions are deduplicated per session.
  */
 @ExtendWith(MockitoExtension.class)
 class CommunityControllerTest {
@@ -131,25 +131,43 @@ class CommunityControllerTest {
     // /community/data must include both keys expected by the client script.
     @Test
     void communityData_returnsTop10AndTrending() {
-        // Arrange: mock service outputs for both lists consumed by the UI.
-        when(mediaRankingService.getTop10()).thenReturn(sampleList);
-        List<RankedMediaResponse> trendingList = List.of(sampleList.get(0));
-        when(mediaRankingService.getFastRising5()).thenReturn(trendingList);
+        // Arrange: mock per-category data with "ALL" key for cross-category top 10 and
+        // top 5 trending
+        java.util.Map<String, List<RankedMediaResponse>> top10PerCategory = new java.util.LinkedHashMap<>();
+        top10PerCategory.put("ALL", sampleList); // ALL tab gets full top 10 overall
+        top10PerCategory.put("MOVIE", sampleList.size() > 0 ? sampleList.subList(0, 1) : List.of());
+        top10PerCategory.put("GAME",
+                sampleList.size() > 1 ? sampleList.subList(1, Math.min(2, sampleList.size())) : List.of());
+        top10PerCategory.put("SONG", sampleList.size() > 2 ? sampleList.subList(2, sampleList.size()) : List.of());
 
-        // Act: call JSON endpoint backing the trending page.
-        var response = communityController.communityData();
+        List<RankedMediaResponse> trendingList = List.of(sampleList.get(0));
+        java.util.Map<String, List<RankedMediaResponse>> trendingPerCategory = new java.util.LinkedHashMap<>();
+        // ALL tab gets top 5 trending
+        trendingPerCategory.put("ALL",
+                trendingList.size() > 0 ? trendingList.subList(0, Math.min(5, trendingList.size())) : List.of());
+        trendingPerCategory.put("MOVIE", trendingList);
+        trendingPerCategory.put("GAME", List.of());
+        trendingPerCategory.put("SONG", List.of());
+
+        when(mediaRankingService.getTop10PerCategory()).thenReturn(top10PerCategory);
+        when(mediaRankingService.getFastRising5PerCategory()).thenReturn(trendingPerCategory);
+
+        // Act: call JSON endpoint backing the trending page (null auth =
+        // unauthenticated).
+        var response = communityController.communityData(null);
 
         // Assert:
         // 1) HTTP 200 response,
-        // 2) payload contains both required keys,
+        // 2) payload contains both required keys as per-category maps with "ALL" for
+        // cross-category,
         // 3) values are passed through from the service as-is,
         // 4) both service methods are invoked exactly once.
         assertThat(response.getStatusCode().value()).isEqualTo(200);
         assertThat(response.getBody()).isNotNull();
-        assertThat(response.getBody().get("top10")).isEqualTo(sampleList);
-        assertThat(response.getBody().get("trending")).isEqualTo(trendingList);
-        verify(mediaRankingService).getTop10();
-        verify(mediaRankingService).getFastRising5();
+        assertThat(response.getBody().get("top10")).isEqualTo(top10PerCategory);
+        assertThat(response.getBody().get("trending")).isEqualTo(trendingPerCategory);
+        verify(mediaRankingService).getTop10PerCategory();
+        verify(mediaRankingService).getFastRising5PerCategory();
     }
 
     // ─── saveInteraction (via likeMedia / incrementView) ──────────────────────
