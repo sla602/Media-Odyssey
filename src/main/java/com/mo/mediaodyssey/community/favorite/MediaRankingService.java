@@ -3,20 +3,23 @@ package com.mo.mediaodyssey.community.favorite;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mo.mediaodyssey.recommendation.UserInteractionRepository;
-import org.springframework.http.ResponseEntity;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.net.URLEncoder;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.zip.GZIPInputStream;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.zip.GZIPInputStream;
 import java.util.stream.Collectors;
 
 /**
@@ -43,15 +46,14 @@ public class MediaRankingService {
     @Value("${lastfm.api.key}")
     private String lastfmApiKey;
 
+    /**
+     * Creates a ranking service backed by the interaction repository and
+     * metadata client.
+     */
     public MediaRankingService(UserInteractionRepository userInteractionRepository, RestTemplate restTemplate) {
         this.userInteractionRepository = userInteractionRepository;
         this.restTemplate = restTemplate;
         this.objectMapper = new ObjectMapper();
-    }
-
-    public void clearRequestCache() {
-        requestCache.get().clear();
-        requestCache.remove();
     }
 
     /**
@@ -77,8 +79,8 @@ public class MediaRankingService {
      * - "ALL" tab: top10 overall sorted by popularity score
      * - Category tabs: top10 per category
      */
-    public java.util.Map<String, List<RankedMediaResponse>> getTop10PerCategory() {
-        java.util.Map<String, List<RankedMediaResponse>> result = new java.util.LinkedHashMap<>();
+    public Map<String, List<RankedMediaResponse>> getTop10PerCategory() {
+        Map<String, List<RankedMediaResponse>> result = new LinkedHashMap<>();
 
         // Top 10 overall (sorted by score across all categories)
         List<RankedMediaResponse> top10Overall = getTop10();
@@ -97,10 +99,10 @@ public class MediaRankingService {
      * Row format from findTop5TrendingLikesSince:
      * [0] mediaApiId (String)
      * [1] mediaType (String)
-     * [2] likeCount (Long)
+     * [2] weeklyLikes (Long)
      */
     public List<RankedMediaResponse> getFastRising5() {
-        java.time.LocalDateTime since = java.time.LocalDateTime.now().minusDays(7);
+        LocalDateTime since = LocalDateTime.now().minusDays(7);
         List<Object[]> rows = userInteractionRepository.findTop5TrendingLikesSince(since);
 
         List<RankedMediaResponse> result = new ArrayList<>();
@@ -127,9 +129,9 @@ public class MediaRankingService {
      * - "ALL" tab: top5 trending overall sorted by trending score
      * - Category tabs: top5 trending per category
      */
-    public java.util.Map<String, List<RankedMediaResponse>> getFastRising5PerCategory() {
-        java.util.Map<String, List<RankedMediaResponse>> result = new java.util.LinkedHashMap<>();
-        java.time.LocalDateTime since = java.time.LocalDateTime.now().minusDays(7);
+    public Map<String, List<RankedMediaResponse>> getFastRising5PerCategory() {
+        Map<String, List<RankedMediaResponse>> result = new LinkedHashMap<>();
+        LocalDateTime since = LocalDateTime.now().minusDays(7);
 
         // Collect category-specific results
         List<RankedMediaResponse> allCombined = new ArrayList<>();
@@ -153,6 +155,13 @@ public class MediaRankingService {
         return result;
     }
 
+    /**
+     * Return a trimmed string value from a result row at the given index.
+     *
+     * @param row   the database result row
+     * @param index the column index to read
+     * @return the trimmed string value or empty string if missing
+     */
     private String rowString(Object[] row, int index) {
         if (index >= row.length || row[index] == null) {
             return "";
@@ -160,11 +169,25 @@ public class MediaRankingService {
         return String.valueOf(row[index]).trim();
     }
 
-    private RankedMediaResponse buildStoredMetadataResponse(String mediaApiId, String mediaType,
-            long totalScore, long likes, long views, String title, String artist, String imageUrl) {
-        return new RankedMediaResponse(mediaApiId, title, artist, mediaType, imageUrl, totalScore, likes, views);
+    /**
+     * Clears the per-request thread-local cache used to deduplicate external
+     * metadata requests. Call this at the end of a request to avoid leaking
+     * cached entries between calls.
+     */
+    public void clearRequestCache() {
+        requestCache.get().clear();
+        requestCache.remove();
     }
 
+    /**
+     * Fetches a JSON response body from the given URL and returns it as a
+     * UTF-8 string. Handles gzip-compressed responses by inspecting the
+     * Content-Encoding header and falling back to magic-bytes detection.
+     *
+     * @param url the URL to request
+     * @return the response body as a String (empty string if no body)
+     * @throws IOException if the request or decompression fails
+     */
     private String fetchJsonBody(String url) throws IOException {
         ResponseEntity<byte[]> response = restTemplate.getForEntity(url, byte[].class);
         byte[] body = response.getBody();
@@ -198,9 +221,73 @@ public class MediaRankingService {
     }
 
     /**
+     * Build a stored/seed {@link RankedMediaResponse} used when the DB already
+     * contains title/artist/image information. This keeps a single creation
+     * point for responses constructed from stored metadata.
+     *
+     * @param mediaApiId external id
+     * @param mediaType  normalized media type
+     * @param totalScore popularity score
+     * @param likes      likes count
+     * @param views      views count
+     * @param title      stored title
+     * @param artist     stored artist
+     * @param imageUrl   stored image URL
+     * @return a populated {@link RankedMediaResponse}
+     */
+    private RankedMediaResponse buildStoredMetadataResponse(String mediaApiId, String mediaType,
+            long totalScore, long likes, long views, String title, String artist, String imageUrl) {
+        return new RankedMediaResponse(mediaApiId, title, artist, mediaType, imageUrl, totalScore, likes, views);
+    }
+
+    /**
+     * When a cached response is available for a trending row we need to
+     * convert it into a trending-specific DTO that uses the provided
+     * weekly likes as the 'likes' and 'weeklyLikes' fields while preserving
+     * the cached title/image information.
+     *
+     * @param cached      cached metadata response
+     * @param weeklyLikes likes in the week (trending metric)
+     * @return a trending-oriented {@link RankedMediaResponse}
+     */
+    private RankedMediaResponse buildCachedTrendingResponse(RankedMediaResponse cached, long weeklyLikes) {
+        return new RankedMediaResponse(
+                cached.getMediaApiId(), cached.getTitle(), cached.getArtist(), cached.getMediaType(),
+                cached.getImageUrl(), cached.getTotalScore(), weeklyLikes, cached.getViews(), weeklyLikes);
+    }
+
+    /**
+     * Helper used when stored metadata exists for a trending row. Uses the
+     * weekly likes as the total/likes/views fields to match prior behaviour
+     * for trending conversions.
+     *
+     * @param mediaApiId  the external id
+     * @param mediaType   normalized media type
+     * @param weeklyLikes likes in the week (trending metric)
+     * @param title       stored title
+     * @param artist      stored artist
+     * @param imageUrl    stored image URL
+     * @return a trending-oriented {@link RankedMediaResponse}
+     */
+    private RankedMediaResponse buildStoredTrendingResponse(String mediaApiId, String mediaType,
+            long weeklyLikes, String title, String artist, String imageUrl) {
+        return buildStoredMetadataResponse(mediaApiId, mediaType, weeklyLikes, 0L, weeklyLikes, title, artist,
+                imageUrl);
+    }
+
+    /**
      * Enriches trending rows.
-     * Row format: [0] mediaApiId, [1] mediaType, [2] likeCount, [3] title, [4]
-     * artist, [5] imageUrl
+     * 
+     * Row format:
+     * [0] mediaApiId (String)
+     * [1] mediaType (String)
+     * [2] weeklyLikes (Long)
+     * [3] storedTitle (String)
+     * [4] storedArtist (String)
+     * [5] storedImageUrl (String)
+     *
+     * @param rows list of raw DB rows matching the shape described above
+     * @return a list of {@link RankedMediaResponse} with metadata populated
      */
     private List<RankedMediaResponse> enrichTrendingRows(List<Object[]> rows) {
         List<RankedMediaResponse> result = new ArrayList<>();
@@ -217,17 +304,13 @@ public class MediaRankingService {
 
             RankedMediaResponse cached = cache.get(cacheKey);
             if (cached != null) {
-                result.add(new RankedMediaResponse(
-                        cached.getMediaApiId(), cached.getTitle(), cached.getArtist(),
-                        cached.getMediaType(), cached.getImageUrl(),
-                        cached.getTotalScore(), weeklyLikes, cached.getViews(), weeklyLikes));
+                result.add(buildCachedTrendingResponse(cached, weeklyLikes));
                 continue;
             }
 
             if (!storedTitle.isBlank()) {
-                RankedMediaResponse response = buildStoredMetadataResponse(
-                        mediaApiId, mediaType, weeklyLikes, 0L, weeklyLikes,
-                        storedTitle, storedArtist, storedImageUrl);
+                RankedMediaResponse response = buildStoredTrendingResponse(
+                        mediaApiId, mediaType, weeklyLikes, storedTitle, storedArtist, storedImageUrl);
                 result.add(response);
                 cache.put(cacheKey, response);
                 continue;
@@ -235,10 +318,7 @@ public class MediaRankingService {
 
             RankedMediaResponse enriched = fetchMetadata(mediaApiId, mediaType, weeklyLikes, 0L, weeklyLikes);
             if (enriched != null) {
-                RankedMediaResponse response = new RankedMediaResponse(
-                        enriched.getMediaApiId(), enriched.getTitle(), enriched.getArtist(),
-                        enriched.getMediaType(), enriched.getImageUrl(),
-                        enriched.getTotalScore(), weeklyLikes, enriched.getViews(), weeklyLikes);
+                RankedMediaResponse response = buildCachedTrendingResponse(enriched, weeklyLikes);
                 result.add(response);
                 cache.put(cacheKey, response);
             }
@@ -248,8 +328,19 @@ public class MediaRankingService {
 
     /**
      * Converts aggregated score rows into DTOs.
-     * Row format: [0] mediaApiId, [1] mediaType, [2] totalScore, [3] likeCount,
-     * [4] viewCount, [5] title, [6] artist, [7] imageUrl
+     * 
+     * Row format:
+     * [0] mediaApiId (String)
+     * [1] mediaType (String)
+     * [2] totalScore (Long)
+     * [3] likes (Long)
+     * [4] views (Long)
+     * [5] storedTitle (String)
+     * [6] storedArtist (String)
+     * [7] storedImageUrl (String)
+     *
+     * @param rows list of raw DB rows matching the shape described above
+     * @return a list of {@link RankedMediaResponse} enriched with metadata
      */
     private List<RankedMediaResponse> enrichScoreRows(List<Object[]> rows) {
         List<RankedMediaResponse> result = new ArrayList<>();
@@ -291,6 +382,17 @@ public class MediaRankingService {
         return result;
     }
 
+    /**
+     * Dispatch helper that selects the appropriate external metadata
+     * fetcher based on the media type.
+     *
+     * @param mediaApiId the external API id or identifier
+     * @param mediaType  normalized media type (MOVIE/GAME/SONG)
+     * @param totalScore aggregated popularity score from interactions
+     * @param likes      aggregated likes count
+     * @param views      aggregated views count
+     * @return a {@link RankedMediaResponse} with metadata or null if not found
+     */
     private RankedMediaResponse fetchMetadata(String mediaApiId, String mediaType,
             long totalScore, long likes, long views) {
         return switch (mediaType) {
@@ -303,6 +405,12 @@ public class MediaRankingService {
 
     /**
      * Fetches movie metadata from TMDB.
+     *
+     * @param mediaApiId external TMDB movie id
+     * @param totalScore aggregated popularity score
+     * @param likes      aggregated likes count
+     * @param views      aggregated views count
+     * @return a {@link RankedMediaResponse} with movie metadata or null on error
      */
     private RankedMediaResponse fetchTmdbMetadata(String mediaApiId, long totalScore, long likes, long views) {
         try {
@@ -326,6 +434,12 @@ public class MediaRankingService {
 
     /**
      * Fetches game metadata from RAWG.
+     *
+     * @param mediaApiId external RAWG game id
+     * @param totalScore aggregated popularity score
+     * @param likes      aggregated likes count
+     * @param views      aggregated views count
+     * @return a {@link RankedMediaResponse} with game metadata or null on error
      */
     private RankedMediaResponse fetchRawgMetadata(String mediaApiId, long totalScore, long likes, long views) {
         try {
@@ -348,8 +462,16 @@ public class MediaRankingService {
 
     /**
      * Fetches track metadata from Last.fm.
-     * mediaApiId is a Last.fm track URL e.g.
-     * https://www.last.fm/music/Artist/_/Track
+     * 
+     * Expect {@code mediaApiId} to be a Last.fm track URL of the form:
+     * {@code https://www.last.fm/music/Artist/_/Track}.
+     * 
+     *
+     * @param mediaApiId Last.fm track URL
+     * @param totalScore aggregated popularity score
+     * @param likes      aggregated likes count
+     * @param views      aggregated views count
+     * @return a {@link RankedMediaResponse} with track metadata or null on error
      */
     private RankedMediaResponse fetchLastfmMetadata(String mediaApiId, long totalScore, long likes, long views) {
         try {
@@ -365,8 +487,8 @@ public class MediaRankingService {
             }
 
             String url = "https://ws.audioscrobbler.com/2.0/?method=track.getInfo"
-                    + "&artist=" + java.net.URLEncoder.encode(artist, "UTF-8")
-                    + "&track=" + java.net.URLEncoder.encode(track, "UTF-8")
+                    + "&artist=" + URLEncoder.encode(artist, "UTF-8")
+                    + "&track=" + URLEncoder.encode(track, "UTF-8")
                     + "&autocorrect=1"
                     + "&api_key=" + lastfmApiKey
                     + "&format=json";
