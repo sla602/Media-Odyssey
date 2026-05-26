@@ -24,8 +24,6 @@ import com.mo.mediaodyssey.dev.controller.DevAccountController;
 @RestControllerAdvice(basePackageClasses = { AuthController.class, DevAccountController.class })
 public class AuthExceptionHandler {
 
-        // Debugging assisted by AI.
-
         @ExceptionHandler(OAuthSignInRequiredException.class)
         public ResponseEntity<AuthApiResponse> handleOauthSignInRequired() {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED)

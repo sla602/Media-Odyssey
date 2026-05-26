@@ -24,9 +24,6 @@ import com.mo.mediaodyssey.auth.exception.UserAlreadyVerifiedException;
 @Service
 public class EmailVerificationService {
 
-    // Inspired by: https://www.baeldung.com/registration-verify-user-by-email
-    // Debugging assisted by AI
-
     @Value("${spring.application.name:App}")
     private String appName;
 
