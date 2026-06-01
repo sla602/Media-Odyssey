@@ -9,7 +9,9 @@ import org.springframework.web.client.RestTemplate;
 
 import java.time.LocalDateTime;
 import java.util.*;
-import java.util.concurrent.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 @Service
@@ -18,6 +20,7 @@ public class RecommendationService {
     private final UserInteractionRepository userInteractionRepository;
     private final BannedMediaRepository bannedMediaRepository;
     private final RestTemplate restTemplate;
+    private final ExecutorService recommendationExecutor;
     private final ObjectMapper objectMapper;
     private final Random random = new Random();
 
@@ -75,10 +78,12 @@ public class RecommendationService {
             "Simulation", "Sports", "Strategy");
 
     public RecommendationService(UserInteractionRepository userInteractionRepository,
-            BannedMediaRepository bannedMediaRepository, RestTemplate restTemplate) {
+            BannedMediaRepository bannedMediaRepository, RestTemplate restTemplate,
+            ExecutorService recommendationExecutor) {
         this.userInteractionRepository = userInteractionRepository;
         this.bannedMediaRepository = bannedMediaRepository;
         this.restTemplate = restTemplate;
+        this.recommendationExecutor = recommendationExecutor;
         this.objectMapper = new ObjectMapper();
     }
 
@@ -118,7 +123,7 @@ public class RecommendationService {
     // returns the genre the user has engaged with most for a given media type
     // VIEW = 1 point, LIKE = 10 points
     private String userFavoriteGenre(Long userId, String mediaType) {
-        List<UserInteraction> allUserInteractions = userInteractionRepository.findByUserId(userId);
+        List<UserInteraction> allUserInteractions = userInteractionRepository.findByUserIdWithGenres(userId);
 
         Map<String, Integer> genreScores = new HashMap<>();
 
@@ -179,18 +184,19 @@ public class RecommendationService {
     // falls back to popular media for new users with no interaction history
     public List<RecommendationResponse> getRecommendations(Long userId, String mediaType) {
         String favoriteGenre = userFavoriteGenre(userId, mediaType);
+        Set<String> bannedIds = loadBannedIds();
 
         if (favoriteGenre == null) {
             List<RecommendationResponse> fallback;
             switch (mediaType) {
                 case "MOVIE":
-                    fallback = fetchTmdbPopular();
+                    fallback = fetchTmdbPopular(bannedIds);
                     break;
                 case "GAME":
-                    fallback = fetchRawgPopular();
+                    fallback = fetchRawgPopular(bannedIds);
                     break;
                 case "SONG":
-                    fallback = fetchLastfmPopular();
+                    fallback = fetchLastfmPopular(bannedIds);
                     break;
                 default:
                     return List.of();
@@ -199,33 +205,65 @@ public class RecommendationService {
         }
 
         List<RecommendationResponse> results = new ArrayList<>();
-
         switch (mediaType) {
             case "MOVIE": {
-                results.addAll(fetchTmdbRecommendations(favoriteGenre));
                 String otherGenre = pickOtherGenre(favoriteGenre, new ArrayList<>(TMDB_GENRE_IDS.keySet()));
-                List<RecommendationResponse> other = fetchTmdbRecommendations(otherGenre);
-                results.addAll(other.subList(0, Math.min(10, other.size())));
+                CompletableFuture<List<RecommendationResponse>> favFuture = CompletableFuture
+                        .supplyAsync(() -> fetchTmdbRecommendations(favoriteGenre, bannedIds), recommendationExecutor);
+                CompletableFuture<List<RecommendationResponse>> otherFuture = CompletableFuture
+                        .supplyAsync(() -> fetchTmdbRecommendations(otherGenre, bannedIds), recommendationExecutor);
+
+                List<RecommendationResponse> fav = favFuture.join();
+                List<RecommendationResponse> other = otherFuture.join();
+
+                if (!fav.isEmpty()) {
+                    results.addAll(fav.subList(0, Math.min(20, fav.size())));
+                }
+                if (!other.isEmpty()) {
+                    results.addAll(other.subList(0, Math.min(10, other.size())));
+                }
                 break;
             }
             case "GAME": {
                 String otherGenre = pickOtherGenre(favoriteGenre, RAWG_GENRES);
-                CompletableFuture<List<RecommendationResponse>> favFuture = CompletableFuture
-                        .supplyAsync(() -> fetchRawgRecommendations(favoriteGenre, 20));
-                CompletableFuture<List<RecommendationResponse>> otherFuture = CompletableFuture
-                        .supplyAsync(() -> fetchRawgRecommendations(otherGenre, 10));
-                results.addAll(favFuture.join());
-                results.addAll(otherFuture.join());
+                List<RecommendationResponse> rawgResults = fetchRawgRecommendations(favoriteGenre, 30, bannedIds);
+                int splitIndex = Math.min(20, rawgResults.size());
+                results.addAll(rawgResults.subList(0, splitIndex));
+                for (int i = splitIndex; i < Math.min(30, rawgResults.size()); i++) {
+                    RecommendationResponse recommendation = rawgResults.get(i);
+                    results.add(new RecommendationResponse(
+                            recommendation.getMediaApiId(),
+                            recommendation.getTitle(),
+                            recommendation.getArtist(),
+                            recommendation.getMediaType(),
+                            otherGenre,
+                            recommendation.getImageUrl(),
+                            recommendation.getScore()));
+                }
                 break;
             }
             case "SONG": {
-                results.addAll(fetchLastfmRecommendations(favoriteGenre, 20));
                 String otherGenre = pickOtherGenre(favoriteGenre, SONG_GENRES);
-                results.addAll(fetchLastfmRecommendations(otherGenre, 10));
+                CompletableFuture<List<RecommendationResponse>> favFuture = CompletableFuture
+                        .supplyAsync(() -> fetchLastfmRecommendations(favoriteGenre, 20, bannedIds),
+                                recommendationExecutor);
+                CompletableFuture<List<RecommendationResponse>> otherFuture = CompletableFuture
+                        .supplyAsync(() -> fetchLastfmRecommendations(otherGenre, 10, bannedIds),
+                                recommendationExecutor);
+
+                List<RecommendationResponse> fav = favFuture.join();
+                List<RecommendationResponse> other = otherFuture.join();
+
+                if (!fav.isEmpty()) {
+                    results.addAll(fav.subList(0, Math.min(20, fav.size())));
+                }
+                if (!other.isEmpty()) {
+                    results.addAll(other.subList(0, Math.min(10, other.size())));
+                }
                 break;
             }
             default:
-                break;
+                return List.of();
         }
 
         Map<String, RecommendationResponse> seen = new LinkedHashMap<>();
@@ -247,9 +285,8 @@ public class RecommendationService {
     }
 
     // fallback: top popular movies from TMDB — random page for variety
-    private List<RecommendationResponse> fetchTmdbPopular() {
+    private List<RecommendationResponse> fetchTmdbPopular(Set<String> banned) {
         List<RecommendationResponse> results = new ArrayList<>();
-        Set<String> banned = loadBannedIds();
         int page = random.nextInt(5) + 1;
         String url = "https://api.themoviedb.org/3/movie/popular?api_key=" + tmdbApiKey
                 + "&page=" + page;
@@ -279,14 +316,27 @@ public class RecommendationService {
         return results;
     }
 
-    // fallback: top rated games from RAWG — random page for variety
-    private List<RecommendationResponse> fetchRawgPopular() {
-        List<RecommendationResponse> results = new ArrayList<>();
-        Set<String> banned = loadBannedIds();
+    // fallback: top rated games from RAWG — random page for variety, with a
+    // page-1 fallback if the selected page is invalid
+    private List<RecommendationResponse> fetchRawgPopular(Set<String> banned) {
         int page = random.nextInt(5) + 1;
+        try {
+            return CompletableFuture
+                    .supplyAsync(() -> fetchRawgPopularPage(banned, page), recommendationExecutor)
+                    .get(1200, TimeUnit.MILLISECONDS);
+        } catch (Exception e) {
+            if (page != 1) {
+                return fetchRawgPopularPage(banned, 1);
+            }
+            return List.of();
+        }
+    }
+
+    private List<RecommendationResponse> fetchRawgPopularPage(Set<String> banned, int page) {
+        List<RecommendationResponse> results = new ArrayList<>();
         String url = "https://api.rawg.io/api/games?key=" + rawgApiKey +
                 "&metacritic=70,100&page_size=20&page=" + page;
-                
+
         try {
             String response = restTemplate.getForObject(url, String.class);
             JsonNode games = objectMapper.readTree(response).path("results");
@@ -312,20 +362,24 @@ public class RecommendationService {
         } catch (Exception e) {
             System.err.println("RAWG popular fallback error: " + e.getMessage());
         }
+
         return results;
     }
 
-    // fallback: picks 3 random genres from SONG_GENRES and fetches 10 tracks each
-    // so each track has a real genre recorded instead of a hardcoded "Pop"
-    private List<RecommendationResponse> fetchLastfmPopular() {
+    private List<RecommendationResponse> fetchLastfmPopular(Set<String> banned) {
         List<RecommendationResponse> results = new ArrayList<>();
 
         List<String> shuffled = new ArrayList<>(SONG_GENRES);
         Collections.shuffle(shuffled);
         List<String> picked = shuffled.subList(0, 3);
 
-        for (String genre : picked) {
-            results.addAll(fetchLastfmRecommendations(genre, 10));
+        List<CompletableFuture<List<RecommendationResponse>>> futures = picked.stream()
+                .map(genre -> CompletableFuture.supplyAsync(() -> fetchLastfmRecommendations(genre, 10, banned),
+                        recommendationExecutor))
+                .collect(Collectors.toList());
+
+        for (CompletableFuture<List<RecommendationResponse>> future : futures) {
+            results.addAll(future.join());
         }
 
         return results;
@@ -333,14 +387,13 @@ public class RecommendationService {
 
     // calls TMDB to get top movies in the user's favourite genre — random page for
     // variety
-    private List<RecommendationResponse> fetchTmdbRecommendations(String genre) {
+    private List<RecommendationResponse> fetchTmdbRecommendations(String genre, Set<String> banned) {
         List<RecommendationResponse> results = new ArrayList<>();
 
         Integer genreId = TMDB_GENRE_IDS.get(genre);
         if (genreId == null)
             return results;
 
-        Set<String> banned = loadBannedIds();
         int page = random.nextInt(10) + 1;
         String url = "https://api.themoviedb.org/3/discover/movie"
                 + "?api_key=" + tmdbApiKey
@@ -369,19 +422,32 @@ public class RecommendationService {
     }
 
     // calls RAWG to get top games in the user's favourite genre — random page for
-    // variety
-    private List<RecommendationResponse> fetchRawgRecommendations(String genre, int limit) {
-        List<RecommendationResponse> results = new ArrayList<>();
-
-        String genreSlug = genre.toLowerCase().replace(" ", "-");
-        Set<String> banned = loadBannedIds();
+    // variety, with a page-1 fallback if the selected page is invalid
+    private List<RecommendationResponse> fetchRawgRecommendations(String genre, int limit, Set<String> banned) {
         int page = random.nextInt(5) + 1;
+        String genreSlug = genre.toLowerCase().replace(" ", "-");
+        try {
+            return CompletableFuture
+                    .supplyAsync(() -> fetchRawgRecommendationsPage(genre, genreSlug, limit, banned, page),
+                            recommendationExecutor)
+                    .get(1200, TimeUnit.MILLISECONDS);
+        } catch (Exception e) {
+            if (page != 1) {
+                return fetchRawgRecommendationsPage(genre, genreSlug, limit, banned, 1);
+            }
+            return List.of();
+        }
+    }
+
+    private List<RecommendationResponse> fetchRawgRecommendationsPage(String genre, String genreSlug, int limit,
+            Set<String> banned, int page) {
+        List<RecommendationResponse> results = new ArrayList<>();
 
         String url = "https://api.rawg.io/api/games"
                 + "?key=" + rawgApiKey
                 + "&genres=" + genreSlug
                 + "&metacritic=70,100"
-                + "&page_size=" + limit //10 or 20 depending on whether it's the fav genre or the random genre
+                + "&page_size=" + limit // 10 or 20 depending on whether it's the fav genre or the random genre
                 + "&page=" + page;
 
         try {
@@ -406,10 +472,9 @@ public class RecommendationService {
 
     // uses Last.fm tag.getTopTracks to get top tracks for a genre tag — random page
     // for variety
-    private List<RecommendationResponse> fetchLastfmRecommendations(String genre, int limit) {
+    private List<RecommendationResponse> fetchLastfmRecommendations(String genre, int limit, Set<String> banned) {
         List<RecommendationResponse> results = new ArrayList<>();
         try {
-            Set<String> banned = loadBannedIds();
             String tag = java.net.URLEncoder.encode(genre.toLowerCase(), "UTF-8");
             int page = random.nextInt(5) + 1;
             String lastfmUrl = "https://ws.audioscrobbler.com/2.0/?method=tag.getTopTracks"
@@ -443,7 +508,7 @@ public class RecommendationService {
     // data.
     public List<RecommendationResponse> getLikedMedia(Long userId) {
         List<UserInteraction> liked = userInteractionRepository
-                .findByUserIdAndInteractionType(userId, "LIKE");
+                .findByUserIdAndInteractionTypeWithGenres(userId, "LIKE");
 
         List<RecommendationResponse> results = new ArrayList<>();
         for (UserInteraction interaction : liked) {

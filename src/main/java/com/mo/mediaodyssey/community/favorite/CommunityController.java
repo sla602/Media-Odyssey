@@ -141,7 +141,7 @@ public class CommunityController {
             List<String> userViewedMedia = new java.util.ArrayList<>();
 
             if (userId != null) {
-                List<UserInteraction> userInteractions = userInteractionRepository.findByUserId(userId);
+                List<UserInteraction> userInteractions = userInteractionRepository.findByUserIdWithGenres(userId);
                 for (UserInteraction interaction : userInteractions) {
                     String key = interaction.getMediaType() + "|" + interaction.getMediaApiId();
                     if ("LIKE".equals(interaction.getInteractionType())) {

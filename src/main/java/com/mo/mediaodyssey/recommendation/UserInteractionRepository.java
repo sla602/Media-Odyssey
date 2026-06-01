@@ -12,10 +12,22 @@ import java.util.List;
 @Repository
 public interface UserInteractionRepository extends JpaRepository<UserInteraction, Long> {
 
-    // Get all interactions for a user
+    // Get all interactions for a user, eagerly loading genres so callers can
+    // safely read the collection outside an open persistence context.
+    @Query("SELECT DISTINCT ui FROM UserInteraction ui LEFT JOIN FETCH ui.genres WHERE ui.userId = :userId")
+    List<UserInteraction> findByUserIdWithGenres(@Param("userId") Long userId);
+
+    // Backwards-compatible plain lookup used by existing tests and callers that
+    // only need the interaction rows.
     List<UserInteraction> findByUserId(Long userId);
 
-    // Get all interactions of a specific type for a user (VIEW, LIKE, RATE)
+    // Get all interactions of a specific type for a user (VIEW, LIKE, RATE),
+    // with genres eagerly loaded.
+    @Query("SELECT DISTINCT ui FROM UserInteraction ui LEFT JOIN FETCH ui.genres WHERE ui.userId = :userId AND ui.interactionType = :interactionType")
+    List<UserInteraction> findByUserIdAndInteractionTypeWithGenres(@Param("userId") Long userId,
+            @Param("interactionType") String interactionType);
+
+    // Backwards-compatible plain lookup used by existing tests and callers.
     List<UserInteraction> findByUserIdAndInteractionType(Long userId, String interactionType);
 
     // Check if a specific interaction already exists for a user + media item

@@ -293,6 +293,15 @@ public class MediaRankingService {
     }
 
     /**
+     * Builds a best-effort metadata record when the external API is unavailable.
+     */
+    private MediaMetadata fallbackMetadata(String mediaApiId, String mediaType,
+            String storedTitle, String storedArtist, String storedImageUrl) {
+        String title = storedTitle.isBlank() ? mediaApiId : storedTitle;
+        return buildMetadata(mediaApiId, mediaType, title, storedArtist, storedImageUrl);
+    }
+
+    /**
      * Enriches trending rows.
      * 
      * Row format:
@@ -340,6 +349,11 @@ public class MediaRankingService {
             if (enriched != null) {
                 cacheMetadata(cacheKey, enriched);
                 result.add(buildTrendingResponse(enriched, weeklyLikes));
+            } else {
+                MediaMetadata fallback = fallbackMetadata(mediaApiId, mediaType, storedTitle, storedArtist,
+                        storedImageUrl);
+                cacheMetadata(cacheKey, fallback);
+                result.add(buildTrendingResponse(fallback, weeklyLikes));
             }
         }
         return result;
@@ -394,6 +408,11 @@ public class MediaRankingService {
             if (enriched != null) {
                 cacheMetadata(cacheKey, enriched);
                 result.add(buildScoreResponse(enriched, totalScore, likes, views));
+            } else {
+                MediaMetadata fallback = fallbackMetadata(mediaApiId, mediaType, storedTitle, storedArtist,
+                        storedImageUrl);
+                cacheMetadata(cacheKey, fallback);
+                result.add(buildScoreResponse(fallback, totalScore, likes, views));
             }
         }
 

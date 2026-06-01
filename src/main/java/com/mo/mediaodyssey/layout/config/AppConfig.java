@@ -12,6 +12,8 @@ import org.apache.hc.client5.http.impl.io.PoolingHttpClientConnectionManagerBuil
 import org.apache.hc.core5.util.Timeout;
 
 import java.time.Duration;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 @Configuration
 public class AppConfig {
@@ -33,6 +35,10 @@ public class AppConfig {
                                 .setDefaultConnectionConfig(connectionConfig)
                                 .build();
 
+                // Increase pool sizes to allow higher parallelism for external API calls
+                connectionManager.setMaxTotal(200);
+                connectionManager.setDefaultMaxPerRoute(50);
+
                 CloseableHttpClient httpClient = HttpClients.custom()
                                 .setConnectionManager(connectionManager)
                                 .build();
@@ -41,5 +47,15 @@ public class AppConfig {
                 factory.setConnectionRequestTimeout(Duration.ofSeconds(5));
                 factory.setReadTimeout(Duration.ofSeconds(10));
                 return new RestTemplate(factory);
+        }
+
+        /**
+         * ExecutorService bean for handling asynchronous recommendation processing.
+         * - Shutdown hook ensures proper cleanup of resources.
+         */
+        @Bean(destroyMethod = "shutdown")
+        public ExecutorService recommendationExecutor() {
+                // Larger pool to support parallel external API fetches for recommendations
+                return Executors.newFixedThreadPool(30);
         }
 }
