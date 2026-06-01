@@ -29,11 +29,11 @@ import java.util.Set;
  *
  * Current iteration scope:
  * - Top 10 ranking page
+ * - Fast-Rising section built from likes in the last 7 days
  * - category filter
  * - view / like interaction recording
  *
  * Deferred to later iteration:
- * - Fast-Rising section
  * - user-submitted star rating interaction
  */
 @Controller
@@ -89,7 +89,8 @@ public class CommunityController {
      * Loads the Community Favourites page.
      * category param is kept for URL compatibility but is now handled client-side.
      *
-     * Iteration 3: Fast-Rising section now populated via getFastRising5().
+     * Iteration 3: Fast-Rising section is populated via
+     * getFastRising5PerCategory().
      */
     @GetMapping
     public String communityPage(Model model,
@@ -98,14 +99,20 @@ public class CommunityController {
     }
 
     /**
-     * JSON API: returns rankings with both "ALL" (cross-category top 5) and
-     * per-category data.
-     * Single HTTP request containing all category data with proper sorting.
+     * JSON API for the Community Favourites page.
+     *
+     * The response includes two ranking maps:
+     * - top10: the overall Top 10 and the Top 10 for each category.
+     * - trending: the Fast-Rising lists for each category plus the derived ALL
+     * bucket.
+     *
+     * The ALL bucket in trending is not queried separately. It is built by the
+     * service from the category-specific Fast-Rising results.
      *
      * Response shape:
      * {
      * "top10": {
-     * "ALL": [ ...top 5 overall sorted by popularity... ], // 5 items
+     * "ALL": [ ...top 10 overall sorted by popularity... ], // 10 items
      * "MOVIE": [ ...10 items per category... ],
      * "GAME": [ ...10 items per category... ],
      * "SONG": [ ...10 items per category... ]

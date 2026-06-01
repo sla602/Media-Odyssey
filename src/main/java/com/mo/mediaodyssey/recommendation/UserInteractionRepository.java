@@ -34,7 +34,8 @@ public interface UserInteractionRepository extends JpaRepository<UserInteraction
     // ── Community Favourites Ranking Queries ──────────────────────────────────
 
     /**
-     * Aggregates a Point System score per mediaApiId across all users.
+     * Aggregates a Point System score per mediaApiId across all users
+     * and all time.
      *
      * Formula: score = (VIEW count × 1) + (LIKE count × 10)
      *
@@ -80,35 +81,12 @@ public interface UserInteractionRepository extends JpaRepository<UserInteraction
     List<Object[]> findTop10ByScoreAndMediaType(@Param("mediaType") String mediaType);
 
     /**
-     * Fast-Rising Top 5: items with the most LIKE interactions in the past 7 days.
-     * Used for the trending section on the Community Favourites page.
+     * Fast-Rising Top 5 per category.
      *
-     * Returns a list of Object[] where:
-     * [0] = mediaApiId (String)
-     * [1] = mediaType (String)
-     * [2] = likeCount (Long)
-     * [3] = title (String)
-     * [4] = artist (String)
-     * [5] = imageUrl (String)
-     */
-    @Query("""
-                SELECT ui.mediaApiId, ui.mediaType, COUNT(ui) AS likeCount,
-                       COALESCE(MAX(ui.title), ''),
-                       COALESCE(MAX(ui.artist), ''),
-                       COALESCE(MAX(ui.imageUrl), '')
-                FROM UserInteraction ui
-                WHERE ui.interactionType = 'LIKE'
-                AND ui.timestamp >= :since
-                GROUP BY ui.mediaApiId, ui.mediaType
-                ORDER BY likeCount DESC
-                LIMIT 5
-            """)
-    List<Object[]> findTop5TrendingLikesSince(@Param("since") java.time.LocalDateTime since);
-
-    /**
-     * Fast-Rising Top 5 per category: items with the most LIKE interactions in the
-     * past 7 days.
-     * Filtered by specific media type (MOVIE, GAME, SONG).
+     * This query returns the most-liked items from the last 7 days for one
+     * media type at a time. The service calls it three times (MOVIE, GAME, and
+     * SONG) and then builds the ALL bucket by combining those results and
+     * sorting them again by weekly like count.
      *
      * Returns a list of Object[] where:
      * [0] = mediaApiId (String)
@@ -135,7 +113,8 @@ public interface UserInteractionRepository extends JpaRepository<UserInteraction
             @Param("mediaType") String mediaType);
 
     /**
-     * Returns likes and views count separately per mediaApiId for Top 10 ranking.
+     * Returns likes and views count separately per mediaApiId for Top 10 ranking
+     * using all-time interactions.
      *
      * Returns a list of Object[] where:
      * [0] = mediaApiId (String)
