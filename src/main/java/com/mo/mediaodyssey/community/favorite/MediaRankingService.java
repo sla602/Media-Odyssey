@@ -210,7 +210,7 @@ public class MediaRankingService {
             try (GZIPInputStream gzipInputStream = new GZIPInputStream(new ByteArrayInputStream(body))) {
                 body = gzipInputStream.readAllBytes();
             } catch (IOException e) {
-                System.err.println("Failed to decompress gzip response from " + url + ": " + e.getMessage());
+                System.err.println("Failed to decompress metadata API gzip response: " + e.getMessage());
                 throw e;
             }
         }

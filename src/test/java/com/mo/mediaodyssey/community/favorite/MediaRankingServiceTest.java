@@ -217,6 +217,21 @@ class MediaRankingServiceTest {
         assertThat(result.get(0).getViews()).isEqualTo(5L);
     }
 
+    @Test
+    void getTop10_metadataApiUnavailable_keepsFallbackEntry() {
+        Object[] row = new Object[] { "offline-movie", "MOVIE", 20L, 1L, 10L, "", "", "" };
+        when(userInteractionRepository.findTop10ByScoreWithCounts()).thenReturn(Collections.singletonList(row));
+        when(restTemplate.getForEntity(anyString(), eq(byte[].class)))
+                .thenThrow(new RuntimeException("metadata service unavailable"));
+
+        List<RankedMediaResponse> result = rankingService.getTop10();
+
+        assertThat(result).hasSize(1);
+        assertThat(result.get(0).getMediaApiId()).isEqualTo("offline-movie");
+        assertThat(result.get(0).getTitle()).isEqualTo("offline-movie");
+        assertThat(result.get(0).getTotalScore()).isEqualTo(20L);
+    }
+
     // Ensure fetchJsonBody correctly handles gzip-compressed responses even when
     // the
     // Content-Encoding header is missing (magic-byte detection).

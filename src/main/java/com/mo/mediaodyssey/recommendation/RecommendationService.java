@@ -11,7 +11,7 @@ import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.TimeUnit;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 @Service
@@ -204,62 +204,27 @@ public class RecommendationService {
             return filterAndMarkLiked(fallback, userId);
         }
 
-        List<RecommendationResponse> results = new ArrayList<>();
+        List<RecommendationResponse> results;
         switch (mediaType) {
             case "MOVIE": {
                 String otherGenre = pickOtherGenre(favoriteGenre, new ArrayList<>(TMDB_GENRE_IDS.keySet()));
-                CompletableFuture<List<RecommendationResponse>> favFuture = CompletableFuture
-                        .supplyAsync(() -> fetchTmdbRecommendations(favoriteGenre, bannedIds), recommendationExecutor);
-                CompletableFuture<List<RecommendationResponse>> otherFuture = CompletableFuture
-                        .supplyAsync(() -> fetchTmdbRecommendations(otherGenre, bannedIds), recommendationExecutor);
-
-                List<RecommendationResponse> fav = favFuture.join();
-                List<RecommendationResponse> other = otherFuture.join();
-
-                if (!fav.isEmpty()) {
-                    results.addAll(fav.subList(0, Math.min(20, fav.size())));
-                }
-                if (!other.isEmpty()) {
-                    results.addAll(other.subList(0, Math.min(10, other.size())));
-                }
+                results = fetchFavoriteAndOther(
+                        () -> fetchTmdbRecommendations(favoriteGenre, bannedIds), 20,
+                        () -> fetchTmdbRecommendations(otherGenre, bannedIds), 10);
                 break;
             }
             case "GAME": {
                 String otherGenre = pickOtherGenre(favoriteGenre, RAWG_GENRES);
-                List<RecommendationResponse> rawgResults = fetchRawgRecommendations(favoriteGenre, 30, bannedIds);
-                int splitIndex = Math.min(20, rawgResults.size());
-                results.addAll(rawgResults.subList(0, splitIndex));
-                for (int i = splitIndex; i < Math.min(30, rawgResults.size()); i++) {
-                    RecommendationResponse recommendation = rawgResults.get(i);
-                    results.add(new RecommendationResponse(
-                            recommendation.getMediaApiId(),
-                            recommendation.getTitle(),
-                            recommendation.getArtist(),
-                            recommendation.getMediaType(),
-                            otherGenre,
-                            recommendation.getImageUrl(),
-                            recommendation.getScore()));
-                }
+                results = fetchFavoriteAndOther(
+                        () -> fetchRawgRecommendations(favoriteGenre, 20, bannedIds), 20,
+                        () -> fetchRawgRecommendations(otherGenre, 10, bannedIds), 10);
                 break;
             }
             case "SONG": {
                 String otherGenre = pickOtherGenre(favoriteGenre, SONG_GENRES);
-                CompletableFuture<List<RecommendationResponse>> favFuture = CompletableFuture
-                        .supplyAsync(() -> fetchLastfmRecommendations(favoriteGenre, 20, bannedIds),
-                                recommendationExecutor);
-                CompletableFuture<List<RecommendationResponse>> otherFuture = CompletableFuture
-                        .supplyAsync(() -> fetchLastfmRecommendations(otherGenre, 10, bannedIds),
-                                recommendationExecutor);
-
-                List<RecommendationResponse> fav = favFuture.join();
-                List<RecommendationResponse> other = otherFuture.join();
-
-                if (!fav.isEmpty()) {
-                    results.addAll(fav.subList(0, Math.min(20, fav.size())));
-                }
-                if (!other.isEmpty()) {
-                    results.addAll(other.subList(0, Math.min(10, other.size())));
-                }
+                results = fetchFavoriteAndOther(
+                        () -> fetchLastfmRecommendations(favoriteGenre, 20, bannedIds), 20,
+                        () -> fetchLastfmRecommendations(otherGenre, 10, bannedIds), 10);
                 break;
             }
             default:
@@ -273,6 +238,26 @@ public class RecommendationService {
         results = new ArrayList<>(seen.values());
 
         return filterAndMarkLiked(results, userId);
+    }
+
+    private List<RecommendationResponse> fetchFavoriteAndOther(
+            Supplier<List<RecommendationResponse>> favoriteFetch, int favoriteLimit,
+            Supplier<List<RecommendationResponse>> otherFetch, int otherLimit) {
+        CompletableFuture<List<RecommendationResponse>> favoriteFuture = CompletableFuture
+                .supplyAsync(favoriteFetch, recommendationExecutor);
+        CompletableFuture<List<RecommendationResponse>> otherFuture = CompletableFuture
+                .supplyAsync(otherFetch, recommendationExecutor);
+
+        List<RecommendationResponse> results = new ArrayList<>();
+        addLimited(results, favoriteFuture.join(), favoriteLimit);
+        addLimited(results, otherFuture.join(), otherLimit);
+        return results;
+    }
+
+    private void addLimited(List<RecommendationResponse> target, List<RecommendationResponse> source, int limit) {
+        if (!source.isEmpty()) {
+            target.addAll(source.subList(0, Math.min(limit, source.size())));
+        }
     }
 
     // Loads all banned mediaApiIds into a Set in one query — used by all fetch
@@ -317,19 +302,14 @@ public class RecommendationService {
     }
 
     // fallback: top rated games from RAWG — random page for variety, with a
-    // page-1 fallback if the selected page is invalid
+    // page-1 fallback if the selected page has no usable results
     private List<RecommendationResponse> fetchRawgPopular(Set<String> banned) {
         int page = random.nextInt(5) + 1;
-        try {
-            return CompletableFuture
-                    .supplyAsync(() -> fetchRawgPopularPage(banned, page), recommendationExecutor)
-                    .get(1200, TimeUnit.MILLISECONDS);
-        } catch (Exception e) {
-            if (page != 1) {
-                return fetchRawgPopularPage(banned, 1);
-            }
-            return List.of();
+        List<RecommendationResponse> results = fetchRawgPopularPage(banned, page);
+        if (results.isEmpty() && page != 1) {
+            return fetchRawgPopularPage(banned, 1);
         }
+        return results;
     }
 
     private List<RecommendationResponse> fetchRawgPopularPage(Set<String> banned, int page) {
@@ -422,21 +402,15 @@ public class RecommendationService {
     }
 
     // calls RAWG to get top games in the user's favourite genre — random page for
-    // variety, with a page-1 fallback if the selected page is invalid
+    // variety, with a page-1 fallback if the selected page has no usable results
     private List<RecommendationResponse> fetchRawgRecommendations(String genre, int limit, Set<String> banned) {
         int page = random.nextInt(5) + 1;
         String genreSlug = genre.toLowerCase().replace(" ", "-");
-        try {
-            return CompletableFuture
-                    .supplyAsync(() -> fetchRawgRecommendationsPage(genre, genreSlug, limit, banned, page),
-                            recommendationExecutor)
-                    .get(1200, TimeUnit.MILLISECONDS);
-        } catch (Exception e) {
-            if (page != 1) {
-                return fetchRawgRecommendationsPage(genre, genreSlug, limit, banned, 1);
-            }
-            return List.of();
+        List<RecommendationResponse> results = fetchRawgRecommendationsPage(genre, genreSlug, limit, banned, page);
+        if (results.isEmpty() && page != 1) {
+            return fetchRawgRecommendationsPage(genre, genreSlug, limit, banned, 1);
         }
+        return results;
     }
 
     private List<RecommendationResponse> fetchRawgRecommendationsPage(String genre, String genreSlug, int limit,
