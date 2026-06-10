@@ -354,6 +354,63 @@ class MediaRankingServiceTest {
                 "https://image.tmdb.org/t/p/w500/poster.jpg");
     }
 
+    @Test
+    void communityRanking_usesStoredImageWhenCachedMetadataExists() {
+        Object[] uncachedRow = new Object[] { "27205", "MOVIE", 20L, 1L, 10L, "Inception", "", "" };
+        Object[] storedImageRow = new Object[] {
+                "27205",
+                "MOVIE",
+                4L,
+                "Inception",
+                "",
+                "https://db.example/poster.jpg"
+        };
+
+        when(userInteractionRepository.findTop10ByScoreWithCounts()).thenReturn(Collections.singletonList(uncachedRow));
+        when(userInteractionRepository.findTop5TrendingLikesSinceAndMediaType(any(), eq("MOVIE")))
+                .thenReturn(Collections.singletonList(storedImageRow));
+        when(userInteractionRepository.findTop5TrendingLikesSinceAndMediaType(any(), eq("GAME")))
+                .thenReturn(Collections.emptyList());
+        when(userInteractionRepository.findTop5TrendingLikesSinceAndMediaType(any(), eq("SONG")))
+                .thenReturn(Collections.emptyList());
+        when(userInteractionRepository.updateImageUrlForMediaIfMissing(
+                eq("27205"),
+                eq("MOVIE"),
+                eq("https://image.tmdb.org/t/p/w500/poster.jpg"))).thenReturn(1);
+
+        stubMetadataResponses();
+
+        rankingService.getTop10();
+        Map<String, List<RankedMediaResponse>> result = rankingService.getFastRising5PerCategory();
+
+        assertThat(result.get("MOVIE")).hasSize(1);
+        assertThat(result.get("MOVIE").get(0).getImageUrl()).isEqualTo("https://db.example/poster.jpg");
+    }
+
+    @Test
+    void communityRanking_reusesCachedMetadataWhenImageUnavailable() {
+        Object[] top10Row = new Object[] { "posterless", "MOVIE", 20L, 1L, 10L, "Posterless", "", "" };
+        Object[] trendingRow = new Object[] { "posterless", "MOVIE", 4L, "Posterless", "", "" };
+
+        when(userInteractionRepository.findTop10ByScoreWithCounts()).thenReturn(Collections.singletonList(top10Row));
+        when(userInteractionRepository.findTop5TrendingLikesSinceAndMediaType(any(), eq("MOVIE")))
+                .thenReturn(Collections.singletonList(trendingRow));
+        when(userInteractionRepository.findTop5TrendingLikesSinceAndMediaType(any(), eq("GAME")))
+                .thenReturn(Collections.emptyList());
+        when(userInteractionRepository.findTop5TrendingLikesSinceAndMediaType(any(), eq("SONG")))
+                .thenReturn(Collections.emptyList());
+        when(restTemplate.getForEntity(anyString(), eq(byte[].class)))
+                .thenReturn(ResponseEntity.ok("{\"title\":\"Posterless\",\"poster_path\":\"\"}".getBytes()));
+
+        List<RankedMediaResponse> top10 = rankingService.getTop10();
+        Map<String, List<RankedMediaResponse>> trending = rankingService.getFastRising5PerCategory();
+
+        assertThat(top10.get(0).getImageUrl()).isEmpty();
+        assertThat(trending.get("MOVIE").get(0).getImageUrl()).isEmpty();
+        verify(restTemplate, times(1)).getForEntity(anyString(), eq(byte[].class));
+        verify(userInteractionRepository, never()).updateImageUrlForMediaIfMissing(anyString(), anyString(), anyString());
+    }
+
     // helper to produce gzipped bytes
     private static byte[] gzipBytes(String input) throws java.io.IOException {
         java.io.ByteArrayOutputStream bos = new java.io.ByteArrayOutputStream();

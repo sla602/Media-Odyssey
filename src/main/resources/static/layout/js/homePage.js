@@ -160,13 +160,16 @@ async function loadRecommendations(mediaType) {
         return;
     }
 
-    // If a background refresh is already running for this tab, wait for the
-    // fresh payload instead of showing stale cached data.
-    if (recCacheStale[mediaType] && recRefreshPromises[mediaType]) {
+    // If a background refresh is already running for this tab, wait for that
+    // payload instead of duplicating the same API call or showing stale data.
+    if (recRefreshPromises[mediaType]) {
         statusEl.textContent = "Loading… wait time is 30 seconds max. Thank you for your patience!";
         cardsEl.innerHTML = "";
         try {
             await recRefreshPromises[mediaType];
+            if (mediaType !== currentMediaType) {
+                return;
+            }
             if (mediaType === currentMediaType && recCache[mediaType] && !recCacheStale[mediaType]) {
                 statusEl.textContent = "";
                 renderCards(recCache[mediaType]);
@@ -175,6 +178,10 @@ async function loadRecommendations(mediaType) {
         } catch (err) {
             console.error(err);
         }
+    }
+
+    if (mediaType !== currentMediaType) {
+        return;
     }
 
     if (recInFlight[mediaType]) return;
@@ -199,11 +206,10 @@ async function loadRecommendations(mediaType) {
             return;
         }
 
-        recCache[mediaType] = data;
-        recCacheStale[mediaType] = false;
-
         // Only render if this type is still the active tab when the response arrives
+        recCache[mediaType] = data;
         if (mediaType === currentMediaType) {
+            recCacheStale[mediaType] = false;
             statusEl.textContent = "";
             renderCards(data);
         }
@@ -218,19 +224,25 @@ async function loadRecommendations(mediaType) {
     }
 }
 
-// Silently fetch and cache without touching the DOM.
-async function prefetchRecommendations(mediaType) {
-    if (recRefreshPromises[mediaType]) return recRefreshPromises[mediaType];
+async function fetchAndCacheRecommendations(mediaType) {
+    const res = await fetch(`/api/recommendations?mediaType=${mediaType}`);
+    if (!res.ok) return;
+    const data = await res.json();
+    if (data && data.length > 0) {
+        recCache[mediaType] = data;
+        recCacheStale[mediaType] = false;
+    }
+}
 
-    const refreshPromise = (async () => {
-        const res = await fetch(`/api/recommendations?mediaType=${mediaType}`);
-        if (!res.ok) return;
-        const data = await res.json();
-        if (data && data.length > 0) {
-            recCache[mediaType] = data;
-            recCacheStale[mediaType] = false;
-        }
-    })();
+// Silently fetch and cache without touching the DOM. Forced refreshes run after
+// any older prefetch so leaving a tab always schedules a newer payload.
+async function prefetchRecommendations(mediaType, force = false) {
+    const existingRefresh = recRefreshPromises[mediaType];
+    if (existingRefresh && !force) return existingRefresh;
+
+    const refreshPromise = existingRefresh
+        ? existingRefresh.catch(() => undefined).then(() => fetchAndCacheRecommendations(mediaType))
+        : fetchAndCacheRecommendations(mediaType);
 
     recRefreshPromises[mediaType] = refreshPromise;
     try {
@@ -238,7 +250,9 @@ async function prefetchRecommendations(mediaType) {
     } catch (err) {
         console.error(`Prefetch failed for ${mediaType}:`, err);
     } finally {
-        delete recRefreshPromises[mediaType];
+        if (recRefreshPromises[mediaType] === refreshPromise) {
+            delete recRefreshPromises[mediaType];
+        }
     }
 }
 
@@ -378,9 +392,8 @@ async function recordInteraction(btnOrCard, interactionType) {
     }
 }
 
-// Tab switching — keep the active tab cached for instant return, and refresh
-// the tab we just left in the background so it has fresh data ready if the
-// user comes back.
+// Tab switching: use a fresh cache entry for one view, then mark the tab left
+// behind stale while its next payload refreshes in the background.
 document.querySelectorAll(".rec-tab").forEach(tab => {
     tab.addEventListener("click", () => {
         const previousMediaType = currentMediaType;
@@ -390,12 +403,12 @@ document.querySelectorAll(".rec-tab").forEach(tab => {
         loadRecommendations(currentMediaType);
         if (previousMediaType && previousMediaType !== currentMediaType) {
             recCacheStale[previousMediaType] = true;
-            prefetchRecommendations(previousMediaType);
+            prefetchRecommendations(previousMediaType, true);
         }
     });
 });
 
 // Start all three fetches simultaneously — MOVIE renders when done,
-// GAME and SONG go straight to cache so first click is instant
+// GAME and SONG go straight to cache for their first tab view.
 loadRecommendations(currentMediaType);
 ["GAME", "SONG"].forEach(type => prefetchRecommendations(type));

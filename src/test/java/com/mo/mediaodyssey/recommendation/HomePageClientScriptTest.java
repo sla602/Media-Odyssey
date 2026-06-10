@@ -31,7 +31,7 @@ class HomePageClientScriptTest {
                 .contains("const previousMediaType = currentMediaType;")
                 .contains("loadRecommendations(currentMediaType);")
                 .contains("recCacheStale[previousMediaType] = true;")
-                .contains("prefetchRecommendations(previousMediaType);")
+                .contains("prefetchRecommendations(previousMediaType, true);")
                 .doesNotContain("delete recCache[currentMediaType];")
                 .doesNotContain("delete recCache[previousMediaType];");
     }
@@ -46,6 +46,9 @@ class HomePageClientScriptTest {
                 .contains("if (recCache[mediaType] && !recCacheStale[mediaType]) {")
                 .contains("recCache[mediaType] = data;")
                 .contains("recCacheStale[mediaType] = false;")
+                .contains("if (mediaType !== currentMediaType) {")
+                .contains("async function prefetchRecommendations(mediaType, force = false) {")
+                .contains("existingRefresh.catch(() => undefined).then(() => fetchAndCacheRecommendations(mediaType))")
                 .contains("[\"GAME\", \"SONG\"].forEach(type => prefetchRecommendations(type));");
     }
 }

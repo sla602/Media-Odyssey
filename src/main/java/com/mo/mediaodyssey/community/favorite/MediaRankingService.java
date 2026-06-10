@@ -327,9 +327,9 @@ public class MediaRankingService {
     }
 
     /**
-     * Resolves metadata for a ranked row, backfilling missing song artwork on
-     * demand so the Community Favourites page can render images without adding
-     * cost to the home-page recommendation flow.
+     * Resolves metadata for a ranked row, backfilling missing artwork on demand
+     * so the Community Favourites page can render images without adding cost to
+     * the home-page recommendation flow.
      */
     private MediaMetadata resolveMetadata(String mediaApiId, String mediaType,
             String storedTitle, String storedArtist, String storedImageUrl) {
@@ -339,12 +339,18 @@ public class MediaRankingService {
 
         MediaMetadata cached = getCachedMetadata(cacheKey);
         if (cached != null) {
-            if (missingImage && !cached.imageUrl.isBlank()) {
-                persistImageIfMissing(mediaApiId, mediaType, cached.imageUrl);
-                return cached;
-            }
-            if (!missingImage && !cached.imageUrl.isBlank()) {
-                return cached;
+            String title = missingTitle ? cached.title : storedTitle;
+            String artist = storedArtist.isBlank() ? cached.artist : storedArtist;
+            String imageUrl = missingImage ? cached.imageUrl : storedImageUrl;
+
+            if (!title.isBlank()) {
+                if (missingImage && !imageUrl.isBlank()) {
+                    persistImageIfMissing(mediaApiId, mediaType, imageUrl);
+                }
+
+                MediaMetadata metadata = buildMetadata(mediaApiId, mediaType, title, artist, imageUrl);
+                cacheMetadata(cacheKey, metadata);
+                return metadata;
             }
         }
 

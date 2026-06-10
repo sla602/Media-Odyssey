@@ -44,10 +44,11 @@ public interface UserInteractionRepository extends JpaRepository<UserInteraction
     void deleteLikeByUserIdAndMediaApiId(@Param("userId") Long userId, @Param("mediaApiId") String mediaApiId);
 
     /**
-     * Backfills missing image URLs for all stored interactions matching a song.
+     * Backfills missing image URLs for all stored interactions matching a media
+     * item.
      *
-     * The Community Favourites page uses the cached image URL when present and
-     * only fetches Last.fm when the DB does not already have one.
+     * The Community Favourites page uses the stored image URL when present and
+     * only fetches external metadata when the DB does not already have one.
      */
     @Transactional
     @Modifying
