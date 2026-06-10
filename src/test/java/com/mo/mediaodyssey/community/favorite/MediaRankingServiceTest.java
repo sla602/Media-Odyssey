@@ -12,6 +12,7 @@ import org.springframework.web.client.RestTemplate;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -250,6 +251,107 @@ class MediaRankingServiceTest {
 
         assertThat(result).hasSize(1);
         assertThat(result.get(0).getTitle()).isEqualTo("Inception");
+    }
+
+    @Test
+    void getFastRising5PerCategory_backfillsMissingImagesForAllMediaTypes() {
+        when(userInteractionRepository.findTop5TrendingLikesSinceAndMediaType(any(), eq("MOVIE")))
+                .thenReturn(Collections.singletonList(new Object[] {
+                        "27205",
+                        "MOVIE",
+                        4L,
+                        "Inception",
+                        "",
+                        ""
+                }));
+        when(userInteractionRepository.findTop5TrendingLikesSinceAndMediaType(any(), eq("GAME")))
+                .thenReturn(Collections.singletonList(new Object[] {
+                        "3498",
+                        "GAME",
+                        4L,
+                        "Grand Theft Auto V",
+                        "",
+                        ""
+                }));
+        when(userInteractionRepository.findTop5TrendingLikesSinceAndMediaType(any(), eq("SONG")))
+                .thenReturn(Collections.singletonList(new Object[] {
+                        "https://www.last.fm/music/Queen/_/Bohemian+Rhapsody",
+                        "SONG",
+                        4L,
+                        "Bohemian Rhapsody",
+                        "Queen",
+                        ""
+                }));
+        when(userInteractionRepository.updateImageUrlForMediaIfMissing(
+                eq("27205"),
+                eq("MOVIE"),
+                eq("https://image.tmdb.org/t/p/w500/poster.jpg"))).thenReturn(1);
+        when(userInteractionRepository.updateImageUrlForMediaIfMissing(
+                eq("3498"),
+                eq("GAME"),
+                eq("https://images.example/gta.jpg"))).thenReturn(1);
+        when(userInteractionRepository.updateImageUrlForMediaIfMissing(
+                eq("https://www.last.fm/music/Queen/_/Bohemian+Rhapsody"),
+                eq("SONG"),
+                eq("https://images.example/large.jpg"))).thenReturn(1);
+
+        stubMetadataResponses();
+
+        Map<String, List<RankedMediaResponse>> result = rankingService.getFastRising5PerCategory();
+
+        assertThat(result.get("MOVIE")).hasSize(1);
+        assertThat(result.get("GAME")).hasSize(1);
+        assertThat(result.get("SONG")).hasSize(1);
+        assertThat(result.get("MOVIE").get(0).getImageUrl()).isEqualTo("https://image.tmdb.org/t/p/w500/poster.jpg");
+        assertThat(result.get("GAME").get(0).getImageUrl()).isEqualTo("https://images.example/gta.jpg");
+        assertThat(result.get("SONG").get(0).getImageUrl()).isEqualTo("https://images.example/large.jpg");
+        verify(userInteractionRepository, times(1)).updateImageUrlForMediaIfMissing(
+                "27205",
+                "MOVIE",
+                "https://image.tmdb.org/t/p/w500/poster.jpg");
+        verify(userInteractionRepository, times(1)).updateImageUrlForMediaIfMissing(
+                "3498",
+                "GAME",
+                "https://images.example/gta.jpg");
+        verify(userInteractionRepository, times(1)).updateImageUrlForMediaIfMissing(
+                "https://www.last.fm/music/Queen/_/Bohemian+Rhapsody",
+                "SONG",
+                "https://images.example/large.jpg");
+    }
+
+    @Test
+    void communityRanking_reusesCachedResolvedMetadataAcrossSections() {
+        Object[] top10Row = new Object[] { "27205", "MOVIE", 20L, 1L, 10L, "Inception", "", "" };
+        Object[] trendingRow = new Object[] { "27205", "MOVIE", 4L, "Inception", "", "https://image.tmdb.org/t/p/w500/poster.jpg" };
+
+        when(userInteractionRepository.findTop10ByScoreWithCounts()).thenReturn(Collections.singletonList(top10Row));
+        when(userInteractionRepository.findTop10ByScoreWithCountsAndMediaType("MOVIE"))
+                .thenReturn(Collections.singletonList(top10Row));
+        when(userInteractionRepository.findTop10ByScoreWithCountsAndMediaType("GAME"))
+                .thenReturn(Collections.emptyList());
+        when(userInteractionRepository.findTop10ByScoreWithCountsAndMediaType("SONG"))
+                .thenReturn(Collections.emptyList());
+        when(userInteractionRepository.findTop5TrendingLikesSinceAndMediaType(any(), eq("MOVIE")))
+                .thenReturn(Collections.singletonList(trendingRow));
+        when(userInteractionRepository.findTop5TrendingLikesSinceAndMediaType(any(), eq("GAME")))
+                .thenReturn(Collections.emptyList());
+        when(userInteractionRepository.findTop5TrendingLikesSinceAndMediaType(any(), eq("SONG")))
+                .thenReturn(Collections.emptyList());
+        when(userInteractionRepository.updateImageUrlForMediaIfMissing(
+                eq("27205"),
+                eq("MOVIE"),
+                eq("https://image.tmdb.org/t/p/w500/poster.jpg"))).thenReturn(1);
+
+        stubMetadataResponses();
+
+        rankingService.getTop10PerCategory();
+        rankingService.getFastRising5PerCategory();
+
+        verify(restTemplate, times(1)).getForEntity(anyString(), eq(byte[].class));
+        verify(userInteractionRepository, times(1)).updateImageUrlForMediaIfMissing(
+                "27205",
+                "MOVIE",
+                "https://image.tmdb.org/t/p/w500/poster.jpg");
     }
 
     // helper to produce gzipped bytes

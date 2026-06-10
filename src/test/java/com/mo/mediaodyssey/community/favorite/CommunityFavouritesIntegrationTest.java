@@ -49,7 +49,7 @@ class CommunityFavouritesIntegrationTest {
         for (long uid = TEST_USER_ID_BASE; uid <= TEST_USER_ID_BASE + 9; uid++) {
             List<UserInteraction> toDelete = userInteractionRepository.findByUserId(uid);
             if (!toDelete.isEmpty()) {
-                userInteractionRepository.deleteAllInBatch(toDelete);
+                userInteractionRepository.deleteAll(toDelete);
             }
         }
         mediaRankingService.clearRequestCache();

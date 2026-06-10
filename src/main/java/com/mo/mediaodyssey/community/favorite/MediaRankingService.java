@@ -18,6 +18,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.zip.GZIPInputStream;
 import java.util.stream.Collectors;
@@ -55,6 +56,12 @@ public class MediaRankingService {
      */
     private final ThreadLocal<Map<String, MediaMetadata>> requestCache = ThreadLocal
             .withInitial(ConcurrentHashMap::new);
+
+    /**
+     * Deduplicates DB backfill writes within a single request.
+     */
+    private final ThreadLocal<Set<String>> requestImageBackfills = ThreadLocal
+            .withInitial(ConcurrentHashMap::newKeySet);
 
     @Value("${tmdb.api.key}")
     private String tmdbApiKey;
@@ -175,6 +182,8 @@ public class MediaRankingService {
     public void clearRequestCache() {
         requestCache.get().clear();
         requestCache.remove();
+        requestImageBackfills.get().clear();
+        requestImageBackfills.remove();
     }
 
     /**
@@ -276,6 +285,22 @@ public class MediaRankingService {
     }
 
     /**
+     * Persists a fetched image URL if the DB row does not already have one.
+     */
+    private void persistImageIfMissing(String mediaApiId, String mediaType, String imageUrl) {
+        if (imageUrl == null || imageUrl.isBlank()) {
+            return;
+        }
+
+        String cacheKey = mediaType + "|" + mediaApiId;
+        if (!requestImageBackfills.get().add(cacheKey)) {
+            return;
+        }
+
+        userInteractionRepository.updateImageUrlForMediaIfMissing(mediaApiId, mediaType, imageUrl);
+    }
+
+    /**
      * Builds a Top 10 response with all-time score and counts.
      */
     private RankedMediaResponse buildScoreResponse(MediaMetadata metadata,
@@ -302,6 +327,56 @@ public class MediaRankingService {
     }
 
     /**
+     * Resolves metadata for a ranked row, backfilling missing song artwork on
+     * demand so the Community Favourites page can render images without adding
+     * cost to the home-page recommendation flow.
+     */
+    private MediaMetadata resolveMetadata(String mediaApiId, String mediaType,
+            String storedTitle, String storedArtist, String storedImageUrl) {
+        String cacheKey = mediaType + "|" + mediaApiId;
+        boolean missingTitle = storedTitle.isBlank();
+        boolean missingImage = storedImageUrl.isBlank();
+
+        MediaMetadata cached = getCachedMetadata(cacheKey);
+        if (cached != null) {
+            if (missingImage && !cached.imageUrl.isBlank()) {
+                persistImageIfMissing(mediaApiId, mediaType, cached.imageUrl);
+                return cached;
+            }
+            if (!missingImage && !cached.imageUrl.isBlank()) {
+                return cached;
+            }
+        }
+
+        if (missingTitle || missingImage) {
+            MediaMetadata fetched = fetchMetadata(mediaApiId, mediaType);
+            if (fetched != null) {
+                String title = missingTitle ? fetched.title : storedTitle;
+                String artist = storedArtist.isBlank() ? fetched.artist : storedArtist;
+                String imageUrl = missingImage ? fetched.imageUrl : storedImageUrl;
+
+                if (missingImage && !imageUrl.isBlank()) {
+                    persistImageIfMissing(mediaApiId, mediaType, imageUrl);
+                }
+
+                MediaMetadata metadata = buildMetadata(mediaApiId, mediaType, title, artist, imageUrl);
+                cacheMetadata(cacheKey, metadata);
+                return metadata;
+            }
+        }
+
+        if (!storedTitle.isBlank()) {
+            MediaMetadata metadata = buildMetadata(mediaApiId, mediaType, storedTitle, storedArtist, storedImageUrl);
+            cacheMetadata(cacheKey, metadata);
+            return metadata;
+        }
+
+        MediaMetadata fallback = fallbackMetadata(mediaApiId, mediaType, storedTitle, storedArtist, storedImageUrl);
+        cacheMetadata(cacheKey, fallback);
+        return fallback;
+    }
+
+    /**
      * Enriches trending rows.
      * 
      * Row format:
@@ -325,36 +400,13 @@ public class MediaRankingService {
             String storedTitle = rowString(row, 3);
             String storedArtist = rowString(row, 4);
             String storedImageUrl = rowString(row, 5);
-            String cacheKey = mediaType + "|" + mediaApiId;
 
             if (weeklyLikes <= 0) {
                 continue;
             }
 
-            MediaMetadata cached = getCachedMetadata(cacheKey);
-            if (cached != null) {
-                result.add(buildTrendingResponse(cached, weeklyLikes));
-                continue;
-            }
-
-            if (!storedTitle.isBlank()) {
-                MediaMetadata metadata = buildMetadata(mediaApiId, mediaType, storedTitle, storedArtist,
-                        storedImageUrl);
-                cacheMetadata(cacheKey, metadata);
-                result.add(buildTrendingResponse(metadata, weeklyLikes));
-                continue;
-            }
-
-            MediaMetadata enriched = fetchMetadata(mediaApiId, mediaType);
-            if (enriched != null) {
-                cacheMetadata(cacheKey, enriched);
-                result.add(buildTrendingResponse(enriched, weeklyLikes));
-            } else {
-                MediaMetadata fallback = fallbackMetadata(mediaApiId, mediaType, storedTitle, storedArtist,
-                        storedImageUrl);
-                cacheMetadata(cacheKey, fallback);
-                result.add(buildTrendingResponse(fallback, weeklyLikes));
-            }
+            MediaMetadata metadata = resolveMetadata(mediaApiId, mediaType, storedTitle, storedArtist, storedImageUrl);
+            result.add(buildTrendingResponse(metadata, weeklyLikes));
         }
         return result;
     }
@@ -388,32 +440,8 @@ public class MediaRankingService {
             String storedTitle = rowString(row, 5);
             String storedArtist = rowString(row, 6);
             String storedImageUrl = rowString(row, 7);
-            String cacheKey = mediaType + "|" + mediaApiId;
-
-            MediaMetadata cached = getCachedMetadata(cacheKey);
-            if (cached != null) {
-                result.add(buildScoreResponse(cached, totalScore, likes, views));
-                continue;
-            }
-
-            if (!storedTitle.isBlank()) {
-                MediaMetadata metadata = buildMetadata(mediaApiId, mediaType, storedTitle, storedArtist,
-                        storedImageUrl);
-                cacheMetadata(cacheKey, metadata);
-                result.add(buildScoreResponse(metadata, totalScore, likes, views));
-                continue;
-            }
-
-            MediaMetadata enriched = fetchMetadata(mediaApiId, mediaType);
-            if (enriched != null) {
-                cacheMetadata(cacheKey, enriched);
-                result.add(buildScoreResponse(enriched, totalScore, likes, views));
-            } else {
-                MediaMetadata fallback = fallbackMetadata(mediaApiId, mediaType, storedTitle, storedArtist,
-                        storedImageUrl);
-                cacheMetadata(cacheKey, fallback);
-                result.add(buildScoreResponse(fallback, totalScore, likes, views));
-            }
+            MediaMetadata metadata = resolveMetadata(mediaApiId, mediaType, storedTitle, storedArtist, storedImageUrl);
+            result.add(buildScoreResponse(metadata, totalScore, likes, views));
         }
 
         return result;
