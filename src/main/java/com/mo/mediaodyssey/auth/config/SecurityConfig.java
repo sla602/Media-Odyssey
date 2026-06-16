@@ -36,6 +36,16 @@ import com.mo.mediaodyssey.shared.services.CurrentAccountService;
 public class SecurityConfig {
 
         private static final int MAX_CONCURRENT_SESSIONS = 1;
+        private final String devRole;
+
+        public SecurityConfig(@Value("${dev.mode.role}") String devRole) {
+                if (devRole != null) {
+                        String normalizedRole = devRole.strip().toUpperCase();
+                        this.devRole = normalizedRole.isEmpty() ? "PUBLIC" : normalizedRole;
+                } else {
+                        this.devRole = "PUBLIC";
+                }
+        }
 
         @Bean
         public SecurityFilterChain filterChain(HttpSecurity http, MOOAuth2UserService customOAuth2UserService,
@@ -44,73 +54,86 @@ public class SecurityConfig {
                         SessionRegistry sessionRegistry,
                         RememberMeServices rememberMeServices)
                         throws Exception {
-                http
-                                .csrf(csrf -> csrf.disable())
-                                .sessionManagement((session) -> session
-                                                .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
-                                                .sessionAuthenticationStrategy(sessionAuthenticationStrategy)
-                                                .sessionConcurrency((concurrency) -> concurrency
-                                                                .maximumSessions(MAX_CONCURRENT_SESSIONS)
-                                                                .maxSessionsPreventsLogin(false)
-                                                                .sessionRegistry(sessionRegistry)
-                                                                .expiredUrl("/auth/login?sessionExpired=true")))
-                                .authorizeHttpRequests(auth -> auth
-                                                .requestMatchers( // Public access.
-                                                                "/auth/**",
-                                                                "/api/auth/**",
-                                                                "/api/dev/**",
-                                                                "/error",
-                                                                "/search",
-                                                                "/css/**",
-                                                                "/js/**",
-                                                                "/images/**",
-                                                                "/favicon.ico",
-                                                                "/apple-touch-icon.png",
-                                                                "/apple-touch-icon-precomposed.png")
-                                                .permitAll()
-                                                .requestMatchers("/admin/**").hasRole("ADMIN") // Admin access only.
-                                                .anyRequest().authenticated()) // All others require authentication with
-                                                                               // any role.
-                                .exceptionHandling(ex -> ex.authenticationEntryPoint(
-                                                new LoginUrlAuthenticationEntryPoint("/auth"))) // Redirect requests
-                                                                                                // requiring
-                                                                                                // authentication to
-                                                                                                // "/auth".
-                                .formLogin((form) -> form.disable()) // Disable default Spring Security form login.
-                                .httpBasic((basic) -> basic.disable()) // Disable default Spring Security basic HTTP
-                                                                       // authentication.
-                                .rememberMe((remember) -> remember
-                                                .rememberMeServices(rememberMeServices))
-                                .oauth2Login(oauth2 -> oauth2 // Configure Spring Security oauth client with
-                                                              // customization.
-                                                .loginPage("/auth/login")
-                                                .authorizationEndpoint(authEndpoint -> authEndpoint
-                                                                .baseUri("/auth/oauth2/authorization"))
-                                                .redirectionEndpoint(redirect -> redirect
-                                                                .baseUri("/auth/oauth2/callback/*"))
-                                                .userInfoEndpoint(userInfo -> userInfo
-                                                                .userService(customOAuth2UserService))
-                                                .failureUrl("/auth/login?oauthError=true")
-                                                .successHandler((request, response, authentication) -> {
-                                                        currentAccountService.refreshPrincipal(authentication, request,
-                                                                        response);
-                                                        response.sendRedirect("/");
-                                                }))
-                                .logout((logout) -> logout // Configure Spring Security log out with customization.
-                                                .logoutUrl("/api/auth/logout")
-                                                .invalidateHttpSession(true)
-                                                .clearAuthentication(true)
-                                                .deleteCookies("JSESSIONID", "SESSION", "remember-me")
-                                                .logoutSuccessHandler((request, response, authentication) -> {
-                                                        if ("POST".equalsIgnoreCase(request.getMethod())) {
-                                                                new HttpStatusReturningLogoutSuccessHandler(
-                                                                                HttpStatus.OK).onLogoutSuccess(request,
-                                                                                                response,
-                                                                                                authentication);
-                                                        } else {
-                                                                response.sendRedirect("/auth");
-                                                        }
-                                                }).permitAll());
+                // Disable default Spring Security CSRF protection.
+                http.csrf((csrf) -> csrf.disable());
+                // Disable default Spring Security form login.
+                http.formLogin((form) -> form.disable());
+                // Disable default Spring Security basic HTTP authentication.
+                http.httpBasic((basic) -> basic.disable());
+                // Configure session management.
+                http.sessionManagement((session) -> session
+                                .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
+                                .sessionAuthenticationStrategy(sessionAuthenticationStrategy)
+                                .sessionConcurrency((concurrency) -> concurrency
+                                                .maximumSessions(MAX_CONCURRENT_SESSIONS)
+                                                .maxSessionsPreventsLogin(false)
+                                                .sessionRegistry(sessionRegistry)
+                                                .expiredUrl("/auth/login?sessionExpired=true")));
+                // Configure authorization rules.
+                http.authorizeHttpRequests(auth -> {
+                        // Admin endpoints permit admin access only.
+                        auth.requestMatchers("/admin/**").hasRole("ADMIN");
+                        // Dev endpoints permit access based on dev role.
+                        if (this.devRole.equals("PUBLIC")) {
+                                auth.requestMatchers("/api/dev/**").permitAll();
+                        } else {
+                                auth.requestMatchers("/api/dev/**").hasRole(this.devRole);
+                        }
+                        // Allow public access to auth and misc resources.
+                        auth.requestMatchers(
+                                        "/auth/**",
+                                        "/api/auth/**",
+                                        "/error",
+                                        "/search",
+                                        "/css/**",
+                                        "/js/**",
+                                        "/images/**",
+                                        "/favicon.ico",
+                                        "/apple-touch-icon.png",
+                                        "/apple-touch-icon-precomposed.png")
+                                        .permitAll();
+                        // All others require authentication with
+                        // any role.
+                        auth.anyRequest().authenticated();
+                });
+                // Redirect requests requiring authentication to "/auth".
+                http.exceptionHandling(ex -> ex.authenticationEntryPoint(
+                                new LoginUrlAuthenticationEntryPoint("/auth")));
+                // Configure Spring Security Remember Me with customization.
+                http.rememberMe((remember) -> remember
+                                .rememberMeServices(rememberMeServices));
+                // Configure Spring Security oauth client with customization.
+                http.oauth2Login(oauth2 -> oauth2
+                                .loginPage("/auth/login")
+                                .authorizationEndpoint(authEndpoint -> authEndpoint
+                                                .baseUri("/auth/oauth2/authorization"))
+                                .redirectionEndpoint(redirect -> redirect
+                                                .baseUri("/auth/oauth2/callback/*"))
+                                .userInfoEndpoint(userInfo -> userInfo
+                                                .userService(customOAuth2UserService))
+                                .failureUrl("/auth/login?oauthError=true")
+                                .successHandler((request, response, authentication) -> {
+                                        currentAccountService.refreshPrincipal(authentication, request,
+                                                        response);
+                                        response.sendRedirect("/");
+                                }));
+                // Configure Spring Security log out with customization.
+                http.logout((logout) -> logout
+                                .logoutUrl("/api/auth/logout")
+                                .invalidateHttpSession(true)
+                                .clearAuthentication(true)
+                                .deleteCookies("JSESSIONID", "SESSION", "remember-me")
+                                .logoutSuccessHandler((request, response, authentication) -> {
+                                        if ("POST".equalsIgnoreCase(request.getMethod())) {
+                                                new HttpStatusReturningLogoutSuccessHandler(
+                                                                HttpStatus.OK).onLogoutSuccess(request,
+                                                                                response,
+                                                                                authentication);
+                                        } else {
+                                                response.sendRedirect("/auth");
+                                        }
+                                }).permitAll());
+
                 return http.build();
         }
 
