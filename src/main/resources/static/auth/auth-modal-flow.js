@@ -10,7 +10,7 @@ window.AuthModalFlow = (() => {
         AUTH_PASSWORD_RESET_EMAIL_SENT: "If an eligible account exists, a password reset link has been sent. Please check your email.",
         AUTH_PASSWORD_RESET_SUCCESS: "Your password has been reset successfully. Please log in with your new password.",
         AUTH_INVALID_PASSWORD_RESET_TOKEN: "This password reset link is invalid or expired. Please request a new reset link.",
-        AUTH_OAUTH_SIGN_IN_REQUIRED: "This account was created with an OAuth provider. Please continue via OAuth provider.",
+        AUTH_OAUTH_SIGN_IN_REQUIRED: "This account was created with a provider-based sign-in. Please continue with the same provider.",
         AUTH_INVALID_CREDENTIALS: "The email and/or password provided is incorrect. Please try again.",
         AUTH_USER_NOT_FOUND: "The email and/or password provided is incorrect. Please try again.",
         AUTH_DISABLED: "Your account is disabled. Please contact support.",

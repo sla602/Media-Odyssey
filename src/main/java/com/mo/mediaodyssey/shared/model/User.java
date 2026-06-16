@@ -113,20 +113,20 @@ public class User implements UserDetails {
      * Authentication source for this account.
      * Expected values:
      * - LOCAL (email/password)
-     * - OAUTH (external provider)
+     * - OAUTH (external provider sign-in, currently OIDC-backed)
      */
     @Column(nullable = false)
     private String authProvider = "LOCAL";
 
     /**
-     * OAuth provider registration id (e.g., google, github) when authProvider is
-     * OAUTH.
+     * Provider registration id (e.g., google) used to identify which external
+     * sign-in flow created this account.
      */
     @Column(nullable = true)
     private String oauthProvider;
 
     /**
-     * Provider subject identifier (e.g., OpenID sub) when available.
+     * Stable provider subject identifier (for OIDC, the `sub` claim).
      */
     @Column(nullable = true)
     private String oauthProviderUserId;
@@ -168,28 +168,49 @@ public class User implements UserDetails {
     @OneToOne(mappedBy = "user", cascade = { CascadeType.PERSIST, CascadeType.REMOVE }, orphanRemoval = true)
     private PasswordResetToken passwordResetToken;
 
-    // ** Constructor, Getters, and Setters **
-    public User() {
-        // Required by JPA
+    // ** Constructors **
+
+    /**
+     * JPA requires a no-arg public or protected constructor.
+     * This protected constructor is not used anywhere else in the app, but must be
+     * present for JPA to function properly.
+     * 
+     * See following link for details:
+     * https://jakarta.ee/specifications/persistence/3.2/jakarta-persistence-spec-3.2.html#:~:text=The%20entity%20class%20must%20have%20a%20public%20or%20protected%20constructor%20with%20no%20parameters
+     **/
+    protected User() {
     }
 
-    // AuthService creates Account in registerUser() using this constructor.
-    /*
-     ** Logic from avatar side: when create user with email and password,
-     * automatically let custom_Avatar_URL is null
-     * and default_avatar_URL (generate avatar by using a uuid) and stored it.
+    /**
+     * Shared private constructor for User.
+     * 
+     * Initializes common fields between different auth providers.
+     * 
+     ** Logic from avatar side: when create user with email and password
+     * automatically set custom_Avatar_URL is null. Generate avatar by using a uuid
+     * and set it to default_avatar_URL.
+     * 
+     * @param email
+     * @param password
+     * @param isEnabled
+     * @param isEmailVerified
+     * @param role
+     * @param authProvider
+     * @param oauthProvider
+     * @param oauthProviderUserId
      */
-    public User(String email, String password) {
+    private User(String email, String password, boolean isEnabled, boolean isEmailVerified, String role,
+            String authProvider, String oauthProvider, String oauthProviderUserId) {
         this.email = email;
         this.username = email;
         this.password = password;
-        this.isEnabled = true;
-        this.isEmailVerified = false;
+        this.isEnabled = isEnabled;
+        this.isEmailVerified = isEmailVerified;
         this.isAccountNonLocked = true;
-        this.role = "ROLE_USER";
-        this.authProvider = "LOCAL";
-        this.oauthProvider = null;
-        this.oauthProviderUserId = null;
+        this.role = role;
+        this.authProvider = authProvider;
+        this.oauthProvider = oauthProvider;
+        this.oauthProviderUserId = oauthProviderUserId;
 
         /* their actual uploaded avatar pictures will be null until they upload */
         this.custom_avatar_URL = null;
@@ -202,7 +223,60 @@ public class User implements UserDetails {
         this.selected_avatar_type = "default"; // never let it null
     }
 
-    // Used in DevUserService
+    /**
+     * MOLocalAuthService creates Account in registerUser() using this public
+     * constructor.
+     * 
+     * @param email
+     * @param password
+     */
+    public User(String email, String password) {
+        this(email, password, true, false, "ROLE_USER", "LOCAL", null, null);
+    }
+
+    /**
+     * MOOidcUserService creates Account in createNewOidcUser() using this
+     * public constructor.
+     * 
+     * Notes:
+     * 1. password stays non-null to satisfy the existing user schema.
+     * 2. oauthProvider is saved so a stable external subject can be retained. This
+     * is so the same OIDC identity can be recognized later.
+     * 3. isEmailVerified is set to true since OIDC sign-in is considered verified
+     * by the OIDC provider.
+     * This means the email will not be verified further by the app. However, it is
+     * important to note that it is not necessarily guaranteed that the OIDC
+     * provider has verified the user's email address.
+     * 
+     * @param email
+     * @param password
+     * @param oauthProvider
+     * @param oauthProviderUserId
+     */
+    public User(String email, String password, String oauthProvider,
+            String oauthProviderUserId) {
+        this(email, password, true, true, "ROLE_USER", "OAUTH", oauthProvider, oauthProviderUserId);
+    }
+
+    /**
+     * Public constructor with all fields.
+     * 
+     * Used in DevUserService.
+     * 
+     * @param email
+     * @param username
+     * @param password
+     * @param isEnabled
+     * @param isEmailVerified
+     * @param isAccountNonLocked
+     * @param role
+     * @param authProvider
+     * @param oauthProvider
+     * @param oauthProviderUserId
+     * @param default_avatar_URL
+     * @param custom_avatar_URL
+     * @param selected_avatar_type
+     */
     public User(String email, String username, String password, boolean isEnabled, boolean isEmailVerified,
             boolean isAccountNonLocked,
             String role, String authProvider, String oauthProvider, String oauthProviderUserId,
@@ -221,6 +295,8 @@ public class User implements UserDetails {
         this.default_avatar_URL = default_avatar_URL;
         this.selected_avatar_type = selected_avatar_type;
     }
+
+    // ** Getters, and Setters **
 
     public Long getId() {
         return id;
@@ -377,7 +453,8 @@ public class User implements UserDetails {
             return Objects.equals(this.email, other.email);
         }
 
-        // Allow session principal matching across local User and OAuth principal types.
+        // Allow session principal matching across local User and provider principal
+        // types.
         if (obj instanceof Principal principal) {
             return Objects.equals(this.email, principal.getName());
         }

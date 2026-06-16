@@ -29,7 +29,7 @@ public class AuthExceptionHandler {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .body(AuthApiResponse.error("AUTH_OAUTH_SIGN_IN_REQUIRED",
-                                                "This account uses OAuth sign-in. Please continue via OAuth provider."));
+                                                "This account uses provider-based sign-in. Please continue with the same provider."));
         }
 
         @ExceptionHandler(BadCredentialsException.class)
@@ -92,7 +92,7 @@ public class AuthExceptionHandler {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .body(AuthApiResponse.error("AUTH_PASSWORD_RESET_OAUTH_NOT_ALLOWED",
-                                                "Password reset is not available for OAuth accounts. Please sign in with your OAuth provider."));
+                                                "Password reset is not available for provider-based sign-in accounts. Please sign in with the same provider."));
         }
 
         @ExceptionHandler({ MethodArgumentNotValidException.class, BindException.class,

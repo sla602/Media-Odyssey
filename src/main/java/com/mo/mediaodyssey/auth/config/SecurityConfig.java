@@ -27,7 +27,7 @@ import org.springframework.security.web.authentication.session.RegisterSessionAu
 import org.springframework.security.web.authentication.session.SessionAuthenticationStrategy;
 
 import com.mo.mediaodyssey.auth.security.MOAuthenticationProvider;
-import com.mo.mediaodyssey.auth.services.MOOAuth2UserService;
+import com.mo.mediaodyssey.auth.services.MOOidcUserService;
 import com.mo.mediaodyssey.auth.services.MOUserDetailsService;
 import com.mo.mediaodyssey.shared.services.CurrentAccountService;
 
@@ -48,7 +48,7 @@ public class SecurityConfig {
         }
 
         @Bean
-        public SecurityFilterChain filterChain(HttpSecurity http, MOOAuth2UserService customOAuth2UserService,
+        public SecurityFilterChain filterChain(HttpSecurity http, MOOidcUserService customOidcUserService,
                         CurrentAccountService currentAccountService,
                         SessionAuthenticationStrategy sessionAuthenticationStrategy,
                         SessionRegistry sessionRegistry,
@@ -102,7 +102,7 @@ public class SecurityConfig {
                 // Configure Spring Security Remember Me with customization.
                 http.rememberMe((remember) -> remember
                                 .rememberMeServices(rememberMeServices));
-                // Configure Spring Security oauth client with customization.
+                // Configure Spring Security OIDC client with customization.
                 http.oauth2Login(oauth2 -> oauth2
                                 .loginPage("/auth/login")
                                 .authorizationEndpoint(authEndpoint -> authEndpoint
@@ -110,7 +110,7 @@ public class SecurityConfig {
                                 .redirectionEndpoint(redirect -> redirect
                                                 .baseUri("/auth/oauth2/callback/*"))
                                 .userInfoEndpoint(userInfo -> userInfo
-                                                .userService(customOAuth2UserService))
+                                                .oidcUserService(customOidcUserService))
                                 .failureUrl("/auth/login?oauthError=true")
                                 .successHandler((request, response, authentication) -> {
                                         currentAccountService.refreshPrincipal(authentication, request,

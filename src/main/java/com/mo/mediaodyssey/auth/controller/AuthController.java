@@ -76,7 +76,7 @@ public class AuthController {
         sessionAuthenticationStrategy.onAuthentication(authentication, request, response);
 
         // Persist the login using the same principal refresh flow shared by both local
-        // and OAuth login.
+        // and provider login.
         currentAccountService.refreshPrincipal(authentication, request, response);
 
         // Remember-me is login-only and opt-in.

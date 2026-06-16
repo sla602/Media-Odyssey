@@ -10,41 +10,95 @@ services:
     # Image is built and published to GHCR by the build-publish-deploy workflow. Comment out below if building locally.
     image: ${GHCR_IMAGE:-ghcr.io/sla602/media-odyssey:main}
 
-    # App runtime variables are loaded from the root .env file.
+    # App runtime variables are loaded from the .env file.
     env_file:
       - .env
+
+    # Run as unprivileged user.
+    # 1000 is the default UID/GID for the first non-root user/group on many Linux systems, respectively.
+    user: "1000:1000"
+
+    # Prevent the app from gaining additional privileges.
+    security_opt:
+      - no-new-privileges:true
+
+    # Drop all Linux kernel capabilities.
+    cap_drop:
+      - ALL
+
+    # Expose application port for access by Cloudflare Tunnel.
     expose:
-      - "8080"
+      - ${PORT:-8080}
+
+    # Mount a volume for application logs.
     volumes:
       - ./logs:/logs
+
+    # Wait for the database to be healthy before starting the app.
     depends_on:
       db:
         condition: service_healthy
+
+    # Always restart the app unless it is explicitly stopped.
     restart: unless-stopped
 
   tunnel:
     container_name: mediaodyssey_tunnel
     image: cloudflare/cloudflared:latest
     command: tunnel --no-autoupdate run --token ${CLOUDFLARED_TUNNEL_TOKEN}
+
+    # Run as unprivileged user. Distroless images often use 65532 as the default unprivileged UID/GID.
+    user: "65532:65532"
+
+    # Prevent the app from gaining additional privileges.
+    security_opt:
+      - no-new-privileges:true
+
+    # Drop all Linux kernel capabilities.
+    cap_drop:
+      - ALL
+
+    # Wait for the app to start before starting the tunnel.
     depends_on:
       app:
         condition: service_started
+
+    # Always restart the tunnel unless it is explicitly stopped.
     restart: unless-stopped
 
   db:
     container_name: mediaodyssey_db
     image: postgres:18-alpine
+
+    # Run as unprivileged postgres user (UID/GID 70 in official Postgres images)
+    user: "70:70"
+
+    # Prevent the app from gaining additional privileges.
+    security_opt:
+      - no-new-privileges:true
+
+    # Drop all Linux kernel capabilities.
+    cap_drop:
+      - ALL
+
+    # Database credentials and settings are loaded from the .env file.
     environment:
       POSTGRES_DB: ${POSTGRES_DB}
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+
+    # Verifies that the database continues to stay up and responsive.
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}" ]
       interval: 5s
       timeout: 5s
       retries: 10
+
+    # Mount a volume to persist database data.
     volumes:
       - postgres-data:/var/lib/postgresql
+
+    # Always restart the database unless it is explicitly stopped.
     restart: unless-stopped
 
 volumes:

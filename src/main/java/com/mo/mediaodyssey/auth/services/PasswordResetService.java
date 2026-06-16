@@ -56,7 +56,7 @@ public class PasswordResetService {
         }
 
         if (user.isOauthAccount()) {
-            throw buildOauthResetNotAllowed();
+            throw buildProviderResetNotAllowed();
         }
 
         PasswordResetToken existingToken = user.getPasswordResetToken();
@@ -100,7 +100,7 @@ public class PasswordResetService {
         User user = tokenEntity.getUser();
 
         if (user.isOauthAccount()) {
-            throw buildOauthResetNotAllowed();
+            throw buildProviderResetNotAllowed();
         }
 
         user.setPassword(passwordEncoder.encode(dto.newPassword()));
@@ -144,8 +144,8 @@ public class PasswordResetService {
         return false;
     }
 
-    private PasswordResetNotAllowedException buildOauthResetNotAllowed() {
+    private PasswordResetNotAllowedException buildProviderResetNotAllowed() {
         return new PasswordResetNotAllowedException(
-                "Password reset is not available for OAuth accounts. Please sign in with your OAuth provider.");
+                "Password reset is not available for provider-based sign-in accounts. Please sign in with the same provider.");
     }
 }

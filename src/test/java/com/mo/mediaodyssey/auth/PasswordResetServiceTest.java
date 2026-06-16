@@ -148,7 +148,7 @@ class PasswordResetServiceTest {
                 () -> passwordResetService
                         .requestPasswordReset(new ForgotPasswordDto("oauth-user@mediaodyssey.example")))
                 .isInstanceOf(PasswordResetNotAllowedException.class)
-                .hasMessageContaining("OAuth accounts");
+                .hasMessageContaining("provider-based sign-in");
 
         verifyNoInteractions(emailService);
         verify(passwordResetTokenRepository, never()).save(any());
@@ -214,7 +214,7 @@ class PasswordResetServiceTest {
         assertThatThrownBy(
                 () -> passwordResetService.resetPassword(new ResetPasswordDto("oauth-token", "new-password")))
                 .isInstanceOf(PasswordResetNotAllowedException.class)
-                .hasMessageContaining("OAuth accounts");
+                .hasMessageContaining("provider-based sign-in");
 
         verifyNoInteractions(passwordEncoder, userRepository, sessionRegistry);
         verify(passwordResetTokenRepository, never()).delete(any());

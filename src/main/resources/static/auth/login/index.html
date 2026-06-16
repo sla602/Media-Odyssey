@@ -111,7 +111,7 @@
             let isSubmitting = false;
 
             if (searchParams.get("oauthError") === "true") {
-                showStatusModalAfterLoading("OAuth sign-in failed. If you previously registered with email/password, please log in with email/password instead.");
+                showStatusModalAfterLoading("Provider sign-in failed. If you previously registered with email/password, please log in with email/password instead.");
             }
 
             loginForm.addEventListener("submit", async (e) => {
