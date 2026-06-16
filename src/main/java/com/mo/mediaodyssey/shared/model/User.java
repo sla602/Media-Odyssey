@@ -297,7 +297,7 @@ public class User implements UserDetails {
         this.selected_avatar_type = selected_avatar_type;
     }
 
-    // ** Getters, and Setters **
+    // ** Getters and Setters **
 
     public Long getId() {
         return id;

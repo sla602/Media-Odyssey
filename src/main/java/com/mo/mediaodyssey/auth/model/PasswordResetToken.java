@@ -20,6 +20,9 @@ import jakarta.persistence.Table;
 @Table(name = "password_reset_tokens")
 public class PasswordResetToken implements Serializable {
 
+    // ** Data Members **
+
+    // Must be fixed. Randomly generated causes mismatch.
     private static final long serialVersionUID = 1L;
 
     @Id
@@ -43,8 +46,17 @@ public class PasswordResetToken implements Serializable {
         return new Date(cal.getTimeInMillis());
     }
 
-    public PasswordResetToken() {
-        // Required by JPA
+    // ** Constructors **
+
+    /**
+     * JPA requires a no-arg public or protected constructor.
+     * This protected constructor is not used anywhere else in the app, but must be
+     * present for JPA to function properly.
+     *
+     * See following link for details:
+     * https://jakarta.ee/specifications/persistence/3.2/jakarta-persistence-spec-3.2.html#:~:text=The%20entity%20class%20must%20have%20a%20public%20or%20protected%20constructor%20with%20no%20parameters
+     **/
+    protected PasswordResetToken() {
     }
 
     public PasswordResetToken(String token, User user, int expiryTimeInMinutes) {
@@ -52,6 +64,8 @@ public class PasswordResetToken implements Serializable {
         this.user = user;
         this.expiryDate = calculateExpiryDate(expiryTimeInMinutes);
     }
+
+    // ** Getters and Setters **
 
     public Long getId() {
         return id;
