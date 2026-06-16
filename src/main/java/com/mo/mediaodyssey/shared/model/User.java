@@ -49,14 +49,14 @@ public class User implements UserDetails {
     /**
      * Username for MO User. By default, matches email address. Can be changed by MO
      * User. Does not need to be unique.
-     * 
+     *
      * "username" is not used for authentication. Rather, email address is. Java
-     * 
+     *
      * Security expects a unique Username and Password. "email" is unique but a
      * User's "username" is not. This is why "username" may appear in other places.
      * In those cases, outside of this class, an email address as "username" is
      * used.
-     * 
+     *
      * TODO: logic to self-serve update a User details to be implemented in the
      * future.
      */
@@ -71,9 +71,9 @@ public class User implements UserDetails {
 
     /**
      * isEnabled MO User. Used by Spring Security account-status checks.
-     * 
+     *
      * By default, true, since account locking is handled separately.
-     * 
+     *
      * Previously used for preventing log in if email is not verified. However, in
      * some situations, the visitor is unable to do so. Instead, we will now remind
      * visitors to verify their email when they log in, and allow them to log in
@@ -94,7 +94,7 @@ public class User implements UserDetails {
     /**
      * isAccountNonLocked MO User. Used to determine if MO User account has been not
      * locked by an Admin. By default, true (Account is not locked).
-     * 
+     *
      * Logic handled in MOAuthenticationProvider. Adding more in the future requires
      * implementing its logic in MOAuthenticationProvider.
      */
@@ -119,8 +119,7 @@ public class User implements UserDetails {
     private String authProvider = "LOCAL";
 
     /**
-     * Provider registration id (e.g., google) used to identify which external
-     * sign-in flow created this account.
+     * Provider registration id (e.g., google) that scopes the external subject.
      */
     @Column(nullable = true)
     private String oauthProvider;
@@ -174,7 +173,7 @@ public class User implements UserDetails {
      * JPA requires a no-arg public or protected constructor.
      * This protected constructor is not used anywhere else in the app, but must be
      * present for JPA to function properly.
-     * 
+     *
      * See following link for details:
      * https://jakarta.ee/specifications/persistence/3.2/jakarta-persistence-spec-3.2.html#:~:text=The%20entity%20class%20must%20have%20a%20public%20or%20protected%20constructor%20with%20no%20parameters
      **/
@@ -183,13 +182,13 @@ public class User implements UserDetails {
 
     /**
      * Shared private constructor for User.
-     * 
+     *
      * Initializes common fields between different auth providers.
-     * 
+     *
      ** Logic from avatar side: when create user with email and password
      * automatically set custom_Avatar_URL is null. Generate avatar by using a uuid
      * and set it to default_avatar_URL.
-     * 
+     *
      * @param email
      * @param password
      * @param isEnabled
@@ -226,7 +225,7 @@ public class User implements UserDetails {
     /**
      * MOLocalAuthService creates Account in registerUser() using this public
      * constructor.
-     * 
+     *
      * @param email
      * @param password
      */
@@ -237,17 +236,19 @@ public class User implements UserDetails {
     /**
      * MOOidcUserService creates Account in createNewOidcUser() using this
      * public constructor.
-     * 
+     *
      * Notes:
      * 1. password stays non-null to satisfy the existing user schema.
-     * 2. oauthProvider is saved so a stable external subject can be retained. This
-     * is so the same OIDC identity can be recognized later.
-     * 3. isEmailVerified is set to true since OIDC sign-in is considered verified
-     * by the OIDC provider.
+     * 2. oauthProvider stores the provider registration id because OIDC subjects
+     * are scoped to their provider.
+     * 3. oauthProviderUserId stores the stable OIDC subject so the same identity
+     * can be recognized later.
+     * 4. isEmailVerified is set to true because this app treats OIDC sign-in as
+     * verified by the provider.
      * This means the email will not be verified further by the app. However, it is
      * important to note that it is not necessarily guaranteed that the OIDC
      * provider has verified the user's email address.
-     * 
+     *
      * @param email
      * @param password
      * @param oauthProvider
@@ -260,9 +261,9 @@ public class User implements UserDetails {
 
     /**
      * Public constructor with all fields.
-     * 
+     *
      * Used in DevUserService.
-     * 
+     *
      * @param email
      * @param username
      * @param password

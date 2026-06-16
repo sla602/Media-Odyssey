@@ -26,18 +26,37 @@ services:
     cap_drop:
       - ALL
 
+    # Keep the image filesystem immutable; writable paths are explicit below.
+    read_only: true
+    tmpfs:
+      - /tmp:rw,nosuid,nodev
+    pids_limit: 512
+
     # Expose application port for access by Cloudflare Tunnel.
     expose:
       - ${PORT:-8080}
 
+    # Keep common host aliases from resolving to the Docker host.
+    extra_hosts:
+      - "host.docker.internal:127.0.0.1"
+      - "host.containers.internal:127.0.0.1"
+
     # Mount a volume for application logs.
     volumes:
-      - ./logs:/logs
+      - type: bind
+        source: /logs
+        target: /logs
+        bind:
+          create_host_path: false
 
     # Wait for the database to be healthy before starting the app.
     depends_on:
       db:
         condition: service_healthy
+
+    networks:
+      - mediaodyssey_frontend
+      - mediaodyssey_backend
 
     # Always restart the app unless it is explicitly stopped.
     restart: unless-stopped
@@ -58,10 +77,19 @@ services:
     cap_drop:
       - ALL
 
+    # Keep the tunnel container stateless and limit process fan-out.
+    read_only: true
+    tmpfs:
+      - /tmp:rw,nosuid,nodev
+    pids_limit: 128
+
     # Wait for the app to start before starting the tunnel.
     depends_on:
       app:
         condition: service_started
+
+    networks:
+      - mediaodyssey_frontend
 
     # Always restart the tunnel unless it is explicitly stopped.
     restart: unless-stopped
@@ -81,6 +109,9 @@ services:
     cap_drop:
       - ALL
 
+    # Bound database process fan-out without changing PostgreSQL's writable data path.
+    pids_limit: 256
+
     # Database credentials and settings are loaded from the .env file.
     environment:
       POSTGRES_DB: ${POSTGRES_DB}
@@ -98,8 +129,16 @@ services:
     volumes:
       - postgres-data:/var/lib/postgresql
 
+    networks:
+      - mediaodyssey_backend
+
     # Always restart the database unless it is explicitly stopped.
     restart: unless-stopped
 
 volumes:
   postgres-data:
+
+networks:
+  mediaodyssey_frontend:
+  mediaodyssey_backend:
+    internal: true

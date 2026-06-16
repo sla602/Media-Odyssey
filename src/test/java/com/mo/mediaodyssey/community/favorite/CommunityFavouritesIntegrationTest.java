@@ -17,7 +17,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  *
  * These tests load the full Spring context and connect to the real PostgreSQL
  * DB.
- * 
+ *
  * They will FAIL if:
  * - The DB connection is misconfigured or unreachable.
  * - UserInteraction cannot be saved or queried.

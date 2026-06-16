@@ -7,6 +7,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.security.Principal;
 import java.time.Instant;
 import java.util.Map;
 import java.util.Optional;
@@ -59,6 +60,8 @@ class MOOidcUserServiceTest {
         assertThat(principal.getEmail()).isEqualTo(email);
         assertThat(principal.getName()).isEqualTo(email);
         assertThat(principal.getIdToken().getSubject()).isEqualTo(subject);
+        assertThat(principal).isInstanceOf(Principal.class);
+        assertThat(user).isEqualTo(principal);
         verify(userRepository).findByEmail(email);
         verify(userRepository, never()).save(org.mockito.ArgumentMatchers.any(User.class));
     }

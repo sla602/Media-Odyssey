@@ -16,12 +16,15 @@ import com.mo.mediaodyssey.shared.model.User;
 /**
  * App principal backed by a local `User` and the OIDC claims.
  */
-public class MOOidcUserPrincipal implements OidcUser {
+public class MOOidcUserPrincipal implements OidcUser, Principal {
 
     private final User user;
     private final OidcIdToken idToken;
     private final OidcUserInfo userInfo;
 
+    /**
+     * Creates a principal for a stored user and provider claims.
+     */
     public MOOidcUserPrincipal(User user, OidcIdToken idToken, OidcUserInfo userInfo) {
         this.user = user;
         this.idToken = idToken;
@@ -88,6 +91,9 @@ public class MOOidcUserPrincipal implements OidcUser {
         return userInfo;
     }
 
+    /**
+     * Compares principals and users by email.
+     */
     @Override
     public boolean equals(Object obj) {
         if (this == obj) {
@@ -109,6 +115,9 @@ public class MOOidcUserPrincipal implements OidcUser {
         return false;
     }
 
+    /**
+     * Hashes by email to match equality.
+     */
     @Override
     public int hashCode() {
         return Objects.hash(user.getEmail());

@@ -55,7 +55,8 @@ public class MOOidcUserService implements OAuth2UserService<OidcUserRequest, Oid
     }
 
     /**
-     * Creates the local account record for a first-time OIDC sign-in.
+     * Creates the local account record for a first-time OIDC sign-in and stores
+     * the provider registration id with the provider subject.
      */
     private User createNewOidcUser(String email, String registrationId, String providerUserId) {
         User user = new User(email, passwordEncoder.encode(UUID.randomUUID().toString()), registrationId,

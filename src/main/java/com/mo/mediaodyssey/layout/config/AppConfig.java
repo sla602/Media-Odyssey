@@ -36,7 +36,7 @@ public class AppConfig {
                                 .build();
 
                 // Increase pool sizes to allow higher parallelism for external API calls
-                connectionManager.setMaxTotal(200);
+                connectionManager.setMaxTotal(250);
                 connectionManager.setDefaultMaxPerRoute(50);
 
                 CloseableHttpClient httpClient = HttpClients.custom()

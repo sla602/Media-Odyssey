@@ -78,8 +78,8 @@ public class CurrentAccountService {
                 return user;
             }
 
-            if (principal instanceof MOOidcUserPrincipal oauthPrincipal) {
-                return oauthPrincipal.getUser();
+            if (principal instanceof MOOidcUserPrincipal oidcPrincipal) {
+                return oidcPrincipal.getUser();
             }
 
             throw new AuthenticationCredentialsNotFoundException(

@@ -15,7 +15,7 @@ public class MappingController {
 
     /*
      * Navigates the user to explore other boards.
-     * 
+     *
      * Redirect old exploreBoards route to current explore route.
      */
     @GetMapping("/exploreBoards")

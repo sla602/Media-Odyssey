@@ -232,7 +232,7 @@ public class MediaRankingService {
      *
      * It stores only display metadata, not likes or views, so cached API
      * results can be safely reused with fresh ranking counts.
-     * 
+     *
      * TODO: move MediaMetadata into its own file if appropriate.
      */
     private static final class MediaMetadata {
@@ -384,7 +384,7 @@ public class MediaRankingService {
 
     /**
      * Enriches trending rows.
-     * 
+     *
      * Row format:
      * [0] mediaApiId (String)
      * [1] mediaType (String)
@@ -419,7 +419,7 @@ public class MediaRankingService {
 
     /**
      * Converts aggregated score rows into DTOs.
-     * 
+     *
      * Row format:
      * [0] mediaApiId (String)
      * [1] mediaType (String)
@@ -523,10 +523,10 @@ public class MediaRankingService {
 
     /**
      * Fetches track metadata from Last.fm.
-     * 
+     *
      * Expect {@code mediaApiId} to be a Last.fm track URL of the form:
      * {@code https://www.last.fm/music/Artist/_/Track}.
-     * 
+     *
      *
      * @param mediaApiId Last.fm track URL
      * @return a {@link MediaMetadata} with track metadata or null on error
