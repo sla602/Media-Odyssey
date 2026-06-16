@@ -6,6 +6,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -17,6 +18,8 @@ import static org.assertj.core.api.Assertions.assertThat;
  *
  * These tests load the full Spring context and connect to the real PostgreSQL
  * DB.
+ * Each test runs in a transaction that rolls back, so test rows do not remain
+ * in the live database.
  *
  * They will FAIL if:
  * - The DB connection is misconfigured or unreachable.
@@ -34,6 +37,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * Requires: valid DB and API credentials in application.properties or .env
  */
 @SpringBootTest
+@Transactional
 class CommunityFavouritesIntegrationTest {
 
     @Autowired
@@ -45,13 +49,7 @@ class CommunityFavouritesIntegrationTest {
     private static final long TEST_USER_ID_BASE = 99990L;
 
     @AfterEach
-    void cleanUp() {
-        for (long uid = TEST_USER_ID_BASE; uid <= TEST_USER_ID_BASE + 9; uid++) {
-            List<UserInteraction> toDelete = userInteractionRepository.findByUserId(uid);
-            if (!toDelete.isEmpty()) {
-                userInteractionRepository.deleteAll(toDelete);
-            }
-        }
+    void clearRequestCache() {
         mediaRankingService.clearRequestCache();
     }
 
@@ -81,8 +79,11 @@ class CommunityFavouritesIntegrationTest {
 
         List<UserInteraction> found = userInteractionRepository.findByUserId(TEST_USER_ID_BASE);
         assertThat(found).isNotEmpty();
-        assertThat(found.get(0).getMediaApiId()).isEqualTo("integration-test-media");
-        assertThat(found.get(0).getInteractionType()).isEqualTo("VIEW");
+        assertThat(found).anySatisfy(foundInteraction -> {
+            assertThat(foundInteraction.getId()).isEqualTo(saved.getId());
+            assertThat(foundInteraction.getMediaApiId()).isEqualTo("integration-test-media");
+            assertThat(foundInteraction.getInteractionType()).isEqualTo("VIEW");
+        });
     }
 
     // Score is verified directly from saved interactions (VIEW=1, LIKE=10)

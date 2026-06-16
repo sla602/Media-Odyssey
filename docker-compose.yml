@@ -13,6 +13,8 @@ services:
     # App runtime variables are loaded from the .env file.
     env_file:
       - .env
+    environment:
+      ACCESS_LOG_DIRECTORY: ${ACCESS_LOG_CONTAINER_DIRECTORY:-/logs}
 
     # Run as unprivileged user.
     # 1000 is the default UID/GID for the first non-root user/group on many Linux systems, respectively.
@@ -41,11 +43,11 @@ services:
       - "host.docker.internal:127.0.0.1"
       - "host.containers.internal:127.0.0.1"
 
-    # Mount a volume for application logs.
+    # Mount project-root access logs at the container path used by Tomcat.
     volumes:
       - type: bind
-        source: /logs
-        target: /logs
+        source: ${ACCESS_LOG_HOST_DIRECTORY:-./logs}
+        target: ${ACCESS_LOG_CONTAINER_DIRECTORY:-/logs}
         bind:
           create_host_path: false
 
