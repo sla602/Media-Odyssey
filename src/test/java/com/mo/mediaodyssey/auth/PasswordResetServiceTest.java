@@ -27,6 +27,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mock.web.MockHttpServletRequest;
+import org.springframework.security.authentication.LockedException;
 import org.springframework.security.core.session.SessionInformation;
 import org.springframework.security.core.session.SessionRegistry;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -155,6 +156,21 @@ class PasswordResetServiceTest {
     }
 
     @Test
+    void requestPasswordReset_forLockedUser_blocksReset() {
+        User lockedUser = new User("locked-user@mediaodyssey.example", "encoded-password");
+        lockedUser.setAuthProvider("LOCAL");
+        lockedUser.setAccountNonLocked(false);
+        when(userRepository.findByEmail("locked-user@mediaodyssey.example")).thenReturn(Optional.of(lockedUser));
+
+        assertThatThrownBy(
+                () -> passwordResetService
+                        .requestPasswordReset(new ForgotPasswordDto("locked-user@mediaodyssey.example")))
+                .isInstanceOf(LockedException.class);
+
+        verifyNoInteractions(emailService, passwordResetTokenRepository);
+    }
+
+    @Test
     void requestPasswordReset_withUnknownEmail_completesSilently() {
         when(userRepository.findByEmail("missing@mediaodyssey.example")).thenReturn(Optional.empty());
 
@@ -177,8 +193,8 @@ class PasswordResetServiceTest {
         when(passwordEncoder.encode("new-plain-password")).thenReturn("new-encoded-password");
 
         SessionInformation activeSession = mock(SessionInformation.class);
-        when(sessionRegistry.getAllPrincipals()).thenReturn(List.of(user, "other@mediaodyssey.example"));
-        when(sessionRegistry.getAllSessions(user, false)).thenReturn(List.of(activeSession));
+        when(sessionRegistry.getAllSessions("local-user@mediaodyssey.example", false))
+                .thenReturn(List.of(activeSession));
 
         passwordResetService.resetPassword(new ResetPasswordDto("valid-reset-token", "new-plain-password"));
 
@@ -187,6 +203,7 @@ class PasswordResetServiceTest {
 
         verify(userRepository).save(user);
         verify(passwordResetTokenRepository).delete(tokenEntity);
+        verify(sessionRegistry).getAllSessions("local-user@mediaodyssey.example", false);
         verify(activeSession).expireNow();
     }
 
@@ -199,6 +216,25 @@ class PasswordResetServiceTest {
                 .isInstanceOf(InvalidPasswordResetTokenException.class);
 
         verifyNoInteractions(passwordEncoder, userRepository, sessionRegistry);
+    }
+
+    @Test
+    void resetPassword_withLockedUser_blocksResetAndSkipsMutation() {
+        User lockedUser = new User("locked-user@mediaodyssey.example", "old-password");
+        lockedUser.setAuthProvider("LOCAL");
+        lockedUser.setAccountNonLocked(false);
+
+        PasswordResetToken tokenEntity = new PasswordResetToken("locked-token", lockedUser, CONFIGURED_EXPIRY_MINUTES);
+        tokenEntity.setExpiryDate(Date.from(Instant.now().plus(10, ChronoUnit.MINUTES)));
+
+        when(passwordResetTokenRepository.findByToken("locked-token")).thenReturn(Optional.of(tokenEntity));
+
+        assertThatThrownBy(
+                () -> passwordResetService.resetPassword(new ResetPasswordDto("locked-token", "new-password")))
+                .isInstanceOf(LockedException.class);
+
+        verifyNoInteractions(passwordEncoder, userRepository, sessionRegistry);
+        verify(passwordResetTokenRepository, never()).delete(any());
     }
 
     @Test

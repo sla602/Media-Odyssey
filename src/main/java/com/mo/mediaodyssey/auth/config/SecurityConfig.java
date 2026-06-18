@@ -12,7 +12,6 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.session.SessionRegistry;
-import org.springframework.security.core.session.SessionRegistryImpl;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
@@ -25,6 +24,9 @@ import org.springframework.security.web.authentication.session.CompositeSessionA
 import org.springframework.security.web.authentication.session.ConcurrentSessionControlAuthenticationStrategy;
 import org.springframework.security.web.authentication.session.RegisterSessionAuthenticationStrategy;
 import org.springframework.security.web.authentication.session.SessionAuthenticationStrategy;
+import org.springframework.session.FindByIndexNameSessionRepository;
+import org.springframework.session.Session;
+import org.springframework.session.security.SpringSessionBackedSessionRegistry;
 
 import com.mo.mediaodyssey.auth.security.MOAuthenticationProvider;
 import com.mo.mediaodyssey.auth.services.MOOidcUserService;
@@ -38,6 +40,9 @@ public class SecurityConfig {
         private static final int MAX_CONCURRENT_SESSIONS = 1;
         private final String devRole;
 
+        // Constructor to initialize the SecurityConfig with the dev mode role from
+        // application properties. If dev mode is enabled but dev mode role is not
+        // specified, access will not be restricted for dev endpoints.
         public SecurityConfig(@Value("${dev.mode.role}") String devRole) {
                 if (devRole != null) {
                         String normalizedRole = devRole.strip().toUpperCase();
@@ -47,6 +52,7 @@ public class SecurityConfig {
                 }
         }
 
+        // Configure Spring Security filter chain with customization.
         @Bean
         public SecurityFilterChain filterChain(HttpSecurity http, MOOidcUserService customOidcUserService,
                         CurrentAccountService currentAccountService,
@@ -137,6 +143,7 @@ public class SecurityConfig {
                 return http.build();
         }
 
+        // Configure Spring Security Remember Me with customization.
         @Bean
         public TokenBasedRememberMeServices rememberMeServices(MOUserDetailsService userDetailsService,
                         @Value("${security.remember-me.key}") String rememberMeKey) {
@@ -156,24 +163,28 @@ public class SecurityConfig {
                 return new BCryptPasswordEncoder();
         }
 
+        // Enforce 1 concurrent session per account across all instances of the
+        // application.
         @Bean
-        public SessionRegistry sessionRegistry() {
-                return new SessionRegistryImpl();
+        public <S extends Session> SessionRegistry sessionRegistry(
+                        FindByIndexNameSessionRepository<S> sessionRepository) {
+                return new SpringSessionBackedSessionRegistry<>(sessionRepository);
         }
 
+        // Authentication provider for local accounts.
         @Bean
         public AuthenticationManager authManager(HttpSecurity http, MOAuthenticationProvider moAuthenticationProvider)
-                        throws Exception { // Authentication provider for local accounts.
+                        throws Exception {
                 AuthenticationManagerBuilder authenticationManagerBuilder = http
                                 .getSharedObject(AuthenticationManagerBuilder.class);
                 authenticationManagerBuilder.authenticationProvider(moAuthenticationProvider);
                 return authenticationManagerBuilder.build();
         }
 
+        // Limit maximum concurrent sessions to 1 per account.
+        // If limit is exceeded, the oldest session is invalidated.
         @Bean
         public SessionAuthenticationStrategy sessionAuthenticationStrategy(SessionRegistry sessionRegistry) {
-                // Limit maximum concurrent sessions to 1 per account.
-                // If limit is exceeded, the oldest session is invalidated.
                 ConcurrentSessionControlAuthenticationStrategy concurrent = new ConcurrentSessionControlAuthenticationStrategy(
                                 sessionRegistry);
                 concurrent.setMaximumSessions(MAX_CONCURRENT_SESSIONS);

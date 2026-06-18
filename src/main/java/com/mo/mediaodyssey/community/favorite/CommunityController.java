@@ -71,14 +71,14 @@ public class CommunityController {
      * Persists LIKE or VIEW interactions into UserInteraction table.
      */
     private void saveInteraction(Long userId, String mediaApiId,
-            String mediaType, String interactionType) {
+            String normalizedMediaType, String interactionType) {
         if (userId == null)
             return;
 
         UserInteraction interaction = new UserInteraction();
         interaction.setUserId(userId);
         interaction.setMediaApiId(mediaApiId);
-        interaction.setMediaType(mediaRankingService.normalizeMediaType(mediaType));
+        interaction.setMediaType(normalizedMediaType);
         interaction.setInteractionType(interactionType);
         interaction.setTimestamp(LocalDateTime.now());
         interaction.setGenres(List.of());

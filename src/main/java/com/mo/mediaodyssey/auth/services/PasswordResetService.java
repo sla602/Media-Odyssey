@@ -1,14 +1,13 @@
 package com.mo.mediaodyssey.auth.services;
 
-import java.security.Principal;
 import java.util.Date;
 import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.authentication.LockedException;
 import org.springframework.security.core.session.SessionInformation;
 import org.springframework.security.core.session.SessionRegistry;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -55,6 +54,10 @@ public class PasswordResetService {
             return;
         }
 
+        if (!user.isAccountNonLocked()) {
+            throw new LockedException("User is locked. Cannot reset password for locked user. Contact support.");
+        }
+
         if (user.isOauthAccount()) {
             throw buildProviderResetNotAllowed();
         }
@@ -99,6 +102,10 @@ public class PasswordResetService {
 
         User user = tokenEntity.getUser();
 
+        if (!user.isAccountNonLocked()) {
+            throw new LockedException("User is locked. Cannot reset password for locked user. Contact support.");
+        }
+
         if (user.isOauthAccount()) {
             throw buildProviderResetNotAllowed();
         }
@@ -113,35 +120,9 @@ public class PasswordResetService {
     }
 
     private void expireUserSessions(String email) {
-        for (Object principal : sessionRegistry.getAllPrincipals()) {
-            if (!matchesPrincipalEmail(principal, email)) {
-                continue;
-            }
-
-            for (SessionInformation session : sessionRegistry.getAllSessions(principal, false)) {
-                session.expireNow();
-            }
+        for (SessionInformation session : sessionRegistry.getAllSessions(email, false)) {
+            session.expireNow();
         }
-    }
-
-    private boolean matchesPrincipalEmail(Object principal, String email) {
-        if (principal instanceof User userPrincipal) {
-            return email.equalsIgnoreCase(userPrincipal.getEmail());
-        }
-
-        if (principal instanceof UserDetails userDetails) {
-            return email.equalsIgnoreCase(userDetails.getUsername());
-        }
-
-        if (principal instanceof Principal principalDetails) {
-            return email.equalsIgnoreCase(principalDetails.getName());
-        }
-
-        if (principal instanceof String principalName) {
-            return email.equalsIgnoreCase(principalName);
-        }
-
-        return false;
     }
 
     private PasswordResetNotAllowedException buildProviderResetNotAllowed() {
