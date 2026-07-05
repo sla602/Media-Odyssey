@@ -1,8 +1,10 @@
-package com.mo.mediaodyssey.layout.config;
+package com.mo.mediaodyssey.layout;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
 import org.springframework.web.client.RestTemplate;
+
+import com.mo.mediaodyssey.layout.config.AppConfig;
 
 import java.util.concurrent.ExecutorService;
 

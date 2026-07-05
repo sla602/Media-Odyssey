@@ -2,6 +2,7 @@ package com.mo.mediaodyssey.community.favorite;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 import java.util.Optional;
@@ -55,5 +56,5 @@ public interface MediaRepository extends JpaRepository<Media, Long> {
                     title ASC
                 LIMIT 10
             """, nativeQuery = true)
-    List<Media> findTop10ByRatingAndCategory(String category);
+    List<Media> findTop10ByRatingAndCategory(@Param("category") String category);
 }

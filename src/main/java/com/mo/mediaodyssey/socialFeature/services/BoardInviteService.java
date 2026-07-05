@@ -19,10 +19,11 @@ import java.util.Optional;
  * Manages invites from owner/moderators of private boards to their friends.
  *
  * Rules enforced here:
- *  - Only owner/moderator of the board can send invites.
- *  - Invitee must be a friend of the inviter.
- *  - Invitee cannot already be a member / already invited / BANNED from the board.
- *  - Accepting an invite creates a MEMBER role and deletes the invite row.
+ * - Only owner/moderator of the board can send invites.
+ * - Invitee must be a friend of the inviter.
+ * - Invitee cannot already be a member / already invited / BANNED from the
+ * board.
+ * - Accepting an invite creates a MEMBER role and deletes the invite row.
  */
 @Service
 @Transactional
@@ -34,9 +35,9 @@ public class BoardInviteService {
     private final FriendshipService friendshipService;
 
     public BoardInviteService(BoardInviteRepository inviteRepo,
-                              BoardRoleRepository roleRepo,
-                              BoardsRepository boardsRepo,
-                              FriendshipService friendshipService) {
+            BoardRoleRepository roleRepo,
+            BoardsRepository boardsRepo,
+            FriendshipService friendshipService) {
         this.inviteRepo = inviteRepo;
         this.roleRepo = roleRepo;
         this.boardsRepo = boardsRepo;
@@ -55,8 +56,12 @@ public class BoardInviteService {
         }
 
         // 1. Board must exist
-        Boards board = boardsRepo.findById(boardId)
-                .orElseThrow(() -> new IllegalStateException("Board not found."));
+        //
+        // Note: We only need to check if the board entity exists. Board is not used
+        // later in this method, so we don't need to fetch the entity.
+        if (!boardsRepo.existsById(boardId)) {
+            throw new IllegalStateException("Board not found.");
+        }
 
         // 2. Inviter must be owner or moderator
         RoleType inviterRole = roleRepo.findByUserIdAndBoardId(inviterUserId, boardId)
@@ -74,7 +79,8 @@ public class BoardInviteService {
         }
 
         // 4. Invitee cannot already be in the board, including BANNED
-        Optional<BoardRole> existingRole = roleRepo.findByUserIdAndBoardId(inviteeUserId, boardId);
+        Optional<BoardRole> existingRole = roleRepo.findByUserIdAndBoardId(inviteeUserId,
+                boardId);
         if (existingRole.isPresent()) {
             RoleType existing = existingRole.get().getRoleType();
             if (existing.isBanned()) {
@@ -110,7 +116,8 @@ public class BoardInviteService {
 
         Long boardId = invite.getBoardId();
 
-        // Handle the three cases: no existing role, previously LEFT, or somehow already in.
+        // Handle the three cases: no existing role, previously LEFT, or somehow already
+        // in.
         Optional<BoardRole> existing = roleRepo.findByUserIdAndBoardId(actingUserId, boardId);
         if (existing.isPresent()) {
             BoardRole role = existing.get();
@@ -171,7 +178,9 @@ public class BoardInviteService {
         return inviteRepo.findByInviteeUserId(userId);
     }
 
-    /** All pending invites for a given board (useful for the board settings page). */
+    /**
+     * All pending invites for a given board (useful for the board settings page).
+     */
     public List<BoardInvite> getInvitesForBoard(Long boardId) {
         return inviteRepo.findByBoardId(boardId);
     }

@@ -49,7 +49,7 @@ public interface BoardRoleRepository extends JpaRepository<BoardRole, Long> {
         @Query("SELECT br FROM BoardRole br WHERE br.boardId = :boardId " +
                         "AND br.roleType NOT IN ( " +
                         "com.mo.mediaodyssey.socialFeature.enums.RoleType.LEFT) " +
-                        "AND CAST(br.userId AS string) LIKE %:search% " +
+                        "AND CAST(br.userId AS string) LIKE CONCAT('%', :search, '%') ESCAPE '\\' " +
                         "ORDER BY br.userId ASC")
         List<BoardRole> searchMembersByBoardId(@Param("boardId") Long boardId, @Param("search") String search);
 

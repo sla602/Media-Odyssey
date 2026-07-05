@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
+import com.mo.mediaodyssey.auth.config.AuthRoutes;
 import com.mo.mediaodyssey.auth.dto.ForgotPasswordDto;
 import com.mo.mediaodyssey.auth.dto.ResetPasswordDto;
 import com.mo.mediaodyssey.auth.exception.InvalidPasswordResetTokenException;
@@ -26,7 +27,7 @@ import com.mo.mediaodyssey.shared.services.EmailService;
 @Service
 public class PasswordResetService {
 
-    @Value("${spring.application.name:App}")
+    @Value("${spring.application.name}")
     private String appName;
 
     @Value("${email.resettoken.expiry-in-minutes}")
@@ -46,6 +47,9 @@ public class PasswordResetService {
 
     @Autowired
     private SessionRegistry sessionRegistry;
+
+    @Autowired
+    private AuthRateLimitService authRateLimitService;
 
     @Transactional
     public void requestPasswordReset(ForgotPasswordDto dto) {
@@ -72,10 +76,12 @@ public class PasswordResetService {
         String token = UUID.randomUUID().toString();
         PasswordResetToken passwordResetToken = new PasswordResetToken(token, user, tokenExpiryInMinutes);
 
+        // Build the reset link from the request context. Tomcat resolves the
+        // configured proxy headers so the URL uses the external scheme and host.
         String baseUrl = ServletUriComponentsBuilder.fromCurrentContextPath()
                 .build()
                 .toUriString();
-        String passwordResetUrl = baseUrl + "/auth/reset?token=" + token;
+        String passwordResetUrl = baseUrl + AuthRoutes.Page.RESET + "?token=" + token;
 
         String to = user.getEmail();
         String subject = "Reset Password for " + this.appName;
@@ -115,6 +121,10 @@ public class PasswordResetService {
         userRepository.save(user);
 
         passwordResetTokenRepository.delete(tokenEntity);
+
+        // A successful password reset should restore the caller's login and global
+        // auth headroom so they can immediately try the new password.
+        authRateLimitService.refundSuccessfulPasswordReset();
 
         expireUserSessions(user.getEmail());
     }

@@ -10,11 +10,10 @@ import com.mo.mediaodyssey.socialFeature.models.DTO.FriendRequestDTO;
 import com.mo.mediaodyssey.socialFeature.models.Friendship;
 import com.mo.mediaodyssey.socialFeature.repositories.FriendshipRepository;
 import com.mo.mediaodyssey.socialFeature.repositories.ProfileRepository;
-
+import com.mo.mediaodyssey.shared.util.SqlLikeEscaper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -158,7 +157,7 @@ public class FriendshipService {
         if (query == null || query.isBlank())
             return List.of();
 
-        List<Profile> matches = profileRepo.searchByUsername(query.trim(), viewerId);
+        List<Profile> matches = profileRepo.searchByUsername(SqlLikeEscaper.escape(query.trim()), viewerId);
 
         List<FriendSearchResult> results = new ArrayList<>();
         for (Profile p : matches) {
@@ -177,19 +176,6 @@ public class FriendshipService {
             results.add(new FriendSearchResult(otherId, p.getUsername(), status, requestId));
         }
         return results;
-    }
-
-    /**
-     * Returns null if the user has a username, or a redirect string if they don't.
-     * Used as a guard at the top of all gated endpoints.
-     */
-    private String requireUsername(Long userId, RedirectAttributes redirectAttributes) {
-        if (!profileService.hasUsername(userId)) {
-            redirectAttributes.addFlashAttribute("errorMessage",
-                    "You need to set a username before using the friends page.");
-            return "redirect:/profile";
-        }
-        return null;
     }
 
     // Requests

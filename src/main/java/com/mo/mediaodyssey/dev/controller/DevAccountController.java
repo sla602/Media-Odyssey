@@ -24,10 +24,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/dev/auth")
 public class DevAccountController {
 
-    @Value("${dev.mode.enabled:FALSE}")
-    private String devMode;
-
-    @Value("${dev.email.suffix:}")
+    @Value("${dev.email.suffix}")
     private String email;
 
     @Autowired
@@ -35,13 +32,13 @@ public class DevAccountController {
 
     /**
      * Logic to create an Admin account and skip email verification.
-     * 
+     *
      * For developmental use only. Must be enabled via environment variable. Once
      * enabled, access is unrestricted.
-     * 
+     *
      * Email address and password is randomly assigned. $EMAIL_FROM is combined with
      * the randomly generated UUID. Password uses a different UUID.
-     * 
+     *
      * @return "OK", Email, and Password in body upon success
      */
     @GetMapping("/createAdminAccount")
@@ -67,21 +64,29 @@ public class DevAccountController {
         return createDevAccount("ROLE_USER", "DEV_AUTH_USER_CREATED", "User account created successfully.");
     }
 
+    /**
+     * Creates a developmental account with the specified role.
+     *
+     * @param role           The role for the new account.
+     * @param successStatus  The status type for successful creation.
+     * @param successMessage The detailed message for successful creation.
+     * @return The response entity with the result of the operation.
+     */
     private ResponseEntity<DevAccountApiResponse> createDevAccount(
             String role,
             String successStatus,
             String successMessage) {
-        if (!isDevModeEnabled()) {
+        if (!devUserService.isDevModeEnabled()) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
                     .contentType(MediaType.APPLICATION_JSON)
                     .body(DevAccountApiResponse.error("DEV_AUTH_ACCOUNT_CREATION_DISABLED",
                             "Developmental account creation API endpoint is disabled."));
         } else {
-
             String email = UUID.randomUUID().toString() + this.email;
             String password = UUID.randomUUID().toString();
 
             UserDto dto = new UserDto(email, password);
+
             if ("ROLE_ADMIN".equals(role)) {
                 devUserService.createAdminAccount(dto);
             } else {
@@ -90,9 +95,5 @@ public class DevAccountController {
 
             return ResponseEntity.ok(DevAccountApiResponse.success(successStatus, successMessage, email, password));
         }
-    }
-
-    private boolean isDevModeEnabled() {
-        return "TRUE".equalsIgnoreCase(devMode);
     }
 }

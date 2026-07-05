@@ -99,63 +99,9 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"
         integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI"
         crossorigin="anonymous"></script>
+    <script src="/auth/auth-routes.js"></script>
     <script src="/auth/auth-modal-flow.js"></script>
-
-    <script>
-        window.addEventListener("DOMContentLoaded", () => {
-            const { showLoadingModal, showStatusModal, showAuthStatusAfterLoading, setFormSubmitting } = AuthModalFlow.create();
-            const signupForm = document.getElementById("signupForm");
-
-            let isSubmitting = false;
-
-            signupForm.addEventListener("submit", async (e) => {
-                e.preventDefault();
-                const email = document.getElementById("email").value.trim();
-                const password = document.getElementById("password").value;
-                const confirmPassword = document.getElementById("confirmPassword").value;
-
-                if (isSubmitting) {
-                    return;
-                }
-
-                if (password !== confirmPassword) {
-                    showStatusModal("Passwords do not match.");
-                    return;
-                }
-
-                isSubmitting = true;
-                setFormSubmitting(signupForm, true);
-                showLoadingModal();
-                try {
-
-                    const payload = {
-                        email: email,
-                        password: password
-                    };
-
-                    const res = await fetch("/api/auth/register", {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        credentials: "include",
-                        body: JSON.stringify(payload)
-                    });
-
-                    const resText = await res.json();
-                    const status = resText?.status;
-                    const statusRedirects = {
-                        AUTH_REGISTER_SUCCESS: "/auth/login",
-                    };
-
-                    showAuthStatusAfterLoading(status, resText, { statusRedirects });
-                } catch (error) {
-                    showAuthStatusAfterLoading(undefined, undefined);
-                } finally {
-                    isSubmitting = false;
-                    setFormSubmitting(signupForm, false);
-                }
-            });
-        });
-    </script>
+    <script src="/auth/auth-page-flows.js"></script>
 </body>
 
 </html>

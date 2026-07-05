@@ -1,4 +1,4 @@
-package com.mo.mediaodyssey.auth.services;
+package com.mo.mediaodyssey.auth;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -30,6 +30,7 @@ import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 
 import com.mo.mediaodyssey.auth.repository.UserRepository;
 import com.mo.mediaodyssey.auth.security.MOOidcUserPrincipal;
+import com.mo.mediaodyssey.auth.services.MOOidcUserService;
 import com.mo.mediaodyssey.shared.model.User;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
@@ -97,7 +98,8 @@ class MOOidcUserServiceTest {
         String subject = "google-subject-456";
         when(userRepository.findByEmail(email)).thenReturn(Optional.empty());
         when(passwordEncoder.encode(anyString())).thenReturn("encoded-password");
-        when(userRepository.save(org.mockito.ArgumentMatchers.any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(userRepository.save(org.mockito.ArgumentMatchers.any(User.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
 
         OidcUser result = service.loadUser(oidcUserRequest(email, subject));
 

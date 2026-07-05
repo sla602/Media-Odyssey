@@ -48,6 +48,12 @@ public class FriendshipController {
     /**
      * Returns null if the user has a username, or a redirect string if they don't.
      * Used as a guard at the top of all gated endpoints.
+     *
+     * Note: Until commit 4e59ff56667f35a4244712b6edcba68d9247c56a (inclusive),
+     * requireUsername() was present in both FriendshipController and
+     * FriendshipService. However, FriendshipService does not use requireUsername().
+     * In the commit that follows, requireUsername() was removed from
+     * FriendshipService to avoid duplication.
      */
     private String requireUsername(Long userId, RedirectAttributes redirectAttributes) {
         if (!profileService.hasUsername(userId)) {

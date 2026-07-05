@@ -8,6 +8,7 @@ import com.mo.mediaodyssey.socialFeature.models.Report;
 import com.mo.mediaodyssey.socialFeature.repositories.CommentRepository;
 import com.mo.mediaodyssey.socialFeature.repositories.PostRepository;
 import com.mo.mediaodyssey.socialFeature.repositories.ReportRepository;
+import com.mo.mediaodyssey.shared.util.SqlLikeEscaper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -120,7 +121,10 @@ public class ModerationService {
 
     @Transactional(readOnly = true)
     public List<BoardRole> searchBoardMembers(Long boardId, String query) {
-        return roleRepo.searchMembersByBoardId(boardId, query);
+        if (query == null || query.isBlank()) {
+            return List.of();
+        }
+        return roleRepo.searchMembersByBoardId(boardId, SqlLikeEscaper.escape(query));
     }
 
     // ─── Role Management (Owner only) ────────────────────────────────

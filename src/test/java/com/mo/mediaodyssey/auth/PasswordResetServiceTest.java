@@ -42,6 +42,7 @@ import com.mo.mediaodyssey.auth.exception.PasswordResetNotAllowedException;
 import com.mo.mediaodyssey.auth.model.PasswordResetToken;
 import com.mo.mediaodyssey.auth.repository.PasswordResetTokenRepository;
 import com.mo.mediaodyssey.auth.repository.UserRepository;
+import com.mo.mediaodyssey.auth.services.AuthRateLimitService;
 import com.mo.mediaodyssey.auth.services.PasswordResetService;
 import com.mo.mediaodyssey.shared.model.User;
 import com.mo.mediaodyssey.shared.services.EmailService;
@@ -65,6 +66,9 @@ class PasswordResetServiceTest {
 
     @Mock
     private SessionRegistry sessionRegistry;
+
+    @Mock
+    private AuthRateLimitService authRateLimitService;
 
     @InjectMocks
     private PasswordResetService passwordResetService;
@@ -203,6 +207,7 @@ class PasswordResetServiceTest {
 
         verify(userRepository).save(user);
         verify(passwordResetTokenRepository).delete(tokenEntity);
+        verify(authRateLimitService).refundSuccessfulPasswordReset();
         verify(sessionRegistry).getAllSessions("local-user@mediaodyssey.example", false);
         verify(activeSession).expireNow();
     }
@@ -215,7 +220,7 @@ class PasswordResetServiceTest {
                 () -> passwordResetService.resetPassword(new ResetPasswordDto("missing-token", "new-password")))
                 .isInstanceOf(InvalidPasswordResetTokenException.class);
 
-        verifyNoInteractions(passwordEncoder, userRepository, sessionRegistry);
+        verifyNoInteractions(passwordEncoder, userRepository, sessionRegistry, authRateLimitService);
     }
 
     @Test
@@ -233,7 +238,7 @@ class PasswordResetServiceTest {
                 () -> passwordResetService.resetPassword(new ResetPasswordDto("locked-token", "new-password")))
                 .isInstanceOf(LockedException.class);
 
-        verifyNoInteractions(passwordEncoder, userRepository, sessionRegistry);
+        verifyNoInteractions(passwordEncoder, userRepository, sessionRegistry, authRateLimitService);
         verify(passwordResetTokenRepository, never()).delete(any());
     }
 
@@ -252,7 +257,7 @@ class PasswordResetServiceTest {
                 .isInstanceOf(PasswordResetNotAllowedException.class)
                 .hasMessageContaining("provider-based sign-in");
 
-        verifyNoInteractions(passwordEncoder, userRepository, sessionRegistry);
+        verifyNoInteractions(passwordEncoder, userRepository, sessionRegistry, authRateLimitService);
         verify(passwordResetTokenRepository, never()).delete(any());
     }
 }

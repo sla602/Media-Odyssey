@@ -69,6 +69,11 @@ public class CommunityController {
 
     /**
      * Persists LIKE or VIEW interactions into UserInteraction table.
+     *
+     * Note: the methods that call this method already normalize media type.
+     * Therefore, it is unnecessary to normalize it again here. We will assume it is
+     * normalized before calling this method. The parameter was changed from
+     * mediaType to normalizedMediaType to reflect this expectation.
      */
     private void saveInteraction(Long userId, String mediaApiId,
             String normalizedMediaType, String interactionType) {
