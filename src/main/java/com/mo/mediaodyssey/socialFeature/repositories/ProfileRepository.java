@@ -21,7 +21,7 @@ public interface ProfileRepository extends JpaRepository<Profile, Long> {
      * Only returns profiles that actually have a non-blank username.
      */
     @Query("SELECT p FROM Profile p " +
-            "WHERE LOWER(p.username) LIKE LOWER(CONCAT('%', :query, '%')) " +
+            "WHERE LOWER(p.username) LIKE LOWER(CONCAT('%', :query, '%')) ESCAPE '\\' " +
             "AND p.username IS NOT NULL " +
             "AND p.username <> '' " +
             "AND p.userId <> :excludeUserId")

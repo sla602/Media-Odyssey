@@ -7,11 +7,11 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.web.authentication.rememberme.TokenBasedRememberMeServices;
 import org.springframework.security.web.authentication.session.SessionAuthenticationStrategy;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.mo.mediaodyssey.auth.dto.ResendVerifyTokenDto;
+import com.mo.mediaodyssey.auth.config.AuthRoutes;
 import com.mo.mediaodyssey.auth.dto.AuthApiResponse;
 import com.mo.mediaodyssey.auth.dto.ForgotPasswordDto;
 import com.mo.mediaodyssey.auth.dto.LoginDto;
@@ -31,14 +31,16 @@ import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 
+/**
+ * Controller for handling authentication-related requests.
+ * 
+ * This controller provides API endpoints for user login, registration, email
+ * verification, password reset, and related authentication operations. It
+ * interacts with the authentication services to perform the necessary actions
+ * and returns appropriate responses to the client.
+ */
 @RestController
-@RequestMapping("/api/auth")
 public class AuthController {
-
-    // Inspired by:
-    // https://www.baeldung.com/spring-security-authentication-provider
-    // https://www.djamware.com/post/secure-your-restful-api-with-spring-boot-35-jwt-and-mongodb
-    // Debugging assisted by AI.
 
     @Autowired
     private MOLocalAuthService authService;
@@ -70,7 +72,7 @@ public class AuthController {
      *         and message is returned. Authentication exceptions are handled by
      *         AuthExceptionHandler.
      */
-    @PostMapping(value = "/login", consumes = MediaType.APPLICATION_JSON_VALUE)
+    @PostMapping(value = AuthRoutes.Api.LOGIN, consumes = MediaType.APPLICATION_JSON_VALUE)
     @Transactional
     public ResponseEntity<AuthApiResponse> login(@Valid @RequestBody LoginDto dto, HttpServletRequest request,
             HttpServletResponse response) {
@@ -81,7 +83,7 @@ public class AuthController {
         sessionAuthenticationStrategy.onAuthentication(authentication, request, response);
 
         // Persist the login using the same principal refresh flow shared by both local
-        // and OAuth login.
+        // and provider login.
         currentAccountService.refreshPrincipal(authentication, request, response);
 
         // Remember-me is login-only and opt-in.
@@ -95,9 +97,9 @@ public class AuthController {
         if (authentication.getPrincipal() instanceof User user && !user.isEmailVerified()) {
             return ResponseEntity.ok(AuthApiResponse.success("AUTH_LOGIN_SUCCESS_UNVERIFIED",
                     "Login successful. Please verify your email."));
+        } else {
+            return ResponseEntity.ok(AuthApiResponse.success("AUTH_LOGIN_SUCCESS", "Login successful."));
         }
-
-        return ResponseEntity.ok(AuthApiResponse.success("AUTH_LOGIN_SUCCESS", "Login successful"));
     }
 
     /**
@@ -110,13 +112,13 @@ public class AuthController {
      *         returned. Authentication exceptions are handled by
      *         AuthExceptionHandler.
      */
-    @PostMapping(value = "/register", consumes = MediaType.APPLICATION_JSON_VALUE)
+    @PostMapping(value = AuthRoutes.Api.REGISTER, consumes = MediaType.APPLICATION_JSON_VALUE)
     @Transactional
     public ResponseEntity<AuthApiResponse> register(@Valid @RequestBody UserDto dto) {
         authService.registerUser(dto);
 
         // Return OK - successfully registered
-        return ResponseEntity.ok(AuthApiResponse.success("AUTH_REGISTER_SUCCESS", "Registration successful"));
+        return ResponseEntity.ok(AuthApiResponse.success("AUTH_REGISTER_SUCCESS", "Registration successful."));
     }
 
     /**
@@ -126,7 +128,7 @@ public class AuthController {
      * @return The verification response containing success status and message.
      *         Authentication exceptions are handled by AuthExceptionHandler.
      */
-    @PostMapping(value = "/verify", produces = MediaType.APPLICATION_JSON_VALUE)
+    @PostMapping(value = AuthRoutes.Api.VERIFY, produces = MediaType.APPLICATION_JSON_VALUE)
     @Transactional
     public ResponseEntity<AuthApiResponse> verify(@Valid @RequestParam("token") String token) {
         VerifyTokenDto dto = new VerifyTokenDto(token);
@@ -144,7 +146,7 @@ public class AuthController {
      *         the error status and message is returned. Authentication exceptions
      *         are handled by AuthExceptionHandler.
      */
-    @PostMapping(value = "/resend", consumes = MediaType.APPLICATION_JSON_VALUE)
+    @PostMapping(value = AuthRoutes.Api.RESEND, consumes = MediaType.APPLICATION_JSON_VALUE)
     @Transactional
     public ResponseEntity<AuthApiResponse> resend(@Valid @RequestBody ResendVerifyTokenDto dto) {
         verificationService.resendVerification(dto);
@@ -160,7 +162,7 @@ public class AuthController {
      * @return Generic response to avoid leaking account existence. For eligible
      *         local accounts, a reset email is sent.
      */
-    @PostMapping(value = "/password/forgot", consumes = MediaType.APPLICATION_JSON_VALUE)
+    @PostMapping(value = AuthRoutes.Api.PASSWORD_FORGOT, consumes = MediaType.APPLICATION_JSON_VALUE)
     @Transactional
     public ResponseEntity<AuthApiResponse> forgotPassword(@Valid @RequestBody ForgotPasswordDto dto) {
         passwordResetService.requestPasswordReset(dto);
@@ -175,7 +177,7 @@ public class AuthController {
      * @param dto The reset data containing token and new password.
      * @return Successful reset response when token is valid and not expired.
      */
-    @PostMapping(value = "/password/reset", consumes = MediaType.APPLICATION_JSON_VALUE)
+    @PostMapping(value = AuthRoutes.Api.PASSWORD_RESET, consumes = MediaType.APPLICATION_JSON_VALUE)
     @Transactional
     public ResponseEntity<AuthApiResponse> resetPassword(@Valid @RequestBody ResetPasswordDto dto) {
         passwordResetService.resetPassword(dto);

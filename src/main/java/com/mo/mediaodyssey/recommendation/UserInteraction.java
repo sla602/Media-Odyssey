@@ -5,7 +5,10 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 @Entity
-@Table(name = "user_interaction")
+@Table(name = "user_interaction",
+        indexes = {
+                @Index(name = "idx_ui_user_type_media", columnList = "user_id, interaction_type, media_api_id")
+        })
 public class UserInteraction {
 
     @Id
@@ -24,7 +27,10 @@ public class UserInteraction {
     private String imageUrl;
 
     @ElementCollection
-    @CollectionTable(name = "user_interaction_genres", joinColumns = @JoinColumn(name = "interaction_id"))
+    @CollectionTable(name = "user_interaction_genres", joinColumns = @JoinColumn(name = "interaction_id"),
+            indexes = {
+                    @Index(name = "idx_ui_genres_interaction", columnList = "interaction_id")
+            })
     @Column(name = "genre")
     private List<String> genres;
 

@@ -10,7 +10,11 @@ import org.springframework.security.authentication.AuthenticationCredentialsNotF
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
 
 import com.mo.mediaodyssey.shared.model.User;
 
@@ -25,11 +29,11 @@ import java.util.Set;
  *
  * Current iteration scope:
  * - Top 10 ranking page
+ * - Fast-Rising section built from likes in the last 7 days
  * - category filter
  * - view / like interaction recording
  *
  * Deferred to later iteration:
- * - Fast-Rising section
  * - user-submitted star rating interaction
  */
 @Controller
@@ -65,16 +69,21 @@ public class CommunityController {
 
     /**
      * Persists LIKE or VIEW interactions into UserInteraction table.
+     *
+     * Note: the methods that call this method already normalize media type.
+     * Therefore, it is unnecessary to normalize it again here. We will assume it is
+     * normalized before calling this method. The parameter was changed from
+     * mediaType to normalizedMediaType to reflect this expectation.
      */
     private void saveInteraction(Long userId, String mediaApiId,
-            String mediaType, String interactionType) {
+            String normalizedMediaType, String interactionType) {
         if (userId == null)
             return;
 
         UserInteraction interaction = new UserInteraction();
         interaction.setUserId(userId);
         interaction.setMediaApiId(mediaApiId);
-        interaction.setMediaType(mediaRankingService.normalizeMediaType(mediaType));
+        interaction.setMediaType(normalizedMediaType);
         interaction.setInteractionType(interactionType);
         interaction.setTimestamp(LocalDateTime.now());
         interaction.setGenres(List.of());
@@ -85,7 +94,8 @@ public class CommunityController {
      * Loads the Community Favourites page.
      * category param is kept for URL compatibility but is now handled client-side.
      *
-     * Iteration 3: Fast-Rising section now populated via getFastRising5().
+     * Iteration 3: Fast-Rising section is populated via
+     * getFastRising5PerCategory().
      */
     @GetMapping
     public String communityPage(Model model,
@@ -94,23 +104,66 @@ public class CommunityController {
     }
 
     /**
-     * JSON API: returns ALL Top 10 + Fast-Rising data in one shot so the
-     * front-end can filter client-side (same pattern as likedMedia.js).
+     * JSON API for the Community Favourites page.
+     *
+     * The response includes two ranking maps:
+     * - top10: the overall Top 10 and the Top 10 for each category.
+     * - trending: the Fast-Rising lists for each category plus the derived ALL
+     * bucket.
+     *
+     * The ALL bucket in trending is not queried separately. It is built by the
+     * service from the category-specific Fast-Rising results.
      *
      * Response shape:
      * {
-     *   "top10":    [ RankedMediaResponse, ... ],   // all categories, sorted by score
-     *   "trending": [ RankedMediaResponse, ... ]    // fast-rising top 5 (past 7 days)
+     * "top10": {
+     * "ALL": [ ...top 10 overall sorted by popularity... ], // 10 items
+     * "MOVIE": [ ...10 items per category... ],
+     * "GAME": [ ...10 items per category... ],
+     * "SONG": [ ...10 items per category... ]
+     * },
+     * "trending": {
+     * "ALL": [ ...top 5 overall sorted by trending score... ], // 5 items
+     * "MOVIE": [ ...5 items per category... ],
+     * "GAME": [ ...5 items per category... ],
+     * "SONG": [ ...5 items per category... ]
+     * },
+     * "userLikedMedia": [...],
+     * "userViewedMedia": [...]
      * }
      */
     @GetMapping("/data")
     @ResponseBody
-    public ResponseEntity<Map<String, Object>> communityData() {
-        List<RankedMediaResponse> top10    = mediaRankingService.getTop10();
-        List<RankedMediaResponse> trending = mediaRankingService.getFastRising5();
-        return ResponseEntity.ok(Map.of(
-                "top10",    top10,
-                "trending", trending));
+    public ResponseEntity<Map<String, Object>> communityData(Authentication auth) {
+        try {
+            java.util.Map<String, Object> response = new java.util.LinkedHashMap<>();
+            response.put("top10", mediaRankingService.getTop10PerCategory());
+            response.put("trending", mediaRankingService.getFastRising5PerCategory());
+
+            // Include current user's interactions
+            Long userId = getUserId(auth);
+            List<String> userLikedMedia = new java.util.ArrayList<>();
+            List<String> userViewedMedia = new java.util.ArrayList<>();
+
+            if (userId != null) {
+                List<UserInteraction> userInteractions = userInteractionRepository.findByUserIdWithGenres(userId);
+                for (UserInteraction interaction : userInteractions) {
+                    String key = interaction.getMediaType() + "|" + interaction.getMediaApiId();
+                    if ("LIKE".equals(interaction.getInteractionType())) {
+                        userLikedMedia.add(key);
+                    } else if ("VIEW".equals(interaction.getInteractionType())) {
+                        userViewedMedia.add(key);
+                    }
+                }
+            }
+
+            response.put("userLikedMedia", userLikedMedia);
+            response.put("userViewedMedia", userViewedMedia);
+            return ResponseEntity.ok(response);
+        } finally {
+            // Clear request-scoped cache after building response
+            mediaRankingService.clearRequestCache();
+        }
     }
 
     /**

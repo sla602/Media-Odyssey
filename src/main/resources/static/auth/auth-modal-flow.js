@@ -1,23 +1,26 @@
 window.AuthModalFlow = (() => {
-    const DEFAULT_AUTH_ERROR_MESSAGE = "An unexpected error occurred. Please try again later.";
+    const DEFAULT_AUTH_ERROR_MESSAGE = "Something went wrong on our end. Please try again later.";
+    const DEFAULT_REQUIRED_FIELDS_MESSAGE = "Please fill out all required fields to continue.";
+    const AUTH_INVALID_OR_NOT_FOUND = "Invalid email or password. Please try again.";
 
     const AUTH_STATUS_MESSAGES = Object.freeze({
         AUTH_LOGIN_SUCCESS: "Login successful.",
-        AUTH_LOGIN_SUCCESS_UNVERIFIED: "Login successful. Your email is not verified yet. Please verify your email when possible.",
-        AUTH_REGISTER_SUCCESS: "Account created successfully. Please check your email to verify your account.",
-        AUTH_RESEND_SUCCESS: "Successfully re-sent email verification link. Please check your email to verify your account.",
-        AUTH_VERIFY_SUCCESS: "Your email has been verified successfully. You can now log in using the button below.",
-        AUTH_PASSWORD_RESET_EMAIL_SENT: "If an eligible account exists, a password reset link has been sent. Please check your email.",
-        AUTH_PASSWORD_RESET_SUCCESS: "Your password has been reset successfully. Please log in with your new password.",
-        AUTH_INVALID_PASSWORD_RESET_TOKEN: "This password reset link is invalid or expired. Please request a new reset link.",
-        AUTH_OAUTH_SIGN_IN_REQUIRED: "This account was created with an OAuth provider. Please continue via OAuth provider.",
-        AUTH_INVALID_CREDENTIALS: "The email and/or password provided is incorrect. Please try again.",
-        AUTH_USER_NOT_FOUND: "The email and/or password provided is incorrect. Please try again.",
-        AUTH_DISABLED: "Your account is disabled. Please contact support.",
-        AUTH_LOCKED: "Your account is locked. Please contact support.",
-        AUTH_USER_ALREADY_VERIFIED: "The email is already registered. Please log in.",
-        AUTH_INVALID_VERIFICATION_TOKEN: "This verification link is invalid or expired. If you have already previously verified your email, please continue to log in. Otherwise, please request a new one.",
-        AUTH_BAD_REQUEST: "There was a problem with the input submitted. Please try again.",
+        AUTH_LOGIN_SUCCESS_UNVERIFIED: "Login successful. Don't forget to verify your email when you can.",
+        AUTH_REGISTER_SUCCESS: "Account created! Please check your inbox for a verification link.",
+        AUTH_RESEND_SUCCESS: "We've sent a new verification link. Please check your inbox.",
+        AUTH_VERIFY_SUCCESS: "Your email is verified! You can now log in.",
+        AUTH_PASSWORD_RESET_EMAIL_SENT: "If there's an account linked to that email, we've sent a reset link. Please check your inbox.",
+        AUTH_PASSWORD_RESET_SUCCESS: "Your password has been reset. You can now log in.",
+        AUTH_RATE_LIMITED: "Too many attempts. Please wait a moment and try again.",
+        AUTH_INVALID_PASSWORD_RESET_TOKEN: "This reset link is invalid or has expired. Please request a new one.",
+        AUTH_OAUTH_SIGN_IN_REQUIRED: "Looks like you signed up with a social account (like Google). Please log in using that service.",
+        AUTH_INVALID_CREDENTIALS: AUTH_INVALID_OR_NOT_FOUND,
+        AUTH_USER_NOT_FOUND: AUTH_INVALID_OR_NOT_FOUND,
+        AUTH_DISABLED: "Your account has been disabled. Please contact support for help.",
+        AUTH_LOCKED: "Your account has been locked. Please contact support for help.",
+        AUTH_USER_ALREADY_VERIFIED: "This email is already registered. Please log in instead.",
+        AUTH_INVALID_VERIFICATION_TOKEN: "This link is invalid or has expired. If you already verified your email, you can just log in. Otherwise, please request a new link.",
+        AUTH_BAD_REQUEST: "Please check your information and try again.",
         AUTH_INTERNAL_ERROR: DEFAULT_AUTH_ERROR_MESSAGE,
     });
 
@@ -142,6 +145,7 @@ window.AuthModalFlow = (() => {
                 redirectUrl = null,
                 statusRedirects = {},
                 statusMessages = {},
+                redirectOnShownStatuses = [],
             } = {}
         ) {
             const apiMessage = typeof resBody?.message === "string" && resBody.message.length > 0
@@ -151,8 +155,13 @@ window.AuthModalFlow = (() => {
             const resolvedRedirect = typeof status === "string" && Object.prototype.hasOwnProperty.call(statusRedirects, status)
                 ? statusRedirects[status]
                 : redirectUrl;
+            const shouldRedirectOnShown = typeof status === "string"
+                && Array.isArray(redirectOnShownStatuses)
+                && redirectOnShownStatuses.includes(status);
 
-            showStatusModalAfterLoading(message, resolvedRedirect);
+            showStatusModalAfterLoading(message, resolvedRedirect, {
+                redirectOnShown: shouldRedirectOnShown,
+            });
         }
 
         function setFormSubmitting(formEl, isSubmitting) {
@@ -167,6 +176,16 @@ window.AuthModalFlow = (() => {
             });
 
             formEl.setAttribute("aria-busy", String(isSubmitting));
+        }
+
+        function validateRequiredFields(values, message = DEFAULT_REQUIRED_FIELDS_MESSAGE) {
+            const hasEmptyValue = values.some((value) => typeof value !== "string" || value.trim().length === 0);
+            if (hasEmptyValue) {
+                showStatusModal(message);
+                return false;
+            }
+
+            return true;
         }
 
         statusModalEl.addEventListener("hidden.bs.modal", () => {
@@ -213,6 +232,7 @@ window.AuthModalFlow = (() => {
             showStatusModalAfterLoading,
             showAuthStatusAfterLoading,
             setFormSubmitting,
+            validateRequiredFields,
         };
     }
 

@@ -33,5 +33,14 @@ build/
 .vscode/
 
 .env
+.env.*
+!.env.example
 backup.sql
 .DS_Store
+
+# Keep the access-log bind mount source tracked, but ignore generated logs.
+logs/*
+!logs/.gitkeep
+!.github/workflows/
+.github/
+work/

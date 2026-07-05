@@ -63,10 +63,10 @@ public class SearchController {
     }
 
     public SearchController(UserInteractionRepository userInteractionRepository,
-            CurrentAccountService currentAccountService) {
+            CurrentAccountService currentAccountService, RestTemplate restTemplate) {
         this.userInteractionRepository = userInteractionRepository;
         this.currentAccountService = currentAccountService;
-        this.restTemplate = new RestTemplate();
+        this.restTemplate = restTemplate;
         this.objectMapper = new ObjectMapper();
     }
 

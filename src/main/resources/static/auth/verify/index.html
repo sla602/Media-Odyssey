@@ -72,58 +72,9 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"
         integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI"
         crossorigin="anonymous"></script>
+    <script src="/auth/auth-routes.js"></script>
     <script src="/auth/auth-modal-flow.js"></script>
-
-    <script>
-        window.addEventListener("DOMContentLoaded", () => {
-            const { showLoadingModal, showStatusModalAfterLoading, showAuthStatusAfterLoading, setFormSubmitting } = AuthModalFlow.create();
-            const verifyForm = document.getElementById("verifyForm");
-            const verifyBtn = document.getElementById("verifyBtn");
-            const token = new URLSearchParams(window.location.search).get("token");
-
-            let isSubmitting = false;
-
-            if (!token) {
-                verifyBtn.disabled = true;
-                verifyForm.setAttribute("aria-busy", "false");
-                showStatusModalAfterLoading("This verification link is missing a token. Please request a new verification email.", "/auth/resend");
-                return;
-            }
-
-            verifyForm.addEventListener("submit", async (e) => {
-                e.preventDefault();
-
-                if (isSubmitting) {
-                    return;
-                }
-
-                isSubmitting = true;
-                setFormSubmitting(verifyForm, true);
-                showLoadingModal();
-                try {
-                    const res = await fetch(`/api/auth/verify?token=${encodeURIComponent(token)}`, {
-                        method: "POST",
-                        headers: { "Accept": "application/json" },
-                        credentials: "include",
-                    });
-
-                    const resText = await res.json();
-                    const status = resText?.status;
-                    const statusRedirects = {
-                        AUTH_VERIFY_SUCCESS: "/auth/login",
-                        AUTH_INVALID_VERIFICATION_TOKEN: "/auth/resend",
-                    };
-
-                    showAuthStatusAfterLoading(status, resText, { statusRedirects });
-                } catch (error) {
-                    showAuthStatusAfterLoading(undefined, undefined);
-                } finally {
-                    isSubmitting = false;
-                    setFormSubmitting(verifyForm, false);
-                }
-            });
-        });
-    </script>
+    <script src="/auth/auth-page-flows.js"></script>
 </body>
 
 </html>

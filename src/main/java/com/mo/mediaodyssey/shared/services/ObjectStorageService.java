@@ -36,10 +36,10 @@ public class ObjectStorageService {
     @Autowired
     private S3Client s3Client;
 
-    @Value("${storage.bucket:}")
+    @Value("${storage.bucket}")
     private String bucket;
 
-    @Value("${spring.application.name:App}")
+    @Value("${spring.application.name}")
     private String appName;
 
     /**

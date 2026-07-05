@@ -11,7 +11,7 @@ import org.springframework.security.web.context.HttpSessionSecurityContextReposi
 import org.springframework.stereotype.Service;
 
 import com.mo.mediaodyssey.auth.repository.UserRepository;
-import com.mo.mediaodyssey.auth.security.MOOAuth2UserPrincipal;
+import com.mo.mediaodyssey.auth.security.MOOidcUserPrincipal;
 import com.mo.mediaodyssey.shared.model.User;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -78,8 +78,8 @@ public class CurrentAccountService {
                 return user;
             }
 
-            if (principal instanceof MOOAuth2UserPrincipal oauthPrincipal) {
-                return oauthPrincipal.getUser();
+            if (principal instanceof MOOidcUserPrincipal oidcPrincipal) {
+                return oidcPrincipal.getUser();
             }
 
             throw new AuthenticationCredentialsNotFoundException(

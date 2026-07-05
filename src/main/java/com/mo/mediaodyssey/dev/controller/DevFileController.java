@@ -1,6 +1,7 @@
 package com.mo.mediaodyssey.dev.controller;
 
 import com.mo.mediaodyssey.dev.dto.DevFileApiResponse;
+import com.mo.mediaodyssey.dev.services.DevUserService;
 import com.mo.mediaodyssey.shared.services.ObjectStorageService;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,17 +24,20 @@ public class DevFileController {
     @Autowired
     private ObjectStorageService objectStorageService;
 
-    @Value("${dev.mode.enabled:FALSE}")
+    @Value("${dev.mode.enabled}")
     private String devMode;
 
-    @Value("${storage.public-url:}")
+    @Value("${storage.public-url}")
     private String publicUrl;
+
+    @Autowired
+    private DevUserService devUserService;
 
     /**
      * API endpoint to upload a file to object storage. For developmental use only.
-     * Must be enabled via environment variable. Once enabled, access is
-     * unrestricted.
-     * 
+     * Must be enabled via environment variable. Once enabled, access will be
+     * permitted based on the environment variable setting.
+     *
      * @param file Multipart file to be uploaded. Must be sent as form data with key
      *             "file".
      * @return URL of the uploaded file in body upon success
@@ -41,7 +45,7 @@ public class DevFileController {
     @PostMapping(value = "/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<DevFileApiResponse> uploadFile(@RequestParam("file") MultipartFile file) {
         try {
-            if (!isDevModeEnabled()) {
+            if (!devUserService.isDevModeEnabled()) {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN)
                         .contentType(MediaType.APPLICATION_JSON)
                         .body(DevFileApiResponse.error("DEV_FILE_DISABLED",
@@ -60,10 +64,20 @@ public class DevFileController {
         }
     }
 
+    /**
+     * API endpoint to delete a file from object storage. For developmental use
+     * only. Must be enabled via environment variable. Once enabled, access will be
+     * permitted based on the environment variable setting.
+     *
+     * @param key The key of the file to be deleted. Must be sent as a query
+     *            parameter.
+     * @return 200 OK with success message upon successful deletion, or appropriate
+     *         error response.
+     */
     @DeleteMapping(value = "/delete")
     public ResponseEntity<DevFileApiResponse> deleteFile(@RequestParam("key") String key) {
         try {
-            if (!isDevModeEnabled()) {
+            if (!devUserService.isDevModeEnabled()) {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN)
                         .contentType(MediaType.APPLICATION_JSON)
                         .body(DevFileApiResponse.error("DEV_FILE_DISABLED",
@@ -80,9 +94,18 @@ public class DevFileController {
         }
     }
 
+    /**
+     * API endpoint to get a redirect URL for a file in object storage. For
+     * developmental use only. Must be enabled via environment variable. Once
+     * enabled, access will be permitted based on the environment variable setting.
+     *
+     * @param key The key of the file for which to get the redirect URL.
+     * @return 302 Found with Location header set to the file's public URL upon
+     *         success, or appropriate error response.
+     */
     @GetMapping(value = "/get")
     public ResponseEntity<DevFileApiResponse> getFileRedirect(@RequestParam("key") String key) {
-        if (!isDevModeEnabled()) {
+        if (!devUserService.isDevModeEnabled()) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
                     .contentType(MediaType.APPLICATION_JSON)
                     .body(DevFileApiResponse.error("DEV_FILE_DISABLED",
@@ -96,9 +119,5 @@ public class DevFileController {
                     .header("Location", redirectUrl)
                     .build();
         }
-    }
-
-    private boolean isDevModeEnabled() {
-        return "TRUE".equalsIgnoreCase(devMode);
     }
 }

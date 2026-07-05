@@ -12,10 +12,22 @@ import java.util.List;
 @Repository
 public interface UserInteractionRepository extends JpaRepository<UserInteraction, Long> {
 
-    // Get all interactions for a user
+    // Get all interactions for a user, eagerly loading genres so callers can
+    // safely read the collection outside an open persistence context.
+    @Query("SELECT DISTINCT ui FROM UserInteraction ui LEFT JOIN FETCH ui.genres WHERE ui.userId = :userId")
+    List<UserInteraction> findByUserIdWithGenres(@Param("userId") Long userId);
+
+    // Backwards-compatible plain lookup used by existing tests and callers that
+    // only need the interaction rows.
     List<UserInteraction> findByUserId(Long userId);
 
-    // Get all interactions of a specific type for a user (VIEW, LIKE, RATE)
+    // Get all interactions of a specific type for a user (VIEW, LIKE, RATE),
+    // with genres eagerly loaded.
+    @Query("SELECT DISTINCT ui FROM UserInteraction ui LEFT JOIN FETCH ui.genres WHERE ui.userId = :userId AND ui.interactionType = :interactionType")
+    List<UserInteraction> findByUserIdAndInteractionTypeWithGenres(@Param("userId") Long userId,
+            @Param("interactionType") String interactionType);
+
+    // Backwards-compatible plain lookup used by existing tests and callers.
     List<UserInteraction> findByUserIdAndInteractionType(Long userId, String interactionType);
 
     // Check if a specific interaction already exists for a user + media item
@@ -31,10 +43,31 @@ public interface UserInteractionRepository extends JpaRepository<UserInteraction
     @Query("DELETE FROM UserInteraction ui WHERE ui.userId = :userId AND ui.mediaApiId = :mediaApiId AND ui.interactionType = 'LIKE'")
     void deleteLikeByUserIdAndMediaApiId(@Param("userId") Long userId, @Param("mediaApiId") String mediaApiId);
 
+    /**
+     * Backfills missing image URLs for all stored interactions matching a media
+     * item.
+     *
+     * The Community Favourites page uses the stored image URL when present and
+     * only fetches external metadata when the DB does not already have one.
+     */
+    @Transactional
+    @Modifying
+    @Query("""
+            UPDATE UserInteraction ui
+            SET ui.imageUrl = :imageUrl
+            WHERE ui.mediaApiId = :mediaApiId
+              AND ui.mediaType = :mediaType
+              AND (ui.imageUrl IS NULL OR ui.imageUrl = '')
+            """)
+    int updateImageUrlForMediaIfMissing(@Param("mediaApiId") String mediaApiId,
+            @Param("mediaType") String mediaType,
+            @Param("imageUrl") String imageUrl);
+
     // ── Community Favourites Ranking Queries ──────────────────────────────────
 
     /**
-     * Aggregates a Point System score per mediaApiId across all users.
+     * Aggregates a Point System score per mediaApiId across all users
+     * and all time.
      *
      * Formula: score = (VIEW count × 1) + (LIKE count × 10)
      *
@@ -80,27 +113,40 @@ public interface UserInteractionRepository extends JpaRepository<UserInteraction
     List<Object[]> findTop10ByScoreAndMediaType(@Param("mediaType") String mediaType);
 
     /**
-     * Fast-Rising Top 5: items with the most LIKE interactions in the past 7 days.
-     * Used for the trending section on the Community Favourites page.
+     * Fast-Rising Top 5 per category.
+     *
+     * This query returns the most-liked items from the last 7 days for one
+     * media type at a time. The service calls it three times (MOVIE, GAME, and
+     * SONG) and then builds the ALL bucket by combining those results and
+     * sorting them again by weekly like count.
      *
      * Returns a list of Object[] where:
      * [0] = mediaApiId (String)
      * [1] = mediaType (String)
      * [2] = likeCount (Long)
+     * [3] = title (String)
+     * [4] = artist (String)
+     * [5] = imageUrl (String)
      */
     @Query("""
-                SELECT ui.mediaApiId, ui.mediaType, COUNT(ui) AS likeCount
+                SELECT ui.mediaApiId, ui.mediaType, COUNT(ui) AS likeCount,
+                       COALESCE(MAX(ui.title), ''),
+                       COALESCE(MAX(ui.artist), ''),
+                       COALESCE(MAX(ui.imageUrl), '')
                 FROM UserInteraction ui
                 WHERE ui.interactionType = 'LIKE'
+                AND ui.mediaType = :mediaType
                 AND ui.timestamp >= :since
                 GROUP BY ui.mediaApiId, ui.mediaType
                 ORDER BY likeCount DESC
                 LIMIT 5
             """)
-    List<Object[]> findTop5TrendingLikesSince(@Param("since") java.time.LocalDateTime since);
+    List<Object[]> findTop5TrendingLikesSinceAndMediaType(@Param("since") java.time.LocalDateTime since,
+            @Param("mediaType") String mediaType);
 
     /**
-     * Returns likes and views count separately per mediaApiId for Top 10 ranking.
+     * Returns likes and views count separately per mediaApiId for Top 10 ranking
+     * using all-time interactions.
      *
      * Returns a list of Object[] where:
      * [0] = mediaApiId (String)
@@ -108,6 +154,9 @@ public interface UserInteractionRepository extends JpaRepository<UserInteraction
      * [2] = totalScore (Long)
      * [3] = likeCount (Long)
      * [4] = viewCount (Long)
+     * [5] = title (String)
+     * [6] = artist (String)
+     * [7] = imageUrl (String)
      */
     @Query("""
                 SELECT ui.mediaApiId, ui.mediaType,
@@ -116,7 +165,10 @@ public interface UserInteractionRepository extends JpaRepository<UserInteraction
                            WHEN 'VIEW' THEN 1
                            ELSE 0 END) AS totalScore,
                        SUM(CASE WHEN ui.interactionType = 'LIKE' THEN 1 ELSE 0 END) AS likeCount,
-                       SUM(CASE WHEN ui.interactionType = 'VIEW' THEN 1 ELSE 0 END) AS viewCount
+                       SUM(CASE WHEN ui.interactionType = 'VIEW' THEN 1 ELSE 0 END) AS viewCount,
+                       COALESCE(MAX(ui.title), ''),
+                       COALESCE(MAX(ui.artist), ''),
+                       COALESCE(MAX(ui.imageUrl), '')
                 FROM UserInteraction ui
                 GROUP BY ui.mediaApiId, ui.mediaType
                 ORDER BY totalScore DESC
@@ -126,6 +178,17 @@ public interface UserInteractionRepository extends JpaRepository<UserInteraction
 
     /**
      * Same as findTop10ByScoreWithCounts but filtered to a specific media type.
+     * Includes metadata (title, artist, imageUrl) from stored interactions.
+     *
+     * Returns a list of Object[] where:
+     * [0] = mediaApiId (String)
+     * [1] = mediaType (String)
+     * [2] = totalScore (Long)
+     * [3] = likeCount (Long)
+     * [4] = viewCount (Long)
+     * [5] = title (String)
+     * [6] = artist (String)
+     * [7] = imageUrl (String)
      */
     @Query("""
                 SELECT ui.mediaApiId, ui.mediaType,
@@ -134,7 +197,10 @@ public interface UserInteractionRepository extends JpaRepository<UserInteraction
                            WHEN 'VIEW' THEN 1
                            ELSE 0 END) AS totalScore,
                        SUM(CASE WHEN ui.interactionType = 'LIKE' THEN 1 ELSE 0 END) AS likeCount,
-                       SUM(CASE WHEN ui.interactionType = 'VIEW' THEN 1 ELSE 0 END) AS viewCount
+                       SUM(CASE WHEN ui.interactionType = 'VIEW' THEN 1 ELSE 0 END) AS viewCount,
+                       COALESCE(MAX(ui.title), ''),
+                       COALESCE(MAX(ui.artist), ''),
+                       COALESCE(MAX(ui.imageUrl), '')
                 FROM UserInteraction ui
                 WHERE ui.mediaType = :mediaType
                 GROUP BY ui.mediaApiId, ui.mediaType
@@ -142,7 +208,6 @@ public interface UserInteractionRepository extends JpaRepository<UserInteraction
                 LIMIT 10
             """)
     List<Object[]> findTop10ByScoreWithCountsAndMediaType(@Param("mediaType") String mediaType);
-
 
     /**
      * Find users (other than the given user) who have LIKED media of a
@@ -155,19 +220,19 @@ public interface UserInteractionRepository extends JpaRepository<UserInteraction
      * @param mediaType "MOVIE", "GAME", or "SONG"
      */
     @Query("""
-    SELECT other.userId, COUNT(other.mediaApiId) AS overlap
-    FROM UserInteraction other
-    WHERE other.interactionType = 'LIKE'
-      AND other.mediaType = :mediaType
-      AND other.userId <> :userId
-      AND other.mediaApiId IN (
-          SELECT mine.mediaApiId FROM UserInteraction mine
-          WHERE mine.userId = :userId
-            AND mine.interactionType = 'LIKE'
-            AND mine.mediaType = :mediaType)
-    GROUP BY other.userId
-    ORDER BY overlap DESC
-""")
+                SELECT other.userId, COUNT(other.mediaApiId) AS overlap
+                FROM UserInteraction other
+                WHERE other.interactionType = 'LIKE'
+                  AND other.mediaType = :mediaType
+                  AND other.userId <> :userId
+                  AND other.mediaApiId IN (
+                      SELECT mine.mediaApiId FROM UserInteraction mine
+                      WHERE mine.userId = :userId
+                        AND mine.interactionType = 'LIKE'
+                        AND mine.mediaType = :mediaType)
+                GROUP BY other.userId
+                ORDER BY overlap DESC
+            """)
     List<Object[]> findUsersWithLikeOverlapByMediaType(
             @Param("userId") Long userId,
             @Param("mediaType") String mediaType);

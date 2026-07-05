@@ -20,9 +20,6 @@ import com.mo.mediaodyssey.auth.services.MOUserDetailsService;
 @Component
 public class MOAuthenticationProvider implements AuthenticationProvider {
 
-    // Inspired by:
-    // https://www.baeldung.com/spring-security-authentication-provider
-
     @Autowired
     private MOUserDetailsService userDetailsService;
 
@@ -36,8 +33,8 @@ public class MOAuthenticationProvider implements AuthenticationProvider {
 
         UserDetails user = userDetailsService.loadUserByUsername(email);
         if (user instanceof User moUser && moUser.isOauthAccount()) {
-            // Local password login is not allowed for OAuth-only accounts.
-            throw new OAuthSignInRequiredException("This account uses OAuth sign-in.");
+            // Local password login is not allowed for provider-based sign-in accounts.
+            throw new OAuthSignInRequiredException("This account uses provider-based sign-in.");
         }
 
         if (!passwordEncoder.matches(password, user.getPassword())) {

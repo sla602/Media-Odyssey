@@ -13,16 +13,13 @@ import org.springframework.security.authentication.DisabledException;
 @Service
 @Validated
 public class EmailService {
-    // Inspired by
-    // https://github.com/resend/resend-examples/blob/main/java-resend-examples/spring_boot_app/src/main/java/com/resend/springboot/EmailController.java
-    // Debugging assisted by AI.
 
     private final Resend resend;
     private final String from;
 
     public EmailService(
-            @Value("${resend.api.key:}") String apiKey,
-            @Value("${email.from:}") String from) {
+            @Value("${resend.api.key}") String apiKey,
+            @Value("${email.from}") String from) {
         this.resend = new Resend(apiKey);
         this.from = from;
     }

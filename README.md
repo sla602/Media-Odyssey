@@ -1,8 +1,5 @@
 # Media Odyssey
 
-Link to GitHub: https://github.com/sla602/Media-Odyssey  
-Link to Render: https://media-odyssey.onrender.com
-
 ## Project abstract
 
 Media Odyssey (MO) is a browser-based web application designed to help users discover movies, songs, and games without needing to search across multiple social media platforms. Instead of passively scrolling through unrelated content, users can actively explore curated recommendation boards centred around specific interests such as moods, hobbies, genres, or personality traits. By combining personalised recommendation logic, community interaction, and external media APIs, Media Odyssey aims to create a focused, social, and customizable media discovery experience. The application is intended for general audiences and emphasises both entertainment and meaningful discovery.

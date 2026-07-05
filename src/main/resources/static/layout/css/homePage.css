@@ -21,6 +21,40 @@ body {
     font-family: 'Space Grotesk';
 }
 
+/* FLASH MESSAGE */
+/* Used to show flash messages. Currently used to remind unverified users to verify their email address. */
+.flash-message {
+    max-width: 1100px;
+    margin: 0 0 1rem 0;
+    padding: 0.85rem 1.2rem;
+    border-radius: 10px;
+    font-size: 0.92rem;
+    font-weight: 500;
+    font-family: 'Space Grotesk';
+    text-align: center;
+    animation: flashSlideIn 0.3s ease;
+}
+
+.flash-warning {
+    color: #fde68a;
+    background: linear-gradient(145deg,
+    rgba(245, 158, 11, 0.15) 0%,
+    rgba(180, 83, 9, 0.1) 100%);
+    border: 1px solid rgba(245, 158, 11, 0.4);
+    box-shadow: 0 4px 16px -6px rgba(245, 158, 11, 0.25);
+}
+
+@keyframes flashSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-8px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
 /* === PERSONAL BOARDS DISPLAY === */ 
 .personal-boards-container{
     position: relative; 

@@ -1,19 +1,19 @@
 package com.mo.mediaodyssey.auth.services;
 
-import java.security.Principal;
 import java.util.Date;
 import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.authentication.LockedException;
 import org.springframework.security.core.session.SessionInformation;
 import org.springframework.security.core.session.SessionRegistry;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
+import com.mo.mediaodyssey.auth.config.AuthRoutes;
 import com.mo.mediaodyssey.auth.dto.ForgotPasswordDto;
 import com.mo.mediaodyssey.auth.dto.ResetPasswordDto;
 import com.mo.mediaodyssey.auth.exception.InvalidPasswordResetTokenException;
@@ -27,7 +27,7 @@ import com.mo.mediaodyssey.shared.services.EmailService;
 @Service
 public class PasswordResetService {
 
-    @Value("${spring.application.name:App}")
+    @Value("${spring.application.name}")
     private String appName;
 
     @Value("${email.resettoken.expiry-in-minutes}")
@@ -48,6 +48,9 @@ public class PasswordResetService {
     @Autowired
     private SessionRegistry sessionRegistry;
 
+    @Autowired
+    private AuthRateLimitService authRateLimitService;
+
     @Transactional
     public void requestPasswordReset(ForgotPasswordDto dto) {
         User user = userRepository.findByEmail(dto.email()).orElse(null);
@@ -55,8 +58,12 @@ public class PasswordResetService {
             return;
         }
 
+        if (!user.isAccountNonLocked()) {
+            throw new LockedException("User is locked. Cannot reset password for locked user. Contact support.");
+        }
+
         if (user.isOauthAccount()) {
-            throw buildOauthResetNotAllowed();
+            throw buildProviderResetNotAllowed();
         }
 
         PasswordResetToken existingToken = user.getPasswordResetToken();
@@ -69,10 +76,12 @@ public class PasswordResetService {
         String token = UUID.randomUUID().toString();
         PasswordResetToken passwordResetToken = new PasswordResetToken(token, user, tokenExpiryInMinutes);
 
+        // Build the reset link from the request context. Tomcat resolves the
+        // configured proxy headers so the URL uses the external scheme and host.
         String baseUrl = ServletUriComponentsBuilder.fromCurrentContextPath()
                 .build()
                 .toUriString();
-        String passwordResetUrl = baseUrl + "/auth/reset?token=" + token;
+        String passwordResetUrl = baseUrl + AuthRoutes.Page.RESET + "?token=" + token;
 
         String to = user.getEmail();
         String subject = "Reset Password for " + this.appName;
@@ -99,8 +108,12 @@ public class PasswordResetService {
 
         User user = tokenEntity.getUser();
 
+        if (!user.isAccountNonLocked()) {
+            throw new LockedException("User is locked. Cannot reset password for locked user. Contact support.");
+        }
+
         if (user.isOauthAccount()) {
-            throw buildOauthResetNotAllowed();
+            throw buildProviderResetNotAllowed();
         }
 
         user.setPassword(passwordEncoder.encode(dto.newPassword()));
@@ -109,43 +122,21 @@ public class PasswordResetService {
 
         passwordResetTokenRepository.delete(tokenEntity);
 
+        // A successful password reset should restore the caller's login and global
+        // auth headroom so they can immediately try the new password.
+        authRateLimitService.refundSuccessfulPasswordReset();
+
         expireUserSessions(user.getEmail());
     }
 
     private void expireUserSessions(String email) {
-        for (Object principal : sessionRegistry.getAllPrincipals()) {
-            if (!matchesPrincipalEmail(principal, email)) {
-                continue;
-            }
-
-            for (SessionInformation session : sessionRegistry.getAllSessions(principal, false)) {
-                session.expireNow();
-            }
+        for (SessionInformation session : sessionRegistry.getAllSessions(email, false)) {
+            session.expireNow();
         }
     }
 
-    private boolean matchesPrincipalEmail(Object principal, String email) {
-        if (principal instanceof User userPrincipal) {
-            return email.equalsIgnoreCase(userPrincipal.getEmail());
-        }
-
-        if (principal instanceof UserDetails userDetails) {
-            return email.equalsIgnoreCase(userDetails.getUsername());
-        }
-
-        if (principal instanceof Principal principalDetails) {
-            return email.equalsIgnoreCase(principalDetails.getName());
-        }
-
-        if (principal instanceof String principalName) {
-            return email.equalsIgnoreCase(principalName);
-        }
-
-        return false;
-    }
-
-    private PasswordResetNotAllowedException buildOauthResetNotAllowed() {
+    private PasswordResetNotAllowedException buildProviderResetNotAllowed() {
         return new PasswordResetNotAllowedException(
-                "Password reset is not available for OAuth accounts. Please sign in with your OAuth provider.");
+                "Password reset is not available for provider-based sign-in accounts. Please sign in with the same provider.");
     }
 }

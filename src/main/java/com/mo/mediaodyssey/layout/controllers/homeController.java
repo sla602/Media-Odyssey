@@ -49,6 +49,13 @@ public class homeController {
 
         model.addAttribute("boards", boards);
 
+        // Keep the verification reminder on the destination page so a fast
+        // login redirect does not hide it.
+        if (!user.isEmailVerified()) {
+            model.addAttribute("warningMessage",
+                    "Your email is not verified yet. Please verify it when possible.");
+        }
+
         return "boardsLayout/homePage";
     }
 }

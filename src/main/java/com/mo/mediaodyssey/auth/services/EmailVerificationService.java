@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
+import com.mo.mediaodyssey.auth.config.AuthRoutes;
 import com.mo.mediaodyssey.auth.model.VerificationToken;
 import com.mo.mediaodyssey.auth.repository.UserRepository;
 import com.mo.mediaodyssey.auth.repository.VerificationTokenRepository;
@@ -24,10 +25,7 @@ import com.mo.mediaodyssey.auth.exception.UserAlreadyVerifiedException;
 @Service
 public class EmailVerificationService {
 
-    // Inspired by: https://www.baeldung.com/registration-verify-user-by-email
-    // Debugging assisted by AI
-
-    @Value("${spring.application.name:App}")
+    @Value("${spring.application.name}")
     private String appName;
 
     // Expiry length determined by environment variable.
@@ -49,11 +47,13 @@ public class EmailVerificationService {
         String token = UUID.randomUUID().toString();
         VerificationToken verificationToken = new VerificationToken(token, user, tokenExpiryInMinutes);
 
-        // Build verification token email
+        // Build the verification link from the request context. Tomcat resolves the
+        // trusted proxy headers configured in application.properties, so the generated
+        // URL keeps the externally visible host and scheme.
         String baseUrl = ServletUriComponentsBuilder.fromCurrentContextPath()
                 .build()
                 .toUriString();
-        String verificationUrl = baseUrl + "/auth/verify?token=" + token;
+        String verificationUrl = baseUrl + AuthRoutes.Page.VERIFY + "?token=" + token;
         String to = user.getEmail();
         String subject = "Confirm Registration to " + this.appName;
         String htmlMessage = emailService.buildAuthActionEmailHtml(

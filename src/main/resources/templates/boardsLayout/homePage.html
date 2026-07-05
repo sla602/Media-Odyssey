@@ -24,6 +24,9 @@
         <!-- This div contains the display of boards user have joined and recommendations boards -->
         <div id="mainContent" class="main-content">
 
+            <div th:if="${warningMessage}" class="flash-message flash-warning" role="alert"
+                 th:text="${warningMessage}"></div>
+
             <!--Leave for display trending music, song, movies-->
             <div></div>
 

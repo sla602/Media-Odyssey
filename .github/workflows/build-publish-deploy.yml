@@ -92,8 +92,6 @@ jobs:
       # If $RENDER_ENV_VARS_JSON is empty, only this step is skipped.
       #
       # Value for $RENDER_ENV_VARS_JSON can be generated using output from env-to-json.sh
-      #
-      # This step was primarily written by GitHub Copilot.
       - name: Sync environment variables with Render
         env:
           RENDER_SERVICE_ID: ${{ secrets.RENDER_SERVICE_ID }}
@@ -141,8 +139,6 @@ jobs:
       #
       # Deployment status also verified to be "live" before confirming successful deployment.
       # Deployment status is checked every 15 seconds for 10 minutes.
-      #
-      # Debugging this step was assisted by GitHub Copilot.
       - name: Deploy to Render
         env:
           RENDER_SERVICE_ID: ${{ secrets.RENDER_SERVICE_ID }}

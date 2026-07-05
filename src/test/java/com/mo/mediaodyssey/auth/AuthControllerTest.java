@@ -291,7 +291,7 @@ class AuthControllerTest {
     }
 
     @Test
-    void resend_withNonexistentEmail_returnsUnauthorized() throws Exception {
+    void resend_withNonexistentEmail_returnsGenericUnauthorized() throws Exception {
         doThrow(new UsernameNotFoundException("missing"))
                 .when(verificationService)
                 .resendVerification(any(ResendVerifyTokenDto.class));
@@ -303,7 +303,7 @@ class AuthControllerTest {
                 .content(payload))
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.success").value(false))
-                .andExpect(jsonPath("$.status").value("AUTH_USER_NOT_FOUND"));
+                .andExpect(jsonPath("$.status").value("AUTH_INVALID_CREDENTIALS"));
     }
 
     @Test
