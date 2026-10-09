@@ -26,7 +26,7 @@
         <main class="form-container">
             <form th:action="@{/boards/create}" method="post" th:object="${board}" class="create-board-form">
                 <div class="form-leftside">
-                    <input type="text" th:field="*{board_name}" placeholder="Your adventure's name" class="name-input-box">
+                    <input type="text" th:field="*{board_name}" placeholder="Your adventure's name" class="name-input-box" required>
 
                     <input type="text" th:field="*{board_description}" placeholder="Describe your adventure" class="desc-input-box">
 

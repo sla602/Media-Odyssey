@@ -1,8 +1,8 @@
 package com.mo.mediaodyssey.community.favorite;
 
-import com.mo.mediaodyssey.auth.repository.UserRepository;
 import com.mo.mediaodyssey.recommendation.UserInteraction;
 import com.mo.mediaodyssey.recommendation.UserInteractionRepository;
+import com.mo.mediaodyssey.shared.services.CurrentAccountService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -23,7 +23,8 @@ import static org.mockito.Mockito.*;
  *
  * Uses pure Mockito (no Spring context) to verify:
  * - communityPage() returns the correct view and model attributes
- * - likeMedia() and incrementView() deduplicate requests within the same session
+ * - likeMedia() and incrementView() deduplicate requests within the same
+ * session
  * - No interaction is saved when the user is not authenticated
  */
 @ExtendWith(MockitoExtension.class)
@@ -36,7 +37,7 @@ class CommunityControllerTest {
     private UserInteractionRepository userInteractionRepository;
 
     @Mock
-    private UserRepository userRepository;
+    private CurrentAccountService currentAccountService;
 
     @InjectMocks
     private CommunityController communityController;
@@ -47,10 +48,9 @@ class CommunityControllerTest {
     void setUp() {
         // Sample ranked media list used across multiple tests
         sampleList = Arrays.asList(
-                new RankedMediaResponse("11", "Inception",         "",      "MOVIE", "", 130L, 5L, 80L),
-                new RankedMediaResponse("22", "The Witcher 3",     "",      "GAME",  "", 95L,  3L, 65L),
-                new RankedMediaResponse("33", "Bohemian Rhapsody", "Queen", "SONG",  "", 50L,  1L, 40L)
-        );
+                new RankedMediaResponse("11", "Inception", "", "MOVIE", "", 130L, 5L, 80L),
+                new RankedMediaResponse("22", "The Witcher 3", "", "GAME", "", 95L, 3L, 65L),
+                new RankedMediaResponse("33", "Bohemian Rhapsody", "Queen", "SONG", "", 50L, 1L, 40L));
     }
 
     // ─── communityPage() ──────────────────────────────────────────────────────
@@ -70,7 +70,8 @@ class CommunityControllerTest {
         verify(mediaRankingService, never()).getTop10ByMediaType(any());
     }
 
-    // Category "MOVIE" → should call getTop10ByMediaType() and set currentCat in model
+    // Category "MOVIE" → should call getTop10ByMediaType() and set currentCat in
+    // model
     @Test
     void communityPage_withMovieCategory_callsGetTop10ByMediaType() {
         when(mediaRankingService.normalizeMediaType("MOVIE")).thenReturn("MOVIE");
@@ -140,7 +141,8 @@ class CommunityControllerTest {
         verify(userInteractionRepository, never()).save(any(UserInteraction.class));
     }
 
-    // Same user liking the same item twice in one session → second like should be rejected
+    // Same user liking the same item twice in one session → second like should be
+    // rejected
     @Test
     void likeMedia_duplicateInSameSession_secondCallReturnsFalse() {
         when(mediaRankingService.normalizeMediaType("MOVIE")).thenReturn("MOVIE");
@@ -148,7 +150,7 @@ class CommunityControllerTest {
         MockHttpSession session = new MockHttpSession();
 
         // First like
-        var first  = communityController.likeMedia("11", "MOVIE", session, null);
+        var first = communityController.likeMedia("11", "MOVIE", session, null);
         // Second like same session
         var second = communityController.likeMedia("11", "MOVIE", session, null);
 
@@ -156,14 +158,15 @@ class CommunityControllerTest {
         assertThat(second.getBody()).containsEntry("liked", false);
     }
 
-    // Same user viewing the same item twice in one session → second view should be rejected
+    // Same user viewing the same item twice in one session → second view should be
+    // rejected
     @Test
     void incrementView_duplicateInSameSession_secondCallReturnsFalse() {
         when(mediaRankingService.normalizeMediaType("GAME")).thenReturn("GAME");
 
         MockHttpSession session = new MockHttpSession();
 
-        var first  = communityController.incrementView("22", "GAME", session, null);
+        var first = communityController.incrementView("22", "GAME", session, null);
         var second = communityController.incrementView("22", "GAME", session, null);
 
         assertThat(first.getBody()).containsEntry("viewed", true);
@@ -191,7 +194,7 @@ class CommunityControllerTest {
 
         MockHttpSession session = new MockHttpSession();
 
-        var liked  = communityController.likeMedia("33", "SONG", session, null);
+        var liked = communityController.likeMedia("33", "SONG", session, null);
         var viewed = communityController.incrementView("33", "SONG", session, null);
 
         assertThat(liked.getBody()).containsEntry("liked", true);

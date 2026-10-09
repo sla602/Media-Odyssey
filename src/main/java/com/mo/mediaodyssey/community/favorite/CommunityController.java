@@ -1,14 +1,18 @@
 package com.mo.mediaodyssey.community.favorite;
 
-import com.mo.mediaodyssey.auth.repository.UserRepository;
 import com.mo.mediaodyssey.recommendation.UserInteraction;
 import com.mo.mediaodyssey.recommendation.UserInteractionRepository;
+import com.mo.mediaodyssey.shared.services.CurrentAccountService;
+
 import jakarta.servlet.http.HttpSession;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.AuthenticationCredentialsNotFoundException;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+
+import com.mo.mediaodyssey.shared.model.User;
 
 import java.time.LocalDateTime;
 import java.util.HashSet;
@@ -34,25 +38,29 @@ public class CommunityController {
 
     private final MediaRankingService mediaRankingService;
     private final UserInteractionRepository userInteractionRepository;
-    private final UserRepository userRepository;
+    private final CurrentAccountService currentAccountService;
 
     public CommunityController(MediaRankingService mediaRankingService,
-            UserInteractionRepository userInteractionRepository,
-            UserRepository userRepository) {
+            UserInteractionRepository userInteractionRepository, CurrentAccountService currentAccountService) {
         this.mediaRankingService = mediaRankingService;
         this.userInteractionRepository = userInteractionRepository;
-        this.userRepository = userRepository;
+        this.currentAccountService = currentAccountService;
     }
 
     /**
      * Resolves the logged-in user's database ID from Spring Security.
      */
     private Long getUserId(Authentication auth) {
-        if (auth == null || !auth.isAuthenticated())
+        if (auth == null) {
             return null;
-        return userRepository.findByEmail(auth.getName())
-                .map(u -> u.getId())
-                .orElse(null);
+        }
+
+        try {
+            User account = currentAccountService.getCurrentAccount(auth);
+            return account != null ? account.getId() : null;
+        } catch (AuthenticationCredentialsNotFoundException ex) {
+            return null;
+        }
     }
 
     /**
@@ -75,28 +83,34 @@ public class CommunityController {
 
     /**
      * Loads the Community Favourites page.
-     * category: MOVIE / GAME / SONG / null
+     * category param is kept for URL compatibility but is now handled client-side.
      *
      * Iteration 3: Fast-Rising section now populated via getFastRising5().
      */
     @GetMapping
     public String communityPage(Model model,
             @RequestParam(required = false) String category) {
-
-        String normalizedCategory = (category == null || category.isBlank())
-                ? null
-                : mediaRankingService.normalizeMediaType(category);
-
-        List<RankedMediaResponse> mediaList = (normalizedCategory == null)
-                ? mediaRankingService.getTop10()
-                : mediaRankingService.getTop10ByMediaType(normalizedCategory);
-
-        List<RankedMediaResponse> trending = mediaRankingService.getFastRising5();
-        model.addAttribute("mediaList", mediaList);
-        model.addAttribute("trending", trending);
-        model.addAttribute("currentCat", normalizedCategory);
-
         return "boardsLayout/features/trending";
+    }
+
+    /**
+     * JSON API: returns ALL Top 10 + Fast-Rising data in one shot so the
+     * front-end can filter client-side (same pattern as likedMedia.js).
+     *
+     * Response shape:
+     * {
+     *   "top10":    [ RankedMediaResponse, ... ],   // all categories, sorted by score
+     *   "trending": [ RankedMediaResponse, ... ]    // fast-rising top 5 (past 7 days)
+     * }
+     */
+    @GetMapping("/data")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> communityData() {
+        List<RankedMediaResponse> top10    = mediaRankingService.getTop10();
+        List<RankedMediaResponse> trending = mediaRankingService.getFastRising5();
+        return ResponseEntity.ok(Map.of(
+                "top10",    top10,
+                "trending", trending));
     }
 
     /**

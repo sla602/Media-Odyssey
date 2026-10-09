@@ -1,15 +1,11 @@
 package com.mo.mediaodyssey.auth.controller;
 
-import java.net.URI;
-
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContext;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
+import org.springframework.security.web.authentication.rememberme.TokenBasedRememberMeServices;
+import org.springframework.security.web.authentication.session.SessionAuthenticationStrategy;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -17,16 +13,21 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.mo.mediaodyssey.auth.dto.ResendVerifyTokenDto;
 import com.mo.mediaodyssey.auth.dto.AuthApiResponse;
+import com.mo.mediaodyssey.auth.dto.ForgotPasswordDto;
+import com.mo.mediaodyssey.auth.dto.LoginDto;
+import com.mo.mediaodyssey.auth.dto.ResetPasswordDto;
 import com.mo.mediaodyssey.auth.dto.UserDto;
 import com.mo.mediaodyssey.auth.dto.VerifyTokenDto;
-import com.mo.mediaodyssey.auth.services.AuthService;
-import com.mo.mediaodyssey.auth.services.VerificationService;
+import com.mo.mediaodyssey.auth.services.MOLocalAuthService;
+import com.mo.mediaodyssey.auth.services.EmailVerificationService;
+import com.mo.mediaodyssey.auth.services.PasswordResetService;
+import com.mo.mediaodyssey.shared.model.User;
+import com.mo.mediaodyssey.shared.services.CurrentAccountService;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 
-import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 
@@ -40,10 +41,22 @@ public class AuthController {
     // Debugging assisted by AI.
 
     @Autowired
-    private AuthService authService;
+    private MOLocalAuthService authService;
 
     @Autowired
-    private VerificationService verificationService;
+    private EmailVerificationService verificationService;
+
+    @Autowired
+    private SessionAuthenticationStrategy sessionAuthenticationStrategy;
+
+    @Autowired
+    private CurrentAccountService currentAccountService;
+
+    @Autowired
+    private TokenBasedRememberMeServices rememberMeServices;
+
+    @Autowired
+    private PasswordResetService passwordResetService;
 
     /**
      * Handles account login requests.
@@ -59,21 +72,32 @@ public class AuthController {
      */
     @PostMapping(value = "/login", consumes = MediaType.APPLICATION_JSON_VALUE)
     @Transactional
-    public ResponseEntity<AuthApiResponse> login(@Valid @RequestBody UserDto dto, HttpServletRequest request,
+    public ResponseEntity<AuthApiResponse> login(@Valid @RequestBody LoginDto dto, HttpServletRequest request,
             HttpServletResponse response) {
         // Login the User
         Authentication authentication = authService.loginUser(dto);
 
-        // Persist the login
-        SecurityContext context = SecurityContextHolder.createEmptyContext();
-        context.setAuthentication(authentication);
-        SecurityContextHolder.setContext(context);
+        // Apply session concurrency + session fixation strategy for custom login flow.
+        sessionAuthenticationStrategy.onAuthentication(authentication, request, response);
 
-        new HttpSessionSecurityContextRepository().saveContext(context, request, response);
+        // Persist the login using the same principal refresh flow shared by both local
+        // and OAuth login.
+        currentAccountService.refreshPrincipal(authentication, request, response);
+
+        // Remember-me is login-only and opt-in.
+        if (dto.rememberMeRequested()) {
+            rememberMeServices.onLoginSuccess(request, response, authentication);
+        } else {
+            rememberMeServices.loginFail(request, response);
+        }
 
         // Return OK - successfully logged in
-        return ResponseEntity
-                .ok(AuthApiResponse.success("AUTH_LOGIN_SUCCESS", "Login successful"));
+        if (authentication.getPrincipal() instanceof User user && !user.isEmailVerified()) {
+            return ResponseEntity.ok(AuthApiResponse.success("AUTH_LOGIN_SUCCESS_UNVERIFIED",
+                    "Login successful. Please verify your email."));
+        }
+
+        return ResponseEntity.ok(AuthApiResponse.success("AUTH_LOGIN_SUCCESS", "Login successful"));
     }
 
     /**
@@ -96,27 +120,24 @@ public class AuthController {
     }
 
     /**
-     * Handles email verification requests.
+     * Handles completing email verification requests.
      *
      * @param token The verification token.
-     * @return Upon successful verification, the user is redirected to the login
-     *         page. Otherwise, the error status and message is returned.
+     * @return The verification response containing success status and message.
      *         Authentication exceptions are handled by AuthExceptionHandler.
      */
-    @GetMapping(value = "/verify")
+    @PostMapping(value = "/verify", produces = MediaType.APPLICATION_JSON_VALUE)
     @Transactional
-    public ResponseEntity<Void> verify(@Valid @RequestParam("token") String token) {
+    public ResponseEntity<AuthApiResponse> verify(@Valid @RequestParam("token") String token) {
         VerifyTokenDto dto = new VerifyTokenDto(token);
         verificationService.verifyUser(dto);
 
-        return ResponseEntity
-                .status(HttpStatus.FOUND)
-                .location(URI.create("/auth/login"))
-                .build();
+        return ResponseEntity.ok(
+                AuthApiResponse.success("AUTH_VERIFY_SUCCESS", "Email verified successfully. You can now log in."));
     }
 
     /**
-     * Handles verification token resend requests.
+     * Handles resending email verification token requests.
      *
      * @param dto The resend request data containing user details.
      * @return The resend response containing success status and message. Otherwise,
@@ -130,5 +151,36 @@ public class AuthController {
 
         // Return OK - successfully resent
         return ResponseEntity.ok(AuthApiResponse.success("AUTH_RESEND_SUCCESS", "Verification email resent"));
+    }
+
+    /**
+     * Handles password reset request submissions.
+     *
+     * @param dto The request data containing user email.
+     * @return Generic response to avoid leaking account existence. For eligible
+     *         local accounts, a reset email is sent.
+     */
+    @PostMapping(value = "/password/forgot", consumes = MediaType.APPLICATION_JSON_VALUE)
+    @Transactional
+    public ResponseEntity<AuthApiResponse> forgotPassword(@Valid @RequestBody ForgotPasswordDto dto) {
+        passwordResetService.requestPasswordReset(dto);
+
+        return ResponseEntity.ok(AuthApiResponse.success("AUTH_PASSWORD_RESET_EMAIL_SENT",
+                "If an eligible account exists, a password reset link has been sent."));
+    }
+
+    /**
+     * Handles password reset completion submissions.
+     *
+     * @param dto The reset data containing token and new password.
+     * @return Successful reset response when token is valid and not expired.
+     */
+    @PostMapping(value = "/password/reset", consumes = MediaType.APPLICATION_JSON_VALUE)
+    @Transactional
+    public ResponseEntity<AuthApiResponse> resetPassword(@Valid @RequestBody ResetPasswordDto dto) {
+        passwordResetService.resetPassword(dto);
+
+        return ResponseEntity.ok(AuthApiResponse.success("AUTH_PASSWORD_RESET_SUCCESS",
+                "Password reset successful. You can now log in with your new password."));
     }
 }

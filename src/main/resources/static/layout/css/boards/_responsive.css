@@ -1,0 +1,28 @@
+/* boards/_responsive.css
+   Mobile/tablet overrides. Loaded last. */
+
+/* ===============================================================
+        RESPONSIVE
+==================================================================*/
+
+@media (max-width: 1024px) {
+    .form-container { margin-left: 200px; }
+    .board-container { margin-left: 200px; }
+}
+
+@media (max-width: 768px) {
+    .form-container { margin-left: 0; padding: 2rem 1rem; }
+    .create-board-form { min-width: auto; padding: 2rem 1.5rem; }
+    .board-container { margin-left: 0; padding: 1rem; }
+    .board-header { flex-direction: column; align-items: center; text-align: center; }
+    .board-staff-tabs { position: static; justify-content: center; margin-bottom: 1rem; }
+    .board-title { font-size: 1.5rem; }
+    .post-view-title { font-size: 1.35rem; }
+    .board-meta { justify-content: center; }
+    .board-avatar-placeholder { width: 80px; height: 80px; font-size: 2rem; }
+    .post-card-header, .post-view-header, .comment-header, .report-card-header { flex-direction: column; align-items: flex-start; gap: 0.25rem; }
+    .post-card-actions, .post-view-actions, .comment-actions, .report-card-actions, .member-actions { flex-wrap: wrap; }
+    .member-card { flex-direction: column; align-items: flex-start; gap: 0.75rem; }
+    .ownership-form { flex-direction: column; }
+    .settings-actions { justify-content: center; }
+}

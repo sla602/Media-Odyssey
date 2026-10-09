@@ -47,26 +47,7 @@ public class DevAccountController {
     @GetMapping("/createAdminAccount")
     @Transactional
     public ResponseEntity<DevAccountApiResponse> createAdminAccount() {
-        if (devMode.toLowerCase().equals("TRUE".toLowerCase())) {
-
-            String email = UUID.randomUUID().toString() + this.email;
-            String password = UUID.randomUUID().toString();
-
-            UserDto dto = new UserDto(email, password);
-            devUserService.createAdminAccount(dto);
-
-            // Return OK and generated credentials in a message body
-            return ResponseEntity.ok(DevAccountApiResponse.success(
-                    "DEV_AUTH_ADMIN_CREATED",
-                    "Admin account created successfully.",
-                    email,
-                    password));
-        } else {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .body(DevAccountApiResponse.error("DEV_AUTH_ACCOUNT_CREATION_DISABLED",
-                            "Developmental account creation API endpoint is disabled."));
-        }
+        return createDevAccount("ROLE_ADMIN", "DEV_AUTH_ADMIN_CREATED", "Admin account created successfully.");
     }
 
     /**
@@ -83,25 +64,35 @@ public class DevAccountController {
     @GetMapping("/createUserAccount")
     @Transactional
     public ResponseEntity<DevAccountApiResponse> createUserAccount() {
-        if (devMode.toLowerCase().equals("TRUE".toLowerCase())) {
+        return createDevAccount("ROLE_USER", "DEV_AUTH_USER_CREATED", "User account created successfully.");
+    }
+
+    private ResponseEntity<DevAccountApiResponse> createDevAccount(
+            String role,
+            String successStatus,
+            String successMessage) {
+        if (!isDevModeEnabled()) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body(DevAccountApiResponse.error("DEV_AUTH_ACCOUNT_CREATION_DISABLED",
+                            "Developmental account creation API endpoint is disabled."));
+        } else {
 
             String email = UUID.randomUUID().toString() + this.email;
             String password = UUID.randomUUID().toString();
 
             UserDto dto = new UserDto(email, password);
-            devUserService.createUserAccount(dto);
+            if ("ROLE_ADMIN".equals(role)) {
+                devUserService.createAdminAccount(dto);
+            } else {
+                devUserService.createUserAccount(dto);
+            }
 
-            // Return OK and generated credentials in a message body
-            return ResponseEntity.ok(DevAccountApiResponse.success(
-                    "DEV_AUTH_USER_CREATED",
-                    "User account created successfully.",
-                    email,
-                    password));
-        } else {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .body(DevAccountApiResponse.error("DEV_AUTH_ACCOUNT_CREATION_DISABLED",
-                            "Developmental account creation API endpoint is disabled."));
+            return ResponseEntity.ok(DevAccountApiResponse.success(successStatus, successMessage, email, password));
         }
+    }
+
+    private boolean isDevModeEnabled() {
+        return "TRUE".equalsIgnoreCase(devMode);
     }
 }

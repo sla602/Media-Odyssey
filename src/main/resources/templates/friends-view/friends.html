@@ -187,30 +187,71 @@
         </section>
 
         <!-- ======================================================
-             3) SUGGESTED FRIENDS (shared-board)
-             ====================================================== -->
-        <section class="friends-panel">
+     3) SUGGESTED FRIENDS — shared board + taste overlap
+     Users can toggle between All / Board / Movies / Games /
+     Songs to filter the list by signal.
+     ====================================================== -->
+        <section class="friends-panel suggested-friends-panel">
             <div class="friends-panel-head">
                 <h2 class="section-title">Suggested Friends</h2>
-                <span class="friends-count" th:text="${#lists.size(suggestedFriends)}">0</span>
+                <span class="friends-count"
+                      th:text="${#lists.size(suggestedFriends)}">0</span>
             </div>
-            <p class="panel-subtitle">People you share a board with.</p>
+            <p class="panel-subtitle">People from your boards and people who share your taste.</p>
+
+            <!-- Filter toggle row — client-side filtering via data attributes -->
+            <div class="suggestion-filter-row">
+                <button type="button" class="suggestion-filter-btn active"
+                        data-filter="all"
+                        onclick="filterSuggestions('all')">All</button>
+                <button type="button" class="suggestion-filter-btn"
+                        data-filter="board"
+                        onclick="filterSuggestions('board')">Shared Board</button>
+                <button type="button" class="suggestion-filter-btn"
+                        data-filter="movie"
+                        onclick="filterSuggestions('movie')">Movies</button>
+                <button type="button" class="suggestion-filter-btn"
+                        data-filter="game"
+                        onclick="filterSuggestions('game')">Games</button>
+                <button type="button" class="suggestion-filter-btn"
+                        data-filter="song"
+                        onclick="filterSuggestions('song')">Songs</button>
+            </div>
 
             <div th:if="${#lists.isEmpty(suggestedFriends)}" class="empty-message">
-                No suggestions right now. Join more boards to meet people.
+                No suggestions right now. Join more boards or like some media to meet people.
             </div>
 
-            <div th:each="sug : ${suggestedFriends}" class="member-card friend-card">
+            <!-- Each card carries data-* flags so the JS filter can show/hide
+                 without re-rendering. A user can match multiple signals. -->
+            <div th:each="sug : ${suggestedFriends}"
+                 class="member-card friend-card suggestion-card"
+                 th:attr="data-from-board=${sug.fromSharedBoard},
+                  data-from-movie=${sug.fromSharedMovie},
+                  data-from-game=${sug.fromSharedGame},
+                  data-from-song=${sug.fromSharedSong}">
+
                 <div class="member-info">
                     <div class="friend-text">
-                        <a th:href="@{'/profile/' + ${sug.id}}"
+                        <a th:href="@{'/profile/' + ${sug.userId}}"
                            class="member-name friend-name-link"
-                           th:text="${usernames[sug.id]}">suggested user</a>
-                        <span class="friend-sub">shares a board with you</span>
+                           th:text="${usernames[sug.userId]}">suggested user</a>
+
+                        <!-- Signal badges — show only the flags that are true -->
+                        <div class="suggestion-badges">
+                    <span th:if="${sug.fromSharedBoard}"
+                          class="suggestion-badge badge-board">Shared Board</span>
+                            <span th:if="${sug.fromSharedMovie}"
+                                  class="suggestion-badge badge-movie">Movies</span>
+                            <span th:if="${sug.fromSharedGame}"
+                                  class="suggestion-badge badge-game">Games</span>
+                            <span th:if="${sug.fromSharedSong}"
+                                  class="suggestion-badge badge-song">Songs</span>
+                        </div>
                     </div>
                 </div>
                 <div class="member-actions">
-                    <form th:action="@{'/friends/add/' + ${sug.id}}"
+                    <form th:action="@{'/friends/add/' + ${sug.userId}}"
                           method="post" class="action-form">
                         <button type="submit" class="action-btn action-add">Add Friend</button>
                     </form>
@@ -296,5 +337,36 @@
 </main>
 
 <script th:src="@{/layout/js/fragments.js}"></script>
+<script>
+    // Client-side filter for the Suggested Friends list.
+    // Each .suggestion-card has data-from-board / movie / game / song flags
+    // rendered server-side. Clicking a filter button hides any card that
+    // doesn't match the selected signal.
+    function filterSuggestions(filter) {
+        // Update active state on the buttons
+        document.querySelectorAll('.suggestion-filter-btn').forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.filter === filter);
+        });
+
+        // Show/hide cards. "all" shows everything.
+        document.querySelectorAll('.suggestion-card').forEach(card => {
+            let visible;
+            if (filter === 'all') {
+                visible = true;
+            } else if (filter === 'board') {
+                visible = card.dataset.fromBoard === 'true';
+            } else if (filter === 'movie') {
+                visible = card.dataset.fromMovie === 'true';
+            } else if (filter === 'game') {
+                visible = card.dataset.fromGame === 'true';
+            } else if (filter === 'song') {
+                visible = card.dataset.fromSong === 'true';
+            } else {
+                visible = true;
+            }
+            card.classList.toggle('suggestion-hidden', !visible);
+        });
+    }
+</script>
 </body>
 </html>

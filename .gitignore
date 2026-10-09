@@ -34,3 +34,4 @@ build/
 
 .env
 backup.sql
+.DS_Store

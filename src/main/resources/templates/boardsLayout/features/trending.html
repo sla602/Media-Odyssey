@@ -82,39 +82,6 @@
         color: #ffffff;
       }
 
-      /* === Live Search Input === */
-      /* Styled to match the global search bar in fragments.css */
-      #localSearch {
-        position: sticky;
-        top: 0;
-        z-index: 10;
-        width: 100%;
-        max-width: 400px;
-        padding: 0.625rem 1rem;
-        background: rgba(255, 255, 255, 0.05);
-        border: 1px solid rgba(139, 92, 246, 0.3);
-        border-radius: 25px;
-        color: #e2e8f0;
-        font-size: 0.9rem;
-        font-family: 'Space Grotesk', sans-serif;
-        outline: none;
-        transition: all 0.3s ease;
-        margin-bottom: 1.25rem;
-        display: block;
-      }
-
-      #localSearch::placeholder {
-        color: rgba(203, 213, 225, 0.5);
-        font-style: italic;
-      }
-
-      #localSearch:focus {
-        background: rgba(255, 255, 255, 0.08);
-        border-color: rgba(139, 92, 246, 0.6);
-        box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.15),
-                    0 4px 20px rgba(139, 92, 246, 0.2);
-      }
-
       /* === Divider === */
       hr {
         border: none;
@@ -245,51 +212,12 @@
                 Tab values match UserInteraction mediaType: MOVIE, GAME, SONG.
             -->
       <div class="tab-container">
-        <a href="/community">
-          <button
-            class="tab-btn"
-            th:classappend="${currentCat == null} ? 'active'"
-          >
-            All
-          </button>
-        </a>
-        <a href="/community?category=MOVIE">
-          <button
-            class="tab-btn"
-            th:classappend="${currentCat == 'MOVIE'} ? 'active'"
-          >
-            Movies
-          </button>
-        </a>
-        <a href="/community?category=GAME">
-          <button
-            class="tab-btn"
-            th:classappend="${currentCat == 'GAME'} ? 'active'"
-          >
-            Games
-          </button>
-        </a>
-        <a href="/community?category=SONG">
-          <button
-            class="tab-btn"
-            th:classappend="${currentCat == 'SONG'} ? 'active'"
-          >
-            Songs
-          </button>
-        </a>
+        <button class="tab-btn active" data-type="ALL">All</button>
+        <button class="tab-btn" data-type="MOVIE">Movies</button>
+        <button class="tab-btn" data-type="GAME">Games</button>
+        <button class="tab-btn" data-type="SONG">Songs</button>
       </div>
-
-      <!-- Live search bar -->
-      <div>
-        <input
-          id="localSearch"
-          type="text"
-          placeholder="Search titles..."
-          autocomplete="off"
-        />
-      </div>
-
-      <hr />
+<hr />
 
       <!-- ── Fast-Rising Top 5 ───────────────────────────────────────── -->
       <!--
@@ -300,49 +228,10 @@
             -->
       <section class="trending-section">
         <h2>🔥 Fast-Rising This Week (Top 5)</h2>
-
-        <div th:if="${#lists.isEmpty(trending)}">
-          <p>
-            No trending data yet — start interacting with media on the home
-            page!
-          </p>
-        </div>
-
-        <div id="trendingGrid" th:unless="${#lists.isEmpty(trending)}">
-          <div
-            th:each="m : ${trending}"
-            class="media-card trending-card"
-            th:attr="data-title=${m.title}, data-type=${m.mediaType}"
-          >
-            <!-- Thumbnail image -->
-            <img
-              th:if="${m.imageUrl != null and !m.imageUrl.isEmpty()}"
-              th:src="${m.imageUrl}"
-              th:alt="${m.title}"
-              class="media-thumbnail"
-              onerror="this.style.display = 'none'"
-            />
-            <div
-              th:if="${m.imageUrl == null or m.imageUrl.isEmpty()}"
-              class="media-thumbnail-placeholder"
-            >No Image</div>
-
-            <div class="card-title">
-              <strong th:text="${m.title}">Title</strong>
-              <!-- Artist name for songs -->
-              <span
-                th:if="${m.artist != null and !m.artist.isEmpty()}"
-                th:text="'by ' + ${m.artist}"
-                class="artist-name"
-              ></span>
-              <em th:text="'[' + ${m.mediaType} + ']'">[Type]</em>
-            </div>
-
-            <div class="card-stats">
-              <span>🔥 Fast-Rising Score: <span class="score-number" th:text="${m.weeklyLikes}">0</span> likes this week</span>
-            </div>
-          </div>
-        </div>
+        <!-- Status message (loading / empty) -->
+        <p id="trendingStatus"></p>
+        <!-- Cards rendered here by trending.js -->
+        <div id="trendingGrid"></div>
       </section>
 
       <hr />
@@ -351,7 +240,6 @@
       <!--
                 Ranked by Point System: LIKE × 10 + VIEW × 1.
                 Aggregated from UserInteraction table via MediaRankingService.
-                data-title used by JS live search filter.
 
                 Current iteration:
                 - keep internal score for sorting
@@ -362,217 +250,16 @@
             -->
       <section class="ranking-section">
         <h2>🏆 Top 10 Ranked</h2>
-
-        <div th:if="${#lists.isEmpty(mediaList)}">
-          <p>
-            No rankings yet — start interacting with media on the home page!
-          </p>
-        </div>
-
-        <div id="top10Grid" th:unless="${#lists.isEmpty(mediaList)}">
-          <div
-            th:each="m, stat : ${mediaList}"
-            class="media-card"
-            th:attr="data-api-id=${m.mediaApiId}, data-type=${m.mediaType}, data-title=${m.title}"
-          >
-            <!-- Rank number + thumbnail -->
-            <span class="rank-number" th:text="${stat.index + 1}">1</span>
-
-            <img
-              th:if="${m.imageUrl != null and !m.imageUrl.isEmpty()}"
-              th:src="${m.imageUrl}"
-              th:alt="${m.title}"
-              class="media-thumbnail"
-              onerror="this.style.display = 'none'"
-            />
-            <div
-              th:if="${m.imageUrl == null or m.imageUrl.isEmpty()}"
-              class="media-thumbnail-placeholder"
-            >No Image</div>
-
-            <!-- Title + artist + type -->
-            <div class="card-title">
-              <strong th:text="${m.title}">Title</strong>
-              <span
-                th:if="${m.artist != null and !m.artist.isEmpty()}"
-                th:text="'by ' + ${m.artist}"
-                class="artist-name"
-              ></span>
-              <em th:text="'[' + ${m.mediaType} + ']'">[Type]</em>
-            </div>
-
-            <!-- Added: popularity score display derived from community interactions -->
-            <!-- Requires m.totalScore, m.likes, m.views from RankedMediaResponse / MediaRankingService -->
-            <div class="popularity-score">
-              ⭐ Popularity Score: <span class="score-number" th:text="${m.totalScore}">0</span>
-              <span class="score-detail">
-                <span th:text="${m.likes}">0</span> likes ·
-                <span th:text="${m.views}">0</span> views
-              </span>
-            </div>
-
-            <!--
-              Previous current-iteration UI removed intentionally:
-              raw score is still used internally for ranking,
-              but is no longer shown directly to the user.
-            -->
-            <!--
-            <div class="card-stats">
-              <span
-                >Score:
-                <span class="score-val" th:text="${m.totalScore}">0</span></span
-              >
-            </div>
-            -->
-
-            <!--
-              Like button hidden for this iteration.
-              Endpoint can remain in backend because ranking still uses likes internally.
-            -->
-            <!--
-            <button
-              class="like-btn"
-              th:attr="data-api-id=${m.mediaApiId}, data-type=${m.mediaType}"
-            >
-              ❤️ Like
-            </button>
-            -->
-          </div>
-        </div>
+        <!-- Status message (loading / empty) -->
+        <p id="top10Status"></p>
+        <!-- Cards rendered here by trending.js -->
+        <div id="top10Grid"></div>
       </section>
     </main>
 
     <!-- ── JavaScript ──────────────────────────────────────────────────── -->
-    <script>
-      // ── Live search (client-side, no reload) ─────────────────────────
-      // Auto view on page load
-      document
-        .querySelectorAll("#top10Grid > div[data-api-id]")
-        .forEach((card) => {
-          const mediaApiId = card.dataset.apiId;
-          const mediaType = card.dataset.type;
-          fetch(
-            `/community/view?mediaApiId=${encodeURIComponent(mediaApiId)}&mediaType=${encodeURIComponent(mediaType)}`,
-            { method: "POST" },
-          ).catch(() => {});
-        });
-
-      document
-        .getElementById("localSearch")
-        .addEventListener("input", function (e) {
-          const query = e.target.value.trim().toLowerCase();
-          document.querySelectorAll("#top10Grid > div").forEach((card) => {
-            const title = (card.dataset.title || "").toLowerCase();
-            card.style.display = !query || title.includes(query) ? "" : "none";
-          });
-        });
-
-      // ── Like button ───────────────────────────────────────────────────
-      /*
-       * Records a LIKE interaction via POST /community/like/{mediaApiId}.
-       * Session-based: server prevents duplicate likes.
-       * The actual ranking update happens asynchronously as UserInteraction
-       * data accumulates — page refresh will reflect updated rankings.
-       */
-      document.querySelectorAll(".like-btn").forEach((btn) => {
-        btn.addEventListener("click", () => {
-          if (btn.disabled) return;
-          btn.disabled = true;
-
-          const mediaApiId = btn.dataset.apiId;
-          const mediaType = btn.dataset.type;
-          fetch(
-            `/community/like?mediaApiId=${encodeURIComponent(mediaApiId)}&mediaType=${encodeURIComponent(mediaType)}`,
-            { method: "POST" },
-          )
-            .then((r) => r.json())
-            .then((data) => {
-              if (data.liked) {
-                btn.textContent = "❤️ Liked!";
-              } else {
-                btn.textContent = "✓ Already Liked";
-              }
-            })
-            .catch(() => {
-              btn.disabled = false;
-            });
-        });
-      });
-    </script>
-
-    <script>
-      
-      document.querySelectorAll(".rating-stars").forEach((group) => {
-        const apiId = group.dataset.apiId;
-        const mediaType = group.dataset.type;
-        const buttons = Array.from(group.querySelectorAll(".star-btn"));
-        const msg = group.parentElement.querySelector(".rating-msg");
-
-        buttons.forEach((btn, index) => {
-          btn.addEventListener("mouseenter", () => {
-            highlight(index + 1);
-          });
-
-          btn.addEventListener("mouseleave", () => {
-            resetIfNotLocked();
-          });
-
-          btn.addEventListener("click", () => {
-            const stars = Number(btn.dataset.stars);
-
-            buttons.forEach((b) => (b.disabled = true));
-
-            fetch(
-              `/community/rate/${apiId}?stars=${stars}&mediaType=${encodeURIComponent(mediaType)}`,
-              {
-                method: "POST",
-              },
-            )
-              .then((r) => r.json())
-              .then((data) => {
-                if (data.rated) {
-                  highlight(stars);
-                  lockStars(stars);
-                  msg.textContent = `Thanks! You rated this ${stars}/5.`;
-                } else {
-                  msg.textContent =
-                    "You already rated this item in this session.";
-                }
-              })
-              .catch(() => {
-                buttons.forEach((b) => (b.disabled = false));
-                msg.textContent = "Rating failed. Please try again.";
-              });
-          });
-        });
-
-        function highlight(stars) {
-          buttons.forEach((b, i) => {
-            b.textContent = i < stars ? "★" : "☆";
-          });
-        }
-
-        function lockStars(stars) {
-          highlight(stars);
-          buttons.forEach((b) => (b.disabled = true));
-          group.dataset.locked = "true";
-          group.dataset.lockedStars = String(stars);
-        }
-
-        function resetIfNotLocked() {
-          if (group.dataset.locked === "true") {
-            highlight(Number(group.dataset.lockedStars || "0"));
-          } else {
-            highlight(0);
-          }
-        }
-
-        highlight(0);
-      });
-    </script>
-
-
-    <!-- This js script path: ensures sidebar + header logic -->
+<!-- This js script path: ensures sidebar + header logic -->
+    <script th:src="@{/layout/js/trending.js}"></script>
     <script th:src="@{/layout/js/fragments.js}"></script>
 </body>
 </html>

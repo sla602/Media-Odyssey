@@ -10,11 +10,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 @Service
 public class MOUserDetailsService {
 
-    // Inspiried by:
+    // Inspired by:
     // https://www.baeldung.com/role-and-privilege-for-spring-security-registration
     // Documentation reviewed:
     // https://docs.spring.io/spring-security/site/docs/current/api/org/springframework/security/core/userdetails/UserDetailsService.html
-    // Debugging assisted by AI.
 
     @Autowired
     private UserRepository userRepository;

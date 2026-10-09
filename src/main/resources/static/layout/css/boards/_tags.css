@@ -1,0 +1,110 @@
+/* boards/_tags.css
+   Category badges + genre chips on the board header,
+   plus the tag editor widgets used in board settings. */
+
+/* ===============================================================
+        CATEGORY BADGES + GENRE CHIPS (board header)
+==================================================================*/
+
+.board-tags-row {
+    display: flex;
+    flex-direction: column;
+    gap: 0.55rem;
+    margin-bottom: 1rem;
+}
+
+.board-category-badges,
+.board-genre-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.45rem;
+    align-items: center;
+}
+.board-category-badge {
+    display: inline-block;
+    padding: 0.32rem 0.85rem;
+    border-radius: 999px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    text-transform: capitalize;
+    letter-spacing: 0.2px;
+    border: 1px solid transparent;
+}
+.board-category-badge.cat-movie {
+    background: rgba(59, 130, 246, 0.18);
+    color: #93c5fd;
+    border-color: rgba(59, 130, 246, 0.4);
+}
+.board-category-badge.cat-game {
+    background: rgba(34, 197, 94, 0.18);
+    color: #86efac;
+    border-color: rgba(34, 197, 94, 0.4);
+}
+.board-category-badge.cat-song {
+    background: rgba(168, 85, 247, 0.18);
+    color: #d8b4fe;
+    border-color: rgba(168, 85, 247, 0.4);
+}
+
+.board-genre-chip {
+    display: inline-block;
+    padding: 0.22rem 0.7rem;
+    border-radius: 999px;
+    font-size: 0.72rem;
+    font-weight: 500;
+    background: rgba(148, 163, 184, 0.12);
+    color: #cbd5e1;
+    border: 1px solid rgba(148, 163, 184, 0.3);
+    letter-spacing: 0.2px;
+}
+
+
+/* ── Tag editor form widgets (board settings) ─────────────────── */
+.settings-subheading {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #ffffff;
+    margin: 0 0 0.4rem;
+}
+.settings-help {
+    display: block;
+    font-size: 0.8rem;
+    color: #94a3b8;
+    margin-bottom: 0.75rem;
+    line-height: 1.5;
+}
+.tag-checkbox-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+}
+.tag-checkbox {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    padding: 0.5rem 0.95rem;
+    border-radius: 999px;
+    background: rgba(30, 41, 59, 0.6);
+    border: 1px solid rgba(148, 163, 184, 0.3);
+    cursor: pointer;
+    font-size: 0.85rem;
+    color: #cbd5e1;
+    transition: all 0.18s ease;
+}
+.tag-checkbox:hover {
+    border-color: rgba(139, 92, 246, 0.6);
+    color: #ffffff;
+}
+.tag-checkbox input[type="checkbox"] {
+    accent-color: #8b5cf6;
+}
+.tag-checkbox input[type="checkbox"]:checked + span {
+    color: #ede9fe;
+    font-weight: 600;
+}
+.tag-multiselect {
+    width: 100%;
+    min-height: 10rem;
+    padding: 0.5rem;
+}

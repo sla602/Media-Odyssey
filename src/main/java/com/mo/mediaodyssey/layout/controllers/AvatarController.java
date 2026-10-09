@@ -51,8 +51,6 @@ public class AvatarController {
             HttpServletResponse response) {
         String selectedAvatarType = body.get("selectedAvatarType");
 
-        // User user = (User) authentication.getPrincipal();
-
         User user = currentAccountService.getCurrentAccount(authentication);
 
         // set the variable in the database and save it.
@@ -72,7 +70,6 @@ public class AvatarController {
             String customAvatarURL = storagePublicURL + "/" + fileKey;
 
             // When user upload a file, assume they will use custom avatar immediately.
-            // User user = (User) authentication.getPrincipal();
 
             User user = currentAccountService.getCurrentAccount(authentication);
 

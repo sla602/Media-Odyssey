@@ -7,62 +7,84 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.stereotype.Service;
 
+import com.mo.mediaodyssey.auth.repository.UserRepository;
+import com.mo.mediaodyssey.auth.security.MOOAuth2UserPrincipal;
 import com.mo.mediaodyssey.shared.model.User;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
-import com.mo.mediaodyssey.auth.services.MOUserDetailsService;
-
 @Service
 public class CurrentAccountService {
 
     @Autowired
-    private MOUserDetailsService userDetailsService;
-
-    private Authentication isValidAuthentication(Authentication authentication) {
-        if (authentication == null) {
-            throw new AuthenticationCredentialsNotFoundException(
-                    "Current visitor has not authenticated with a valid account.");
-        }
-
-        if (!(authentication instanceof AnonymousAuthenticationToken)) {
-            return authentication;
-        } else {
-            throw new AuthenticationCredentialsNotFoundException(
-                    "Current visitor has not authenticated with a valid account.");
-        }
-    }
+    private UserRepository userRepository;
 
     public User getCurrentAccount() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        return (User) isValidAuthentication(authentication).getPrincipal();
+        return resolveCurrentAccount(authentication);
     }
 
     public User getCurrentAccount(Authentication authentication) {
-        return (User) isValidAuthentication(authentication).getPrincipal();
+        return resolveCurrentAccount(authentication);
     }
 
     public void refreshPrincipal(Authentication authentication, HttpServletRequest request,
             HttpServletResponse response) {
-        // Verify current authentication is valid.
-        Authentication current = isValidAuthentication(authentication);
+        User account = resolveCurrentAccount(authentication);
+        Long accountId = account.getId();
+        if (accountId == null) {
+            throw new AuthenticationCredentialsNotFoundException(
+                    "Current principal cannot be refreshed because account id is missing.");
+        }
 
-        // Refresh the authentication
-        UserDetails refreshedUserDetails = userDetailsService.loadUserByUsername(current.getName());
+        User refreshedAccount = userRepository.findById(accountId)
+                .orElseThrow(() -> new AuthenticationCredentialsNotFoundException(
+                        "Current principal cannot be refreshed because account no longer exists."));
+
         UsernamePasswordAuthenticationToken refreshedToken = new UsernamePasswordAuthenticationToken(
-                refreshedUserDetails,
-                current.getCredentials(), refreshedUserDetails.getAuthorities());
-        refreshedToken.setDetails(current.getDetails());
+                refreshedAccount,
+                authentication.getCredentials(),
+                refreshedAccount.getAuthorities());
+        refreshedToken.setDetails(authentication.getDetails());
 
-        // Update the context in Spring Security and Spring Session
-        SecurityContext refreshedContext = SecurityContextHolder.getContext();
+        SecurityContext refreshedContext = SecurityContextHolder.createEmptyContext();
         refreshedContext.setAuthentication(refreshedToken);
         SecurityContextHolder.setContext(refreshedContext);
         new HttpSessionSecurityContextRepository().saveContext(refreshedContext, request, response);
+    }
+
+    public boolean isAuthenticated(Authentication authentication) {
+        if (authentication == null) {
+            return false;
+        } else if (authentication instanceof AnonymousAuthenticationToken) {
+            return false;
+        } else {
+            return authentication.isAuthenticated();
+        }
+    }
+
+    private User resolveCurrentAccount(Authentication authentication) {
+        if (!isAuthenticated(authentication)) {
+            throw new AuthenticationCredentialsNotFoundException(
+                    "Current visitor has not authenticated with a valid account.");
+        } else {
+            Object principal = authentication.getPrincipal();
+
+            if (principal instanceof User user) {
+                return user;
+            }
+
+            if (principal instanceof MOOAuth2UserPrincipal oauthPrincipal) {
+                return oauthPrincipal.getUser();
+            }
+
+            throw new AuthenticationCredentialsNotFoundException(
+                    "Current principal cannot be mapped to a valid account.");
+
+        }
     }
 }

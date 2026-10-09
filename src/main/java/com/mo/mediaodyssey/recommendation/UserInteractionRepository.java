@@ -142,4 +142,33 @@ public interface UserInteractionRepository extends JpaRepository<UserInteraction
                 LIMIT 10
             """)
     List<Object[]> findTop10ByScoreWithCountsAndMediaType(@Param("mediaType") String mediaType);
+
+
+    /**
+     * Find users (other than the given user) who have LIKED media of a
+     * specific type that the given user has also LIKED. Returns
+     * (otherUserId, overlapCount) pairs, ordered by overlap desc.
+     *
+     * Used for taste-based friend suggestions on friends.html.
+     *
+     * @param userId    the viewer whose taste we're matching against
+     * @param mediaType "MOVIE", "GAME", or "SONG"
+     */
+    @Query("""
+    SELECT other.userId, COUNT(other.mediaApiId) AS overlap
+    FROM UserInteraction other
+    WHERE other.interactionType = 'LIKE'
+      AND other.mediaType = :mediaType
+      AND other.userId <> :userId
+      AND other.mediaApiId IN (
+          SELECT mine.mediaApiId FROM UserInteraction mine
+          WHERE mine.userId = :userId
+            AND mine.interactionType = 'LIKE'
+            AND mine.mediaType = :mediaType)
+    GROUP BY other.userId
+    ORDER BY overlap DESC
+""")
+    List<Object[]> findUsersWithLikeOverlapByMediaType(
+            @Param("userId") Long userId,
+            @Param("mediaType") String mediaType);
 }
